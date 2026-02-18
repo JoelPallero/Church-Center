@@ -3,6 +3,7 @@
  * Configuración y Conexión a Base de Datos
  * Sistema de Gestión de Iglesia
  */
+date_default_timezone_set('America/Argentina/Buenos_Aires');
 
 class Database
 {
@@ -28,28 +29,42 @@ class Database
 
     private function loadConfig()
     {
-        // Cargar configuración desde archivo .env
-        $envFile = __DIR__ . '/database.env';
-        if (!file_exists($envFile)) {
-            $envFile = dirname(__DIR__, 2) . '/database.env';
+        // 1. Try environment variables (Docker/Server)
+        $envVars = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASS', 'MUSIC_DB_HOST', 'MUSIC_DB_USER', 'MUSIC_DB_PASS', 'MUSIC_DB_NAME'];
+        $loadedFromEnv = false;
+
+        foreach ($envVars as $var) {
+            $val = getenv($var);
+            if ($val !== false) {
+                $this->config[$var] = $val;
+                $loadedFromEnv = true;
+            }
         }
 
-        if (file_exists($envFile)) {
-            $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            foreach ($lines as $line) {
-                if (strpos($line, '=') !== false && strpos($line, '#') !== 0) {
-                    list($key, $value) = explode('=', $line, 2);
-                    $this->config[trim($key)] = trim($value);
+        // 2. Fallback to .env file if not all essential variables are present
+        if (!$loadedFromEnv || empty($this->config['DB_HOST'])) {
+            $envFile = __DIR__ . '/database.env';
+            if (!file_exists($envFile)) {
+                $envFile = dirname(__DIR__, 2) . '/database.env';
+            }
+
+            if (file_exists($envFile)) {
+                $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                foreach ($lines as $line) {
+                    if (strpos($line, '=') !== false && strpos($line, '#') !== 0) {
+                        list($key, $value) = explode('=', $line, 2);
+                        $this->config[trim($key)] = trim($value);
+                    }
+                }
+                if (class_exists('Debug')) {
+                    Debug::log("Database::loadConfig | Config loaded from: $envFile");
                 }
             }
-            if (class_exists('Debug')) {
-                Debug::log("Database::loadConfig | Config loaded from: $envFile | DB_HOST: " . ($this->config['DB_HOST'] ?? 'NOT SET'));
-            }
-        } else {
-            if (class_exists('Debug')) {
-                Debug::error("Database::loadConfig | .env file NOT FOUND at: " . __DIR__ . '/database.env');
-            }
         }
+
+        // 3. Defaults
+        if (empty($this->config['DB_PORT']))
+            $this->config['DB_PORT'] = '3306';
     }
 
     private function connectMain()
@@ -60,11 +75,11 @@ class Database
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci; SET time_zone = '-03:00'"
             ];
             $this->connection = new PDO($dsn, $this->config['DB_USER'], $this->config['DB_PASS'], $options);
         } catch (PDOException $e) {
-            error_log("Error main DB: " . $e->getMessage());
+            throw new Exception("Critical: Main Database connection failed. " . $e->getMessage());
         }
     }
 
@@ -77,11 +92,11 @@ class Database
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci; SET time_zone = '-03:00'"
             ];
             $this->musicConnection = new PDO($dsn, $this->config['MUSIC_DB_USER'], $this->config['MUSIC_DB_PASS'], $options);
         } catch (PDOException $e) {
-            error_log("Error music DB: " . $e->getMessage());
+            throw new Exception("Critical: Music Database connection failed. " . $e->getMessage());
         }
     }
 
@@ -298,11 +313,11 @@ function getDBOperations()
 // Verificar conexión al cargar
 try {
     $db = getDB();
-    $test = $db->testConnection();
-    if ($test['main'] !== 'ok' || $test['music'] !== 'ok') {
-        error_log("Database initialization warnings: " . implode(" | ", $test['errors']));
-    }
 } catch (Exception $e) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode(["message" => "Critical Database Error: " . $e->getMessage()]);
     error_log("Error de inicialización de base de datos: " . $e->getMessage());
+    exit();
 }
 ?>

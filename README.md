@@ -73,30 +73,43 @@ export default defineConfig([
 ])
 ```
 
-## Pendientes y Tareas Congeladas
+## 🏗️ MinistryHub: Arquitectura Multi-Hub SaaS Professional
 
-- [ ] **Asistente AI (Chatbot)**: Funcionalidad de asistente para consultas de canciones, cronogramas y equipos.
-  - El código se encuentra en `src/components/chat/ChatAssistant.tsx`.
-  - El backend está en `backend/src/ChatbotManager.php` y `api/chatbot.php`.
-  - Oculto temporalmente en `MainLayout.tsx`.
-  - Pendiente: Refinar respuestas y asignar lógica final de base de datos.
+MinistryHub es una plataforma modular y escalable diseñada para la gestión integral de congregaciones. Utiliza una arquitectura **Multi-Hub** que permite habilitar módulos contextuales (Worship, Social Media, etc.) según las necesidades.
+
+### Estructura del Proyecto
+
+```text
+/
+├── frontend/             # Aplicación React + Vite
+│   ├── src/              # Código fuente (TypeScript)
+│   └── public/           # Assets estáticos del frontend
+├── backend/              # Lógica de negocio y servicios
+│   ├── src/              # Clases PHP (Auth, Managers, Middleware)
+│   ├── api/              # Puntos de entrada públicos (Controladores)
+│   ├── .docker/          # Configuración de Docker (PHP, Apache)
+│   └── docker-compose.yml # Orquestación local
+```
+
+## 🚀 Inicio Rápido (Docker)
+
+Para comenzar el desarrollo local:
+
+1.  `cd backend`
+2.  `docker-compose up -d`
+3.  Accede a `http://localhost:5173` para el frontend y `http://localhost:8080/api/` para la API.
+
+Para más detalles sobre la instalación y despliegue, consulta **[BACKEND_SETUP.md](file:///c:/Programacion/GitHub/MSM2/BACKEND_SETUP.md)**.
+
+## 📝 Próximos Pasos y Tareas
+
+- [x] Refactorización de Arquitectura Multi-Hub (Base de datos y Backend).
+- [x] Implementación de Middleware de Autorización contextual.
+- [x] Restructuración de carpetas y Dockerización.
+- [ ] **Frontend**: Adaptar los stores y componentes para consumir el nuevo mapa de permisos.
+- [ ] **Asistente AI (Chatbot)**: Refinar la lógica del asistente (Actualmente en `backend/src/modules/chatbot`).
 
 ---
 
-## 🔥 MinistryHub: Arquitectura Modular
-
-MinistryHub ha sido diseñado para ser una plataforma escalable y modular. Actualmente, el núcleo está centrado en la **Gestión de Alabanza**, pero la estructura permite habilitar módulos independientes según las necesidades del cliente:
-
-### Módulos Actuales y Planificados
-- **🎵 Alabanza (Praise):** Gestión de canciones, acordes, metrónomo y cronogramas de músicos. (Módulo Central Actual)
-- **📷 Social Media:** Gestión de calendario de publicaciones, aprobaciones de diseño y copys.
-- **🖥️ Multimedia:** Control de recursos visuales, letras para proyección y fondos.
-- **🙏 Servidores:** Organización de voluntarios, hospitalidad y logística.
-- **🧹 Limpieza:** Cronogramas de mantenimiento y orden del edificio.
-
-### Visión de Futuro
-Cada módulo está diseñado para funcionar de manera independiente pero integrada bajo el dominio central de **MinistryHub**. Esto permitirá en el futuro:
-1. **Escalabilidad:** Implementar cada módulo como una aplicación móvil independiente.
-2. **Personalización:** Habilitar funcionalidades específicas por cliente (Tenant-specific features).
-3. **Subdominios:** Acceso modular vía `ministryhub.churchcenter.com/social-media`, etc.
+MinistryHub es un ecosistema diseñado para crecer. Cada módulo (Praise, Social Media, Multimedia) funciona bajo un dominio centralizado, permitiendo escalabilidad y personalización por cliente (Tenancy).
 

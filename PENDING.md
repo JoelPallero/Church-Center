@@ -10,5 +10,7 @@
 
 
 ## Horario
-- [ ] La hora debe ser la de Buenos Aires.
-- [ ] El menu de perfil está por abajo del blur.
+- [x] La hora debe ser la de Buenos Aires.
+- [x] El menu de perfil está por abajo del blur.
+- [] textos con nombre clave interno de código (e.g. auth.forgotPassword) en lugar de texto plano.
+- [x] En el header figura branding contextual (Ministry Hub, SM Hub, Church Center) según la ruta y el rol.
