@@ -38,10 +38,10 @@ export const NotificationCenter: FC<NotificationCenterProps> = ({ isOpen, onOpen
 
     const fetchNotifications = async () => {
         try {
-            const response = await api.get('/notifications.php?action=list');
+            const response = await api.get('/notifications');
             if (response.data.success) {
-                setNotifications(response.data.notifications);
-                setUnreadCount(response.data.unreadCount);
+                setNotifications(response.data.notifications || []);
+                setUnreadCount(response.data.unreadCount || 0);
             }
         } catch (error) {
             console.error('Failed to fetch notifications');
@@ -50,7 +50,7 @@ export const NotificationCenter: FC<NotificationCenterProps> = ({ isOpen, onOpen
 
     const markAsRead = async (id: number, link?: string) => {
         try {
-            const response = await api.post('/notifications.php?action=read', { id });
+            const response = await api.post(`/notifications/${id}/read`);
             if (response.data.success) {
                 fetchNotifications();
                 if (link) {

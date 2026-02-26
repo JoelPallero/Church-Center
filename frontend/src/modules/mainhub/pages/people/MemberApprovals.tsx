@@ -98,7 +98,7 @@ export const MemberApprovals: FC = () => {
         if (!sel) return;
 
         if (sel.areaIds.length === 0) {
-            alert('Debes seleccionar al menos un área.');
+            alert(t('people.mandatoryArea'));
             return;
         }
 
@@ -108,7 +108,7 @@ export const MemberApprovals: FC = () => {
             if (success) {
                 setPendingUsers(prev => prev.filter(u => u.id !== userId));
             } else {
-                alert('Error al aprobar usuario.');
+                alert(t('people.approvalError'));
             }
         } finally {
             setProcessingId(null);
@@ -121,7 +121,7 @@ export const MemberApprovals: FC = () => {
         <div style={{ maxWidth: '800px', margin: '0 auto', padding: '16px' }}>
             <header style={{ marginBottom: '24px' }}>
                 <h1 className="text-h1">{t('people.moderation.title')}</h1>
-                <p className="text-body-secondary">{t('people.moderation.subtitle')}</p>
+                <p className="text-body-secondary">{t('people.moderation.desc')}</p>
             </header>
 
             {pendingUsers.length === 0 ? (
@@ -140,7 +140,7 @@ export const MemberApprovals: FC = () => {
                                 </div>
                                 <Button
                                     variant="primary"
-                                    label={processingId === u.id ? 'Aprobando...' : t('people.moderation.approve')}
+                                    label={processingId === u.id ? t('people.approving') : t('people.moderation.approve')}
                                     disabled={processingId !== null}
                                     onClick={() => handleApprove(u.id)}
                                 />
@@ -195,7 +195,7 @@ export const MemberApprovals: FC = () => {
 
                             <div style={{ marginTop: '20px' }}>
                                 <label className="text-overline" style={{ display: 'block', marginBottom: '8px' }}>
-                                    Áreas (Selección obligatoria)
+                                    {t('people.mandatoryAreaLabel')}
                                 </label>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                     {areas.map((area) => {

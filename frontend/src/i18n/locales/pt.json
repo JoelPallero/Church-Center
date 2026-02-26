@@ -130,7 +130,52 @@
         "date": "Data",
         "time": "Hora",
         "team": "Equipe",
-        "service_order": "Ordem de Culto"
+        "service_order": "Ordem de Culto",
+        "viewList": "Lista",
+        "viewCalendar": "Calendário",
+        "today": "Hoje",
+        "newMeeting": "Nova Reunião",
+        "details": "Detalhes da Reunião",
+        "noMeetings": "Não há reuniões agendadas para este período.",
+        "form": {
+            "title": "Título da Reunião",
+            "description": "Descrição (Opcional)",
+            "type": "Tipo de Reunião",
+            "location": "Localização",
+            "weeklyConfig": "CONFIGURAÇÃO SEMANAL",
+            "day": "Dia",
+            "startTime": "Hora de Início",
+            "endTime": "Hora de Término",
+            "creating": "Criando...",
+            "create": "Criar Reunião",
+            "types": {
+                "special": "Especial / Única vez",
+                "recurrent": "Recorrente semanal"
+            },
+            "placeholders": {
+                "title": "Ex: Ensaio Geral",
+                "location": "Ex: Auditório Principal"
+            }
+        },
+        "status": {
+            "recurrent": "RECORRENTE",
+            "special": "ESPECIAL",
+            "withTeam": "COM EQUIPE",
+            "noTeam": "SEM EQUIPE",
+            "withSetlist": "COM SETLIST",
+            "noSetlist": "SEM SETLIST"
+        },
+        "assignedMembers": "{{count}} atribuídos",
+        "songCount": "{{count}} músicas"
+    },
+    "days": {
+        "0": "Domingo",
+        "1": "Segunda-feira",
+        "2": "Terça-feira",
+        "3": "Quarta-feira",
+        "4": "Quinta-feira",
+        "5": "Sexta-feira",
+        "6": "Sábado"
     },
     "auth": {
         "email": "E-mail",
@@ -250,7 +295,13 @@
         "languageSubtitle": "Selecione seu idioma preferido",
         "notificationsSubtitle": "Configurar alertas e avisos",
         "documentationSubtitle": "Como manusear a plataforma",
-        "supportSubtitle": "Contatar os desenvolvedores"
+        "supportSubtitle": "Contatar os desenvolvedores",
+        "adminPermissions": "Gestor de Permissões",
+        "adminPermissionsSubtitle": "Configurar capacidades por função",
+        "adminDebug": "Console de Debug",
+        "adminDebugSubtitle": "Logs ao vivo e erros",
+        "adminDiag": "Diagnóstico de API",
+        "adminDiagSubtitle": "Verificar status do servidor"
     },
     "notifications": {
         "title": "Notificações",

@@ -1,10 +1,12 @@
 import type { FC, FormEvent } from 'react';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 
 export const ResetPassword: FC = () => {
+    const { t } = useTranslation();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const token = searchParams.get('token');
@@ -17,7 +19,7 @@ export const ResetPassword: FC = () => {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (password !== confirmPassword) {
-            setMessage({ type: 'error', text: 'Las contraseñas no coinciden.' });
+            setMessage({ type: 'error', text: t('auth.passwordsDoNotMatch') });
             return;
         }
 
@@ -25,7 +27,7 @@ export const ResetPassword: FC = () => {
         setMessage(null);
 
         try {
-            const response = await fetch('/api/reset_password.php', {
+            const response = await fetch('/api/auth/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, password })
@@ -36,10 +38,10 @@ export const ResetPassword: FC = () => {
                 setMessage({ type: 'success', text: data.message });
                 setTimeout(() => navigate('/login'), 3000);
             } else {
-                setMessage({ type: 'error', text: data.error || 'Hubo un error al actualizar la contraseña.' });
+                setMessage({ type: 'error', text: data.error || t('auth.resetError') });
             }
         } catch (err) {
-            setMessage({ type: 'error', text: 'Error de conexión con el servidor.' });
+            setMessage({ type: 'error', text: t('common.connectionError') });
         } finally {
             setIsLoading(false);
         }
@@ -49,9 +51,9 @@ export const ResetPassword: FC = () => {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '24px' }}>
                 <Card style={{ padding: '32px', textAlign: 'center' }}>
-                    <h2 className="text-h2" style={{ color: '#EF4444' }}>Link inválido</h2>
-                    <p className="text-body" style={{ marginTop: '16px' }}>El token de restauración no está presente.</p>
-                    <Button label="Volver al Login" variant="ghost" onClick={() => navigate('/login')} style={{ marginTop: '24px' }} />
+                    <h2 className="text-h2" style={{ color: '#EF4444' }}>{t('auth.invalidToken')}</h2>
+                    <p className="text-body" style={{ marginTop: '16px' }}>{t('auth.invalidTokenDesc')}</p>
+                    <Button label={t('auth.backToLogin')} variant="ghost" onClick={() => navigate('/login')} style={{ marginTop: '24px' }} />
                 </Card>
             </div>
         );
@@ -64,8 +66,8 @@ export const ResetPassword: FC = () => {
         }}>
             <div style={{ marginBottom: '32px', textAlign: 'center' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--color-brand-blue)' }}>password</span>
-                <h1 className="text-h1" style={{ marginTop: '16px' }}>Nueva Contraseña</h1>
-                <p className="text-body" style={{ color: '#6B7280' }}>Ingresa tu nueva clave de acceso</p>
+                <h1 className="text-h1" style={{ marginTop: '16px' }}>{t('auth.resetPasswordTitle')}</h1>
+                <p className="text-body" style={{ color: '#6B7280' }}>{t('auth.resetPasswordSubtitle')}</p>
             </div>
 
             <Card style={{ padding: '32px', width: '100%', maxWidth: '400px' }}>
@@ -82,7 +84,7 @@ export const ResetPassword: FC = () => {
                     )}
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label className="text-overline" style={{ color: '#6B7280' }}>NUEVA CONTRASEÑA</label>
+                        <label className="text-overline" style={{ color: '#6B7280' }}>{t('auth.newPassword')}</label>
                         <input
                             type="password"
                             placeholder="••••••••"
@@ -94,7 +96,7 @@ export const ResetPassword: FC = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label className="text-overline" style={{ color: '#6B7280' }}>CONFIRMAR CONTRASEÑA</label>
+                        <label className="text-overline" style={{ color: '#6B7280' }}>{t('auth.confirmPassword')}</label>
                         <input
                             type="password"
                             placeholder="••••••••"
@@ -107,7 +109,7 @@ export const ResetPassword: FC = () => {
 
                     <Button
                         type="submit"
-                        label={isLoading ? "Guardando..." : "Actualizar Contraseña"}
+                        label={isLoading ? t('common.loading') : t('auth.updatePassword')}
                         variant="primary"
                         disabled={isLoading}
                         style={{ width: '100%', marginTop: '8px' }}

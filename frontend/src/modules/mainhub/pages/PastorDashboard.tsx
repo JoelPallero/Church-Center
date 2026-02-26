@@ -1,20 +1,29 @@
 import type { FC } from 'react';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
+import { useAuth } from '../../../hooks/useAuth';
 
 export const PastorDashboard: FC = () => {
+    const { t } = useTranslation();
+    const { church } = useAuth();
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         fetchPastorData();
-    }, []);
+    }, [church?.id]);
 
     const fetchPastorData = async () => {
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch('/api/pastor.php?action=dashboard_stats', {
+            const churchId = church?.id;
+            const url = churchId
+                ? `/api/reports?action=pastor_stats&church_id=${churchId}`
+                : '/api/reports?action=pastor_stats';
+
+            const response = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -32,7 +41,7 @@ export const PastorDashboard: FC = () => {
         return (
             <div className="flex-center" style={{ height: '300px', flexDirection: 'column', gap: '8px' }}>
                 <div className="spinner" />
-                <p className="text-overline" style={{ color: '#6B7280' }}>Cargando Reportes de la Iglesia...</p>
+                <p className="text-overline" style={{ color: '#6B7280' }}>{t('pastor.loading')}</p>
             </div>
         );
     }
@@ -40,8 +49,8 @@ export const PastorDashboard: FC = () => {
     return (
         <div style={{ paddingBottom: '40px' }}>
             <header style={{ marginBottom: '32px' }}>
-                <h1 className="text-h1">Reportes Pastorales</h1>
-                <p className="text-body" style={{ color: '#9CA3AF' }}>Vista general del cumplimiento y actividad de los equipos.</p>
+                <h1 className="text-h1">{t('pastor.title')}</h1>
+                <p className="text-body" style={{ color: '#9CA3AF' }}>{t('pastor.subtitle')}</p>
             </header>
 
             {/* Quick Stats Grid */}
@@ -54,26 +63,26 @@ export const PastorDashboard: FC = () => {
                 <Card style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         <span className="material-symbols-outlined" style={{ color: '#10B981' }}>groups</span>
-                        <span className="text-overline">EQUIPO ACTIVO</span>
+                        <span className="text-overline">{t('pastor.stats.activeTeam')}</span>
                     </div>
                     <h3 className="text-h1">{stats?.active_members || 0}</h3>
-                    <p className="text-overline" style={{ color: '#6B7280' }}>Miembros participando</p>
+                    <p className="text-overline" style={{ color: '#6B7280' }}>{t('pastor.stats.activeMembers')}</p>
                 </Card>
                 <Card style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         <span className="material-symbols-outlined" style={{ color: '#3B82F6' }}>event_available</span>
-                        <span className="text-overline">REUNIONES MES</span>
+                        <span className="text-overline">{t('pastor.stats.monthlyMeetings')}</span>
                     </div>
                     <h3 className="text-h1">{stats?.meetings_count || 0}</h3>
-                    <p className="text-overline" style={{ color: '#6B7280' }}>Programadas para este mes</p>
+                    <p className="text-overline" style={{ color: '#6B7280' }}>{t('pastor.stats.monthlyScheduled')}</p>
                 </Card>
                 <Card style={{ padding: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         <span className="material-symbols-outlined" style={{ color: '#F59E0B' }}>trending_up</span>
-                        <span className="text-overline">CUMPLIMIENTO</span>
+                        <span className="text-overline">{t('pastor.stats.compliance')}</span>
                     </div>
                     <h3 className="text-h1">{stats?.compliance || '0%'}</h3>
-                    <p className="text-overline" style={{ color: '#6B7280' }}>Cumplimiento de tareas</p>
+                    <p className="text-overline" style={{ color: '#6B7280' }}>{t('pastor.stats.complianceDesc')}</p>
                 </Card>
             </div>
 
@@ -103,7 +112,7 @@ export const PastorDashboard: FC = () => {
                 {/* Task Progress */}
                 <Card drop-shadow>
                     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <h2 className="text-card-title">Cumplimiento de Tareas</h2>
+                        <h2 className="text-card-title">{t('pastor.tasks.title')}</h2>
                         <span className="text-h2" style={{ color: 'var(--color-brand-blue)' }}>{stats?.compliance}</span>
                     </header>
                     <div style={{ height: '8px', width: '100%', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: '4px', marginBottom: '24px' }}>
@@ -121,14 +130,14 @@ export const PastorDashboard: FC = () => {
                                 <div style={{ flex: 1 }}>
                                     <p className="text-body" style={{ fontSize: '14px', margin: 0 }}>{task.title}</p>
                                     <p className="text-overline" style={{ color: 'gray' }}>
-                                        {task.status === 'done' ? 'COMPLETADA' : (task.due_date ? `Vence: ${task.due_date}` : 'Sin fecha')}
+                                        {task.status === 'done' ? t('pastor.tasks.completed') : (task.due_date ? t('pastor.tasks.due', { date: task.due_date }) : t('pastor.tasks.noDueDate'))}
                                     </p>
                                 </div>
                             </div>
                         ))}
                         {(!stats?.tasks || stats.tasks.length === 0) && (
                             <p className="text-body" style={{ textAlign: 'center', color: 'gray', padding: '12px' }}>
-                                No hay tareas pendientes registradas.
+                                {t('pastor.tasks.empty')}
                             </p>
                         )}
                     </div>
@@ -136,7 +145,7 @@ export const PastorDashboard: FC = () => {
 
                 {/* Next Meeting Setlist */}
                 <Card style={{ gridColumn: 'span 1' }}>
-                    <h2 className="text-card-title" style={{ marginBottom: '20px' }}>Próxima Reunión: Setlist</h2>
+                    <h2 className="text-card-title" style={{ marginBottom: '20px' }}>{t('pastor.nextMeeting.title')}</h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {stats?.next_meeting?.songs?.map((song: any, idx: number) => (
                             <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', backgroundColor: 'var(--color-ui-surface)', borderRadius: '12px' }}>
@@ -150,10 +159,10 @@ export const PastorDashboard: FC = () => {
                             </div>
                         ))}
                         {(!stats?.next_meeting?.songs || stats.next_meeting.songs.length === 0) && (
-                            <p className="text-body" style={{ textAlign: 'center', color: '#6B7280' }}>No hay canciones programadas aún.</p>
+                            <p className="text-body" style={{ textAlign: 'center', color: '#6B7280' }}>{t('pastor.nextMeeting.noSongs')}</p>
                         )}
                     </div>
-                    <Button variant="secondary" label="Ver Calendario Completo" style={{ marginTop: '20px', width: '100%' }} />
+                    <Button variant="secondary" label={t('pastor.viewFullCalendar')} style={{ marginTop: '20px', width: '100%' }} />
                 </Card>
             </div>
         </div>

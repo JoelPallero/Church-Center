@@ -6,60 +6,55 @@ import { useAuth } from '../../hooks/useAuth';
 import '../../index.css';
 
 export const BottomNav: FC = () => {
-    useTranslation();
-    const { user } = useAuth();
+    const { t } = useTranslation();
+    const { isSuperAdmin, isMaster, hasPermission } = useAuth();
+    const effectiveIsSuperAdmin = isSuperAdmin || isMaster;
 
-    const isPastor = user?.role?.name === 'pastor';
-    const isMaster = user?.role?.name === 'master';
-    const isLeader = ['leader', 'coordinator'].includes(user?.role?.name || '');
-    const isGuest = user?.role?.level === 200;
-    const isMember = user?.role?.name === 'member' || (!isPastor && !isMaster && !isLeader && !isGuest);
+    const isPastor = hasPermission('church.update');
+    const isLeader = hasPermission('team.create') || hasPermission('area.create');
+    const isMember = hasPermission('church.read') && !isPastor && !isLeader;
+    const isGuest = !hasPermission('church.read') && !effectiveIsSuperAdmin;
 
     let navItems: any[] = [];
 
-    if (isMaster) {
+    if (effectiveIsSuperAdmin) {
         // Superadmin: Dashboard, Reportes, Iglesias, Panel de control
-        // First item Dashboard -> /
         navItems = [
-            { path: '/', icon: 'dashboard', label: 'Dashboard' },
-            { path: '/mainhub/reports', icon: 'analytics', label: 'Reportes' },
-            { path: '/mainhub/churches', icon: 'church', label: 'Iglesias' },
-            { path: '/settings', icon: 'settings_input_component', label: 'Panel' }
+            { path: '/', icon: 'dashboard', label: t('nav.dashboard') },
+            { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports') },
+            { path: '/mainhub/churches', icon: 'church', label: t('nav.churches') },
+            { path: '/settings', icon: 'settings_input_component', label: t('nav.settings') }
         ];
     } else if (isPastor) {
         // Pastor: Reportes, Dashboard, Eventos, Areas, Equipos
-        // First item Reportes -> /
         navItems = [
-            { path: '/mainhub/reports', icon: 'analytics', label: 'Reportes' },
-            { path: '/', icon: 'dashboard', label: 'Dashboard' },
-            { path: '/worship/calendar', icon: 'event', label: 'Eventos', isCentral: true },
-            { path: '/mainhub/churches', icon: 'location_city', label: 'Areas' },
-            { path: '/mainhub/teams', icon: 'groups', label: 'Equipos' }
+            { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports') },
+            { path: '/', icon: 'dashboard', label: t('nav.dashboard') },
+            { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), isCentral: true },
+            { path: '/mainhub/areas', icon: 'location_city', label: t('nav.areas') },
+            { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams') }
         ];
     } else if (isLeader) {
         // Líder/coordinador: Inicio, Equipo, Listados, Canciones, Calendario
-        // First item Inicio -> /
         navItems = [
-            { path: '/', icon: 'home', label: 'Inicio' },
-            { path: '/mainhub/teams', icon: 'groups', label: 'Equipo' },
-            { path: '/worship/playlists', icon: 'reorder', label: 'Listados', isCentral: true },
-            { path: '/worship/songs', icon: 'music_note', label: 'Canciones' },
-            { path: '/worship/calendar', icon: 'event', label: 'Calendario' }
+            { path: '/', icon: 'home', label: t('nav.home') },
+            { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams') },
+            { path: '/worship/playlists', icon: 'reorder', label: t('nav.playlists'), isCentral: true },
+            { path: '/worship/songs', icon: 'music_note', label: t('nav.songs') },
+            { path: '/worship/calendar', icon: 'event', label: t('nav.calendar') }
         ];
     } else if (isMember) {
         // Miembros: Listados, Canciones, Calendario
-        // First item Listados -> /
         navItems = [
-            { path: '/worship/playlists', icon: 'reorder', label: 'Listados' },
-            { path: '/worship/songs', icon: 'music_note', label: 'Canciones', isCentral: true },
-            { path: '/worship/calendar', icon: 'event', label: 'Calendario' }
+            { path: '/worship/playlists', icon: 'reorder', label: t('nav.playlists') },
+            { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), isCentral: true },
+            { path: '/worship/calendar', icon: 'event', label: t('nav.calendar') }
         ];
     } else if (isGuest) {
         // Invitados: Inicio, Mi Perfil
-        // First item Inicio -> /
         navItems = [
-            { path: '/', icon: 'home', label: 'Inicio' },
-            { path: '/profile', icon: 'person', label: 'Mi Perfil' }
+            { path: '/', icon: 'home', label: t('nav.home') },
+            { path: '/profile', icon: 'person', label: t('nav.me') }
         ];
     }
 

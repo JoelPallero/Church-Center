@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { ModuleGuard } from './components/layout/ModuleGuard';
@@ -40,6 +41,10 @@ import { MasterDashboard } from './modules/mainhub/pages/MasterDashboard';
 import { PastorDashboard } from './modules/mainhub/pages/PastorDashboard';
 import { ChurchList } from './modules/mainhub/pages/people/ChurchList';
 import { ChurchEditor } from './modules/mainhub/pages/people/ChurchEditor';
+import { AreaList } from './modules/mainhub/pages/people/AreaList';
+import { AreaSetup } from './modules/mainhub/pages/people/AreaSetup';
+import { TeamSetup } from './modules/mainhub/pages/people/TeamSetup';
+import { ChurchSelect } from './modules/mainhub/pages/people/ChurchSelect';
 import { PermissionsManager } from './pages/admin/PermissionsManager';
 
 // Social Module
@@ -49,71 +54,79 @@ const App: FC = () => {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/auth/google/callback" element={<GoogleCallback />} />
-            <Route path="/accept-invite" element={<AcceptInvite />} />
+        <ToastProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/google/callback" element={<GoogleCallback />} />
+              <Route path="/accept-invite" element={<AcceptInvite />} />
 
-            <Route element={<ProtectedRoute />}>
-              <Route element={<MainLayout />}>
-                {/* Global / Selection Dashboard */}
-                <Route index element={<MainDashboard />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="privacy" element={<PrivacySupport />} />
-                <Route path="debug" element={<LiveDebug />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<MainLayout />}>
+                  {/* Global / Selection Dashboard */}
+                  <Route index element={<MainDashboard />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="settings" element={<Settings />} />
+                  <Route path="privacy" element={<PrivacySupport />} />
+                  <Route path="debug" element={<LiveDebug />} />
 
-                {/* Worship Hub */}
-                <Route path="worship" element={<ModuleGuard moduleKey="worship" />}>
-                  <Route index element={<WorshipDashboard />} />
-                  <Route path="songs" element={<SongList />} />
-                  <Route path="songs/new" element={<SongEditor />} />
-                  <Route path="songs/:id" element={<SongDetail />} />
-                  <Route path="songs/:id/edit" element={<SongEditor />} />
-                  <Route path="songs/approvals" element={<PendingApprovals />} />
-                  <Route path="playlists" element={<Playlists />} />
-                  <Route path="playlists/:id" element={<PlaylistDetail />} />
-                  <Route path="calendar" element={<CalendarPage />} />
+                  {/* Worship Hub */}
+                  <Route path="worship" element={<ModuleGuard moduleKey="worship" />}>
+                    <Route index element={<WorshipDashboard />} />
+                    <Route path="songs" element={<SongList />} />
+                    <Route path="songs/new" element={<SongEditor />} />
+                    <Route path="songs/:id" element={<SongDetail />} />
+                    <Route path="songs/:id/edit" element={<SongEditor />} />
+                    <Route path="songs/approvals" element={<PendingApprovals />} />
+                    <Route path="playlists" element={<Playlists />} />
+                    <Route path="playlists/:id" element={<PlaylistDetail />} />
+                    <Route path="calendar" element={<CalendarPage />} />
+                  </Route>
+
+                  {/* Social Hub */}
+                  <Route path="social" element={<ModuleGuard moduleKey="social" />}>
+                    <Route index element={<SocialDashboard />} />
+                  </Route>
+
+                  {/* MainHub (Pastoral/Admin) */}
+                  <Route path="mainhub" element={<ModuleGuard moduleKey="mainhub" />}>
+                    <Route index element={<MainHubDashboard />} />
+                    <Route path="people" element={<PeopleList />} />
+                    <Route path="people/approvals" element={<MemberApprovals />} />
+                    <Route path="people/invite" element={<InvitePerson />} />
+                    <Route path="teams" element={<TeamsList />} />
+                    <Route path="reports" element={<Reports />} />
+                    <Route path="master" element={<MasterDashboard />} />
+                    <Route path="pastor" element={<PastorDashboard />} />
+                    <Route path="churches" element={<ChurchList />} />
+                    <Route path="churches/new" element={<ChurchEditor />} />
+                    <Route path="churches/edit/:id" element={<ChurchEditor />} />
+                    <Route path="areas" element={<AreaList />} />
+                    <Route path="setup-areas" element={<AreaSetup />} />
+                    <Route path="setup-teams" element={<TeamSetup />} />
+                    <Route path="select-church/:target" element={<ChurchSelect />} />
+                    <Route path="admin/permissions" element={<PermissionsManager />} />
+                    <Route path="join-teams" element={<GroupSelection />} />
+                  </Route>
+
+                  {/* Legacy Redirects for Backward Compatibility */}
+                  <Route path="churches/*" element={<Navigate to="/mainhub/churches" replace />} />
+                  <Route path="songs/*" element={<Navigate to="/worship/songs" replace />} />
+                  <Route path="playlists/*" element={<Navigate to="/worship/playlists" replace />} />
+                  <Route path="reunions/*" element={<Navigate to="/worship/calendar" replace />} />
+                  <Route path="people/*" element={<Navigate to="/mainhub/people" replace />} />
+                  <Route path="teams/*" element={<Navigate to="/mainhub/teams" replace />} />
+                  <Route path="reports/*" element={<Navigate to="/mainhub/reports" replace />} />
                 </Route>
-
-                {/* Social Hub */}
-                <Route path="social" element={<ModuleGuard moduleKey="social" />}>
-                  <Route index element={<SocialDashboard />} />
-                </Route>
-
-                {/* MainHub (Pastoral/Admin) */}
-                <Route path="mainhub" element={<ModuleGuard moduleKey="mainhub" />}>
-                  <Route index element={<MainHubDashboard />} />
-                  <Route path="people" element={<PeopleList />} />
-                  <Route path="people/approvals" element={<MemberApprovals />} />
-                  <Route path="people/invite" element={<InvitePerson />} />
-                  <Route path="teams" element={<TeamsList />} />
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="master" element={<MasterDashboard />} />
-                  <Route path="pastor" element={<PastorDashboard />} />
-                  <Route path="churches" element={<ChurchList />} />
-                  <Route path="churches/new" element={<ChurchEditor />} />
-                  <Route path="admin/permissions" element={<PermissionsManager />} />
-                  <Route path="join-teams" element={<GroupSelection />} />
-                </Route>
-
-                {/* Legacy Redirects for Backward Compatibility */}
-                <Route path="songs/*" element={<Navigate to="/worship/songs" replace />} />
-                <Route path="playlists/*" element={<Navigate to="/worship/playlists" replace />} />
-                <Route path="reunions/*" element={<Navigate to="/worship/calendar" replace />} />
-                <Route path="people/*" element={<Navigate to="/mainhub/people" replace />} />
-                <Route path="teams/*" element={<Navigate to="/mainhub/teams" replace />} />
-                <Route path="reports/*" element={<Navigate to="/mainhub/reports" replace />} />
               </Route>
-            </Route>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </ToastProvider>
       </ThemeProvider>
     </AuthProvider>
   );

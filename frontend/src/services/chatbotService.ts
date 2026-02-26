@@ -19,7 +19,7 @@ export interface ChatResponse {
 
 class ChatService {
     async sendMessage(message: string, context: { churchId: number, currentPath: string }): Promise<ChatResponse> {
-        const response = await fetch('/api/chatbot.php', {
+        const response = await fetch('/api/chatbot', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

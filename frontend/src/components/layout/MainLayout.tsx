@@ -4,11 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { BottomNav } from './BottomNav';
 import { useAuth } from '../../hooks/useAuth';
 import { NotificationCenter } from '../ui/NotificationCenter';
+import { ToastContainer } from '../ui/Toast';
 import { DevRoleSwitcher } from '../dev/DevRoleSwitcher';
 
 export const MainLayout: FC = () => {
     const { t } = useTranslation();
-    const { logout, user, hasPermission } = useAuth();
+    const { logout, user, hasPermission, isSuperAdmin, isMaster } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -16,19 +17,20 @@ export const MainLayout: FC = () => {
 
     const isAnyMenuOpen = userMenuOpen || notificationsOpen;
 
-
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
     const getHubTitle = () => {
-        // Admins and Pastors always see the main brand
-        if (user?.role?.name === 'master' || user?.role?.name === 'pastor') {
+        if (isSuperAdmin || isMaster) {
+            return t('people.roles.master') || "Super Administrador";
+        }
+
+        if (hasPermission('church.update')) {
             return t('common.churchCenter');
         }
 
-        // Contextual hubs for regular members / leaders
         if (location.pathname.startsWith('/worship')) {
             return t('common.ministryHub');
         }
@@ -53,7 +55,7 @@ export const MainLayout: FC = () => {
             <header style={{
                 position: 'sticky',
                 top: 0,
-                zIndex: isAnyMenuOpen ? 2002 : 50, // Above backdrop when open
+                zIndex: isAnyMenuOpen ? 2002 : 50,
                 backdropFilter: isAnyMenuOpen ? 'blur(20px) saturate(180%) blur(4px)' : 'blur(20px) saturate(180%)',
                 backgroundColor: 'var(--color-glass-surface)',
                 borderBottom: '1px solid var(--color-border-subtle)',
@@ -68,14 +70,14 @@ export const MainLayout: FC = () => {
                     justifyContent: 'space-between',
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span className="material-symbols-outlined" style={{ color: 'var(--color-accent-text)' }}>church</span>
+                        <img src="/favicon.png" alt="Logo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
                         <span className="text-h2" style={{ color: 'var(--color-accent-text)' }}>{getHubTitle()}</span>
                     </div>
                     <div className="flex-center" style={{ gap: '8px' }}>
                         <NotificationCenter
                             isOpen={notificationsOpen}
                             onOpenChange={(open) => {
-                                if (open) setUserMenuOpen(false); // Exclusive open
+                                if (open) setUserMenuOpen(false);
                                 setNotificationsOpen(open);
                             }}
                         />
@@ -84,7 +86,7 @@ export const MainLayout: FC = () => {
                                 className="material-symbols-outlined"
                                 style={{ color: 'var(--color-ui-text)', cursor: 'pointer' }}
                                 onClick={() => {
-                                    setNotificationsOpen(false); // Close other menu
+                                    setNotificationsOpen(false);
                                     setUserMenuOpen(!userMenuOpen);
                                 }}
                             >
@@ -124,30 +126,25 @@ export const MainLayout: FC = () => {
                             width: '260px'
                         }}>
                             {(() => {
-                                const isPastor = user?.role?.name === 'pastor';
-                                const isMaster = user?.role?.name === 'master';
-                                const isLeader = ['leader', 'coordinator'].includes(user?.role?.name || '');
-                                const isGuest = user?.role?.level === 200;
+                                const canManageChurch = hasPermission('church.update');
+                                const isLeader = hasPermission('team.create') || hasPermission('area.create');
 
-                                // Determine Footer Items (matching BottomNav exactly)
                                 let footerPaths: string[] = [];
-                                if (isMaster) {
-                                    footerPaths = ['/', '/reports', '/churches', '/settings'];
-                                } else if (isPastor) {
-                                    footerPaths = ['/', '/dashboard_view', '/reunions', '/churches', '/teams'];
+                                if (isSuperAdmin || isMaster) {
+                                    footerPaths = ['/', '/reports', '/mainhub/churches', '/settings'];
+                                } else if (canManageChurch) {
+                                    footerPaths = ['/', '/dashboard_view', '/reunions', '/mainhub/churches', '/teams'];
                                 } else if (isLeader) {
                                     footerPaths = ['/', '/teams', '/playlists', '/songs', '/reunions'];
-                                } else if (isGuest) {
-                                    footerPaths = ['/', '/profile'];
-                                } else { // Member
+                                } else {
                                     footerPaths = ['/', '/songs', '/reunions'];
                                 }
 
-                                // List of all possible navigatable items with required permissions
                                 const navItemsMetadata = [
                                     { path: '/', icon: 'dashboard', label: t('nav.home'), permission: null },
                                     { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'songs.view' },
-                                    { path: '/mainhub/churches', icon: 'church', label: isPastor ? t('nav.areas') : t('nav.churches'), permission: 'churches.view' },
+                                    { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'churches.view' },
+                                    { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'area.create' },
                                     { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'reunions.view' },
                                     { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'teams.view' },
                                     { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'users.view' },
@@ -156,7 +153,6 @@ export const MainLayout: FC = () => {
                                     { path: '/settings', icon: 'settings', label: t('nav.settings'), permission: null }
                                 ];
 
-                                // Filter items: (Has permission OR no permission required) AND Not in footer
                                 const uniqueItems = navItemsMetadata.filter(item => {
                                     const hasPerm = !item.permission || hasPermission(item.permission);
                                     const inFooter = footerPaths.includes(item.path);
@@ -165,13 +161,11 @@ export const MainLayout: FC = () => {
 
                                 return (
                                     <>
-                                        {/* Perfil (Always at top) */}
                                         <div onClick={() => { navigate('/profile'); setUserMenuOpen(false); }} className="dropdown-item">
                                             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person</span>
-                                            <span>{t('profile.me') || 'Mi Perfil'}</span>
+                                            <span>{user?.name}</span>
                                         </div>
 
-                                        {/* Unique Role Items */}
                                         {uniqueItems.map(item => (
                                             <div key={item.path} onClick={() => { navigate(item.path); setUserMenuOpen(false); }} className="dropdown-item">
                                                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{item.icon}</span>
@@ -181,7 +175,6 @@ export const MainLayout: FC = () => {
 
                                         <div className="dropdown-divider" />
 
-                                        {/* Privacy and Support (Always at bottom) */}
                                         <div onClick={() => { navigate('/privacy'); setUserMenuOpen(false); }} className="dropdown-item">
                                             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>help</span>
                                             <span>{t('nav.privacy') || 'Privacidad y Soporte'}</span>
@@ -203,7 +196,6 @@ export const MainLayout: FC = () => {
                 </>
             )}
 
-            {/* Main Content */}
             <main style={{
                 padding: '16px',
                 paddingBottom: '120px',
@@ -215,10 +207,8 @@ export const MainLayout: FC = () => {
                 <Outlet />
             </main>
 
-            {/* Navigation */}
             <BottomNav />
-
-            {/* Dev Tools */}
+            <ToastContainer />
             <DevRoleSwitcher />
         </div>
     );

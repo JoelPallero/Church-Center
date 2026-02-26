@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
+import { useTranslation } from 'react-i18next';
 import { peopleService } from '../../services/peopleService';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
+    const { t } = useTranslation();
     const [roles, setRoles] = useState<any[]>([]);
     const [areas, setAreas] = useState<any[]>([]);
     const [groups, setGroups] = useState<any[]>([]);
@@ -82,7 +84,7 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
 
     const handleSave = async () => {
         if (formData.areaIds.length === 0) {
-            alert('Debes seleccionar al menos un área.');
+            alert(t('people.mandatoryArea'));
             return;
         }
 
@@ -102,10 +104,10 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
             if (success) {
                 onSave();
             } else {
-                alert('Error al guardar el perfil.');
+                alert(t('common.failed'));
             }
         } catch (err) {
-            alert('Error de conexión.');
+            alert(t('common.connectionError'));
         } finally {
             setIsSaving(false);
         }
@@ -114,14 +116,14 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
     const handleDeactivate = async () => {
         // Actually, let's just make it a real Delete since Super Admin asked for it.
 
-        const confirmMsg = '¿Estás seguro de que deseas ELIMINAR este perfil permanentemente?\n\nEsta acción borrará todos los registros asociados y no se puede deshacer.';
+        const confirmMsg = t('people.confirmDeleteProfile');
         if (!window.confirm(confirmMsg)) return;
 
         const success = await peopleService.deleteMember(user.id);
         if (success) {
             onSave();
         } else {
-            alert('Error al eliminar perfil. Es posible que no tengas permisos de Administrador.');
+            alert(t('common.failed'));
         }
     };
 
@@ -173,7 +175,7 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: accentColor }}></span>
                             <span className="text-overline" style={{ fontSize: '11px', letterSpacing: '0.5px' }}>
-                                {selectedRole?.displayName || (isGuest ? 'INVITADO' : 'SIN ROL')}
+                                {selectedRole?.displayName || (isGuest ? t('people.guest') : t('people.noRole'))}
                             </span>
                         </div>
                     </div>
@@ -186,7 +188,7 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                     {/* Basic Info */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                         <div>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>NOMBRE</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>{t('common.firstName')}</label>
                             <input
                                 className="text-body"
                                 value={formData.firstName}
@@ -195,7 +197,7 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                             />
                         </div>
                         <div>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>APELLIDO</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>{t('common.lastName')}</label>
                             <input
                                 className="text-body"
                                 value={formData.lastName}
@@ -207,24 +209,24 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                         <div>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>SEXO</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>{t('common.sex')}</label>
                             <select
                                 value={formData.sex}
                                 onChange={e => setFormData(prev => ({ ...prev, sex: e.target.value }))}
                                 style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)', color: 'white', outline: 'none', fontSize: '14px' }}
                             >
-                                <option value="M">Masculino</option>
-                                <option value="F">Femenino</option>
+                                <option value="M">{t('common.male')}</option>
+                                <option value="F">{t('common.female')}</option>
                             </select>
                         </div>
                         <div>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>ROL</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>{t('people.filterByRole')}</label>
                             <select
                                 value={formData.roleId}
                                 onChange={e => setFormData(prev => ({ ...prev, roleId: e.target.value }))}
                                 style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)', color: 'white', outline: 'none', fontSize: '14px' }}
                             >
-                                <option value="">Seleccionar Rol</option>
+                                <option value="">{t('people.selectRole')}</option>
                                 {roles.map(r => <option key={r.id} value={r.id}>{r.displayName}</option>)}
                             </select>
                         </div>
@@ -243,7 +245,7 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                     {/* Org Section */}
                     <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.01)', borderRadius: '12px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.03)' }}>
                         <div style={{ marginBottom: '16px' }}>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '10px', fontSize: '10px' }}>ÁREAS (OBLIGATORIO)</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '10px', fontSize: '10px' }}>{t('people.mandatoryAreaLabel')}</label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                 {areas.map(area => (
                                     <button
@@ -270,13 +272,13 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                         </div>
                         {needsTeam && (
                             <div>
-                                <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>EQUIPO (BASADO EN ÁREA PRINCIPAL)</label>
+                                <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>{t('people.teamBasedOnArea')}</label>
                                 <select
                                     value={formData.groupId}
                                     onChange={e => setFormData(prev => ({ ...prev, groupId: e.target.value }))}
                                     style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'var(--color-ui-bg)', color: 'white', outline: 'none', fontSize: '13px' }}
                                 >
-                                    <option value="">Seleccionar Equipo</option>
+                                    <option value="">{t('people.selectTeam')}</option>
                                     {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                 </select>
                             </div>
@@ -286,7 +288,7 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                     {/* Instruments (Conditional) */}
                     {isAlabanza && (
                         <div>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '10px', fontSize: '10px' }}>INSTRUMENTOS</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '10px', fontSize: '10px' }}>{t('people.instruments')}</label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                 {instruments.map(inst => (
                                     <div
@@ -313,13 +315,13 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                 <div style={{ padding: '20px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)' }}>
                     <Button
                         variant="ghost"
-                        label="Eliminar"
+                        label={t('common.delete')}
                         onClick={handleDeactivate}
                         style={{ color: '#EF4444', height: '36px', padding: '0 12px', fontSize: '12px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
                     />
                     <div style={{ display: 'flex', gap: '12px' }}>
-                        <Button variant="ghost" label="Cancelar" onClick={onClose} disabled={isSaving} style={{ height: '38px', fontSize: '14px' }} />
-                        <Button variant="primary" label={isSaving ? "Cargando..." : "Guardar Cambios"} onClick={handleSave} disabled={isSaving} style={{ height: '38px', fontSize: '14px', background: 'white', color: 'black', fontWeight: 600 }} />
+                        <Button variant="ghost" label={t('common.cancel')} onClick={onClose} disabled={isSaving} style={{ height: '38px', fontSize: '14px' }} />
+                        <Button variant="primary" label={isSaving ? t('common.loading') : t('common.saveChanges')} onClick={handleSave} disabled={isSaving} style={{ height: '38px', fontSize: '14px', background: 'white', color: 'black', fontWeight: 600 }} />
                     </div>
                 </div>
             </Card>

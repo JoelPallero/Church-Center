@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Metronome } from './Metronome';
@@ -14,6 +14,16 @@ interface SongCardProps {
 export const SongCard: FC<SongCardProps> = ({ song, singerIdFilter }) => {
     const { hasPermission } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const churchId = searchParams.get('church_id');
+
+    const buildUrl = (path: string) => {
+        const params = new URLSearchParams();
+        if (churchId) params.set('church_id', churchId);
+        if (singerIdFilter) params.set('singer', singerIdFilter.toString());
+        const queryString = params.toString();
+        return path + (queryString ? `?${queryString}` : '');
+    };
 
     return (
         <Card
@@ -26,7 +36,7 @@ export const SongCard: FC<SongCardProps> = ({ song, singerIdFilter }) => {
                 borderLeft: song.isAssigned ? '4px solid var(--color-brand-blue)' : 'none',
                 transition: 'transform 0.2s, box-shadow 0.2s'
             }}
-            onClick={() => navigate(`/songs/${song.id}${song.isAssigned ? `?singer=${singerIdFilter}` : ''}`)}
+            onClick={() => navigate(buildUrl(`/worship/songs/${song.id}`))}
         >
             <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -85,7 +95,7 @@ export const SongCard: FC<SongCardProps> = ({ song, singerIdFilter }) => {
                         icon="edit"
                         onClick={(e: MouseEvent) => {
                             e.stopPropagation();
-                            navigate(`/songs/${song.id}/edit`);
+                            navigate(buildUrl(`/worship/songs/${song.id}/edit`));
                         }}
                         style={{ padding: '8px', minWidth: 'auto', height: 'auto', borderRadius: '50%' }}
                     />

@@ -5,12 +5,14 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import { AuthService } from '../services/authService';
 import { Card } from '../components/ui/Card';
+import { useToast } from '../context/ToastContext';
 
 export const Settings: FC = () => {
     const { user } = useAuth();
     const { t, i18n } = useTranslation();
     const { theme, setTheme } = useTheme();
     const navigate = useNavigate();
+    const { addToast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
 
     const isMaster = user?.role?.name === 'master';
@@ -89,8 +91,8 @@ export const Settings: FC = () => {
                     <h3 className="text-overline" style={{ color: 'var(--color-brand-blue)', marginBottom: '12px', letterSpacing: '1px' }}>{t('profile.account')}</h3>
                     <SettingRow
                         icon="person"
-                        title={t('profile.me') || 'Mi Perfil'}
-                        subtitle={t('profile.accountSubtitle') || 'Información personal e instrumentos'}
+                        title={t('nav.me') || t('profile.title')}
+                        subtitle={t('profile.accountSubtitle')}
                         onClick={() => navigate('/profile')}
                     />
                 </section>
@@ -132,7 +134,7 @@ export const Settings: FC = () => {
                     <SettingRow
                         icon="translate"
                         title={t('profile.language')}
-                        subtitle={t('profile.languageSubtitle') || 'Selecciona tu lenguaje preferido'}
+                        subtitle={t('profile.languageSubtitle')}
                         rightElement={
                             <div style={{ display: 'flex', gap: '4px' }}>
                                 {['es', 'en', 'pt'].map(lang => (
@@ -157,8 +159,8 @@ export const Settings: FC = () => {
                     <SettingRow
                         icon="notifications_active"
                         title={t('profile.notifications')}
-                        subtitle={t('profile.notificationsSubtitle') || 'Configura alertas y avisos'}
-                        onClick={() => alert('Próximamente: Configuración de notificaciones push y email.')}
+                        subtitle={t('profile.notificationsSubtitle')}
+                        onClick={() => addToast('Próximamente: Configuración de notificaciones push y email.', 'info')}
                     />
                 </section>
 
@@ -168,13 +170,13 @@ export const Settings: FC = () => {
                     <SettingRow
                         icon="menu_book"
                         title={t('profile.documentation')}
-                        subtitle={t('profile.documentationSubtitle') || 'Cómo manejar la plataforma'}
+                        subtitle={t('profile.documentationSubtitle')}
                         onClick={() => navigate('/privacy')}
                     />
                     <SettingRow
                         icon="support_agent"
                         title={t('profile.support')}
-                        subtitle={t('profile.supportSubtitle') || 'Contactar con los desarrolladores'}
+                        subtitle={t('profile.supportSubtitle')}
                         onClick={() => navigate('/privacy')}
                     />
                 </section>
@@ -185,24 +187,24 @@ export const Settings: FC = () => {
                         <h3 className="text-overline" style={{ color: '#EF4444', marginBottom: '12px', letterSpacing: '1px' }}>{t('profile.admin')}</h3>
                         <SettingRow
                             icon="security"
-                            title="Gestor de Permisos"
-                            subtitle="Configurar capacidades por rol"
+                            title={t('profile.adminPermissions')}
+                            subtitle={t('profile.adminPermissionsSubtitle')}
                             color="#EF4444"
                             onClick={() => navigate('/admin/permissions')}
                         />
                         <SettingRow
                             icon="terminal"
-                            title="Consola de Debug"
-                            subtitle="Logs en vivo y errores"
+                            title={t('profile.adminDebug')}
+                            subtitle={t('profile.adminDebugSubtitle')}
                             color="#EF4444"
                             onClick={() => navigate('/debug')}
                         />
                         <SettingRow
                             icon="health_and_safety"
-                            title="Diagnóstico de API"
-                            subtitle="Verificar estado del servidor"
+                            title={t('profile.adminDiag')}
+                            subtitle={t('profile.adminDiagSubtitle')}
                             color="#10B981"
-                            onClick={() => window.open('/api/diag.php', '_blank')}
+                            onClick={() => window.open('/api/health.php', '_blank')}
                         />
                     </section>
                 )}

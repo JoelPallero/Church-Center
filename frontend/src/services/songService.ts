@@ -6,10 +6,11 @@ export type { Song };
 
 export const songService = {
 
-    getAll: async (): Promise<Song[]> => {
+    getAll: async (churchId?: number): Promise<Song[]> => {
         try {
-            const response = await api.get('/songs.php');
-            return (response.data && Array.isArray(response.data)) ? response.data.map((s: any) => ({
+            const response = await api.get(`/songs${churchId ? `?church_id=${churchId}` : ''}`);
+            const songs = response.data?.songs || [];
+            return Array.isArray(songs) ? songs.map((s: any) => ({
                 id: s.id,
                 churchId: s.church_id,
                 title: s.title,
@@ -28,11 +29,11 @@ export const songService = {
         }
     },
 
-    getById: async (id: string | number): Promise<Song | undefined> => {
+    getById: async (id: string | number, churchId?: number): Promise<Song | undefined> => {
         try {
-            const response = await api.get(`/songs.php?id=${id}`);
-            const s = response.data;
-            if (s) {
+            const response = await api.get(`/songs/${id}${churchId ? `?church_id=${churchId}` : ''}`);
+            const s = response.data?.song || response.data; // Try both formats
+            if (s && s.id) {
                 return {
                     id: s.id,
                     churchId: s.church_id,
@@ -52,8 +53,8 @@ export const songService = {
         }
     },
 
-    add: async (song: Omit<Song, 'id' | 'churchId'>): Promise<Song> => {
-        const response = await api.post('/songs.php', {
+    add: async (song: Omit<Song, 'id' | 'churchId'>, churchId?: number): Promise<Song> => {
+        const response = await api.post(`/songs${churchId ? `?church_id=${churchId}` : ''}`, {
             title: song.title,
             artist: song.artist,
             original_key: song.originalKey,
@@ -62,16 +63,17 @@ export const songService = {
             category: song.category
         });
 
+        const data = response.data;
         return {
             ...song,
-            id: response.data.id,
-            churchId: response.data.churchId || 0
+            id: data.id,
+            churchId: data.church_id || churchId || 0
         } as Song;
     },
 
     update: async (id: number | string, song: Partial<Song>): Promise<boolean> => {
         try {
-            await api.put(`/songs.php?id=${id}`, {
+            await api.put(`/songs/${id}`, {
                 title: song.title,
                 artist: song.artist,
                 original_key: song.originalKey,
@@ -89,7 +91,7 @@ export const songService = {
     // Approval Workflow Methods
     submitEdit: async (edit: Omit<SongEdit, 'id' | 'status' | 'createdAt'>): Promise<boolean> => {
         try {
-            await api.post('/song_edits.php?action=submit', {
+            await api.post('/songs/edits/submit', {
                 song_id: edit.songId,
                 proposed_title: edit.proposedTitle,
                 proposed_artist: edit.proposedArtist,
@@ -108,7 +110,7 @@ export const songService = {
 
     getPendingEdits: async (): Promise<SongEdit[]> => {
         try {
-            const response = await api.get('/song_edits.php?action=list_pending');
+            const response = await api.get('/songs/edits/pending');
             return response.data || [];
         } catch (error) {
             console.error('Failed to fetch pending edits', error);
@@ -118,7 +120,7 @@ export const songService = {
 
     approveEdit: async (editId: number): Promise<boolean> => {
         try {
-            await api.post('/song_edits.php?action=approve', { id: editId });
+            await api.post(`/songs/edits/${editId}/approve`);
             return true;
         } catch (error) {
             console.error('Failed to approve edit', error);
@@ -128,7 +130,7 @@ export const songService = {
 
     rejectEdit: async (editId: number, notes: string): Promise<boolean> => {
         try {
-            await api.post('/song_edits.php?action=reject', { id: editId, notes });
+            await api.post(`/songs/edits/${editId}/reject`, { notes });
             return true;
         } catch (error) {
             console.error('Failed to reject edit', error);
@@ -136,12 +138,12 @@ export const songService = {
         }
     },
 
-    delete: async (id: number | string): Promise<boolean> => {
+    delete: async (id: number | string, churchId?: number): Promise<boolean> => {
         try {
-            await api.delete(`/songs.php?id=${id}`);
+            await api.delete(`/songs/${id}${churchId ? `?church_id=${churchId}` : ''}`);
             return true;
         } catch (error) {
-            console.error('Failed to delete song', error); // Changed error message for clarity
+            console.error('Failed to delete song', error);
             return false;
         }
     }

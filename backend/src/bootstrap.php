@@ -1,78 +1,36 @@
 <?php
-/**
- * MSM2 Backend Bootstrapper
- * Handles modular service loading for local and production environments.
- */
 
-class Bootstrapper
-{
-    private static $basePath = null;
-
-    public static function init()
-    {
-        if (self::$basePath !== null)
-            return;
-
-        $possibleRoots = [
-            __DIR__ . '/',                                    // Local (relative to bootstrap.php)
-            __DIR__ . '/../../backend/src/',                  // From public/api/
-            __DIR__ . '/../../msm_logic/src/',                // Pro (Sibling of public_html)
-            __DIR__ . '/../../../msm_logic/src/'              // Pro (Root of account)
-        ];
-
-        foreach ($possibleRoots as $root) {
-            if (file_exists($root . 'core/Auth.php')) {
-                self::$basePath = $root;
-                break;
-            }
-        }
-
-        if (!self::$basePath) {
-            http_response_code(500);
-            echo json_encode(["message" => "Critical Error: Backend logic root not found."]);
-            exit();
-        }
-    }
-
-    public static function getPath($module, $className)
-    {
-        self::init();
-        return self::$basePath . "$module/$className.php";
-    }
-
-    public static function require($module, $className)
-    {
-        $path = self::getPath($module, $className);
-        if (file_exists($path)) {
-            require_once $path;
-        } else {
-            error_log("Bootstrapper: File not found: $path");
-        }
-    }
+// Define project root as the parent of src/
+if (!defined('APP_ROOT')) {
+    define('APP_ROOT', dirname(__DIR__));
 }
 
-// Initializing the bootstrapper
-Bootstrapper::init();
+// Autoloader manual simple
+spl_autoload_register(function ($class) {
+    $prefix = 'App\\';
+    $base_dir = __DIR__ . '/';
 
-/**
- * PROFESSIONAL SESSION & CORS CONFIGURATION
- */
-// 1. Session Security
-ini_set('session.cookie_httponly', 1);
-ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_samesite', 'Lax');
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
 
-// 2. CORS Handling (For withCredentials compatibility)
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-$allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+    if (file_exists($file)) {
+        require $file;
+    }
+});
 
-if (in_array($origin, $allowedOrigins)) {
-    header("Access-Control-Allow-Origin: $origin");
-    header("Access-Control-Allow-Credentials: true");
-} else {
-    header("Access-Control-Allow-Origin: *");
-}
+// Global Exception Handler
+set_exception_handler(function ($e) {
+    $msg = "Uncaught Exception: " . $e->getMessage() . "\n" .
+        "File: " . $e->getFile() . ":" . $e->getLine() . "\n" .
+        "Stack trace:\n" . $e->getTraceAsString();
+    \App\Helpers\Logger::error($msg);
+    \App\Helpers\Response::error("Internal Server Error: " . $e->getMessage(), 500);
+});
+
+// Initialize CORS
+\App\Helpers\Cors::init();

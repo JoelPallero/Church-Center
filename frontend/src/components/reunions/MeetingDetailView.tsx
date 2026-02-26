@@ -24,7 +24,7 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
     const fetchAssignmentData = async () => {
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch('/api/calendar.php?action=assignment_data', {
+            const response = await fetch(`/api/calendar/assignment-data`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -40,7 +40,7 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
         setIsLoading(true);
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch(`/api/calendar.php?action=details&id=${instanceId}`, {
+            const response = await fetch(`/api/calendar/events/${instanceId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();

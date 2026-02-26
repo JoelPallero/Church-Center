@@ -7,7 +7,7 @@ interface ModuleGuardProps {
 }
 
 export const ModuleGuard: FC<ModuleGuardProps> = ({ moduleKey }) => {
-    const { user, isAuthenticated, isLoading } = useAuth();
+    const { services, isAuthenticated, isSuperAdmin, isLoading, hasService } = useAuth();
 
     if (isLoading) {
         return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
@@ -17,19 +17,13 @@ export const ModuleGuard: FC<ModuleGuardProps> = ({ moduleKey }) => {
         return <Navigate to="/login" replace />;
     }
 
-    // Master has access to everything
-    if (user?.role?.name === 'master') {
+    // Master/Superadmin has access to everything
+    if (isSuperAdmin || hasService(moduleKey)) {
         return <Outlet />;
     }
 
-    // Check if user has access to this module
-    const hasAccess = user?.services?.some(s => s.serviceKey === moduleKey && s.enabled);
+    // Redirect to their first available module, or profile if none
+    const firstModule = services.length > 0 ? services[0] : undefined;
 
-    if (!hasAccess) {
-        // Redirect to their first available module, or profile if none
-        const firstModule = user?.services?.find(s => s.enabled)?.serviceKey;
-        return <Navigate to={firstModule ? `/${firstModule}` : "/profile"} replace />;
-    }
-
-    return <Outlet />;
+    return <Navigate to={firstModule ? `/${firstModule}` : "/profile"} replace />;
 };

@@ -1,4 +1,4 @@
-export type UserRoleName = 'master' | 'pastor' | 'leader' | 'coordinator' | 'member' | 'admin' | 'guest';
+export type UserRoleName = 'master' | 'pastor' | 'leader' | 'coordinator' | 'member' | 'admin' | 'guest' | 'superadmin';
 
 export interface Instrument {
     id: number;
@@ -39,6 +39,7 @@ export interface User {
     groups?: Team[];
     areas?: { id: number; name: string }[];
     services?: UserService[]; // Multi-hub support
+    isMaster?: boolean; // Convenience flag
 }
 
 export interface Church {

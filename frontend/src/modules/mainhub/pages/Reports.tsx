@@ -8,31 +8,48 @@ import { useTranslation } from 'react-i18next';
 import { reportService } from '../../../services/reportService';
 import { Card } from '../../../components/ui/Card';
 
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../hooks/useAuth';
+
 // Professional color palette
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
 export const Reports: FC = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const { isMaster, user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any>(null);
 
+    const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
+    const isPastor = user?.role?.name === 'pastor';
+    const finalChurchId = churchId || user?.churchId;
+
     useEffect(() => {
         const fetchData = async () => {
+            // Redirect if no church context at all and user is Pastor (multitenant context)
+            // Master users bypass selection if they want, but Pastor needs at least one ID
+            if (!finalChurchId && (isMaster || isPastor)) {
+                navigate('/mainhub/select-church/reports');
+                return;
+            }
+
             setLoading(true);
-            const stats = await reportService.getDashboardStats();
+            const stats = await reportService.getDashboardStats(finalChurchId || undefined);
             if (stats) {
                 setData(stats);
             }
             setLoading(false);
         };
         fetchData();
-    }, []);
+    }, [churchId, isMaster, isPastor, navigate]);
 
     if (loading) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column', gap: '16px' }}>
                 <div className="spinner"></div>
-                <p className="text-body-secondary">Cargando estadísticas reales...</p>
+                <p className="text-body-secondary">{t('reports.loading')}</p>
             </div>
         );
     }
@@ -41,8 +58,8 @@ export const Reports: FC = () => {
         return (
             <div style={{ textAlign: 'center', padding: '40px' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'gray' }}>analytics</span>
-                <p className="text-h3">No hay datos disponibles</p>
-                <p className="text-body-secondary">No pudimos recopilar estadísticas en este momento.</p>
+                <p className="text-h3">{t('reports.noData')}</p>
+                <p className="text-body-secondary">{t('reports.noDataDesc')}</p>
             </div>
         );
     }
@@ -61,7 +78,7 @@ export const Reports: FC = () => {
             {/* Header */}
             <div>
                 <h1 className="text-h1" style={{ marginBottom: '4px' }}>{t('nav.reports')}</h1>
-                <p className="text-body-secondary">Estadísticas reales basadas en tu actividad reciente.</p>
+                <p className="text-body-secondary">{t('reports.operationDetails')}</p>
             </div>
 
             {/* KPI Cards */}
@@ -71,10 +88,10 @@ export const Reports: FC = () => {
                 gap: '16px'
             }}>
                 {[
-                    { label: 'Miembros Activos', value: kpis.activeMembers, trend: 'Total', color: '#10B981' },
-                    { label: 'Eventos del Mes', value: kpis.monthlyEvents, trend: 'Actual', color: '#3B82F6' },
-                    { label: 'Eficiencia Global', value: `${kpis.efficiency}%`, trend: '30d', color: '#F59E0B' },
-                    { label: 'Nuevas Canciones', value: kpis.newSongs, trend: '+30d', color: '#8B5CF6' }
+                    { label: t('reports.activeMembers'), value: kpis.activeMembers, trend: 'Total', color: '#10B981' },
+                    { label: t('reports.monthlyEvents'), value: kpis.monthlyEvents, trend: 'Actual', color: '#3B82F6' },
+                    { label: t('reports.efficiency'), value: `${kpis.efficiency}%`, trend: '30d', color: '#F59E0B' },
+                    { label: t('reports.newSongs'), value: kpis.newSongs, trend: '+30d', color: '#8B5CF6' }
                 ].map((kpi, i) => (
                     <Card key={i} style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <span className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>{kpi.label}</span>
@@ -89,7 +106,7 @@ export const Reports: FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
                 {/* Area Activity Chart */}
                 <Card style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <h3 className="text-card-title">Crecimiento de Asistencia (Confirmados)</h3>
+                    <h3 className="text-card-title">{t('reports.attendanceGrowth')}</h3>
                     <div style={{ width: '100%', height: 250 }}>
                         <ResponsiveContainer>
                             <AreaChart data={chartGrowthData}>
@@ -118,7 +135,7 @@ export const Reports: FC = () => {
 
                 {/* Pie Distribution Chart */}
                 <Card style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <h3 className="text-card-title">Distribución por Áreas</h3>
+                    <h3 className="text-card-title">{t('reports.areaDistribution')}</h3>
                     <div style={{ width: '100%', height: 250, display: 'flex', alignItems: 'center' }}>
                         {distribution.length > 0 ? (
                             <ResponsiveContainer>
@@ -156,7 +173,7 @@ export const Reports: FC = () => {
 
             {/* Attendance Bar Chart */}
             <Card style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h3 className="text-card-title">Eficiencia por Equipo (Confirmación vs Asignación)</h3>
+                <h3 className="text-card-title">{t('reports.teamEfficiency')}</h3>
                 <div style={{ width: '100%', height: 300 }}>
                     {teamStats.length > 0 ? (
                         <ResponsiveContainer>
@@ -186,17 +203,17 @@ export const Reports: FC = () => {
 
             {/* System Status (Replacing Project Timeline with more relevant info) */}
             <Card style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h3 className="text-card-title">Detalles de Operación</h3>
+                <h3 className="text-card-title">{t('nav.settings')}</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>SALUD DE SERVIDOR</span>
+                        <span className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>{t('reports.serverHealth')}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981' }}></div>
                             <span className="text-body" style={{ fontWeight: 600 }}>Óptimo (99.9% uptime)</span>
                         </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>CAPACIDAD DE ALMACENAMIENTO</span>
+                        <span className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>{t('reports.storageCapacity')}</span>
                         <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '4px', marginTop: '4px' }}>
                             <div style={{ width: '15%', height: '100%', backgroundColor: '#3B82F6', borderRadius: '4px' }}></div>
                         </div>

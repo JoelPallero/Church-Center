@@ -24,7 +24,7 @@ export const MasterDashboard: FC = () => {
     const fetchStats = async () => {
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch('/api/admin.php?action=stats', {
+            const response = await fetch('/api/reports', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -49,10 +49,10 @@ export const MasterDashboard: FC = () => {
     ];
 
     const adminOptions = [
-        { id: 'churches', label: t('dashboard.admin.churchManagement') || 'Gestión de Iglesias', icon: 'corporate_fare', desc: t('dashboard.admin.churchManagementDesc') || 'Alta, baja y modificación de iglesias' },
-        { id: 'users', label: t('dashboard.admin.userControl') || 'Control de Usuarios', icon: 'manage_accounts', desc: t('dashboard.admin.userControlDesc') || 'Asignación de roles y permisos globales' },
-        { id: 'songs', label: t('dashboard.admin.masterLibrary') || 'Biblioteca Maestra', icon: 'music_video', desc: t('dashboard.admin.masterLibraryDesc') || 'ABM de canciones del sistema' },
-        { id: 'reunions', label: t('dashboard.admin.globalSchedules') || 'Cronogramas Globales', icon: 'event_note', desc: t('dashboard.admin.globalSchedulesDesc') || 'Vista de calendarios por iglesia' },
+        { id: 'churches', label: t('dashboard.admin.churchManagement') || 'Gestión de Iglesias', icon: 'corporate_fare', desc: t('dashboard.admin.churchManagementDesc') || 'Alta, baja y modificación de iglesias', action: () => navigate('/mainhub/churches') },
+        { id: 'users', label: t('dashboard.admin.userControl') || 'Control de Usuarios', icon: 'manage_accounts', desc: t('dashboard.admin.userControlDesc') || 'Asignación de roles y permisos globales', action: () => navigate('/mainhub/people') },
+        { id: 'songs', label: t('dashboard.admin.masterLibrary') || 'Biblioteca Maestra', icon: 'music_video', desc: t('dashboard.admin.masterLibraryDesc') || 'ABM de canciones del sistema', action: () => navigate('/worship/songs') },
+        { id: 'reunions', label: t('dashboard.admin.globalSchedules') || 'Cronogramas Globales', icon: 'event_note', desc: t('dashboard.admin.globalSchedulesDesc') || 'Vista de calendarios por iglesia', action: () => navigate('/worship/calendar') },
         { id: 'permissions', label: t('dashboard.admin.configurePermissions') || 'Configurar permisos', icon: 'security', desc: t('dashboard.admin.configurePermissionsDesc') || 'Gestionar acciones permitidas por rol', action: () => navigate('/admin/permissions') },
         { id: 'settings', label: t('dashboard.admin.systemSettings') || 'Configuración Sistema', icon: 'settings_suggest', desc: t('dashboard.admin.systemSettingsDesc') || 'Ajustes de interfaz, idioma y herramientas técnicas', action: () => navigate('/settings') }
     ];

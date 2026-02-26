@@ -1,24 +1,65 @@
 import type { FC, FormEvent } from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card } from '../../../../components/ui/Card';
 import { Button } from '../../../../components/ui/Button';
-import { useNavigate } from 'react-router-dom';
 import { peopleService } from '../../../../services/peopleService';
+import { useAuth } from '../../../../hooks/useAuth';
 
 export const InvitePerson: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { user, isMaster } = useAuth();
+    const [searchParams] = useSearchParams();
+    const urlChurchId = searchParams.get('church_id');
+
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [bulkEmails, setBulkEmails] = useState('');
     const [isBulk, setIsBulk] = useState(false);
     const [roleId, setRoleId] = useState(4); // Default to member
     const [isLoading, setIsLoading] = useState(false);
+    const [loadingChurches, setLoadingChurches] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+    const [churches, setChurches] = useState<any[]>([]);
+    const [selectedChurchId, setSelectedChurchId] = useState<number | null>(urlChurchId ? parseInt(urlChurchId) : (user?.churchId || null));
+
+    useEffect(() => {
+        if (isMaster && !urlChurchId) {
+            fetchChurches();
+        }
+    }, [isMaster, urlChurchId]);
+
+    const fetchChurches = async () => {
+        try {
+            setLoadingChurches(true);
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch('/api/churches', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                setChurches(data.churches);
+                if (data.churches.length > 0 && !selectedChurchId) {
+                    setSelectedChurchId(data.churches[0].id);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch churches', err);
+        } finally {
+            setLoadingChurches(false);
+        }
+    };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        if (isMaster && !selectedChurchId) {
+            setStatus({ type: 'error', message: t('people.invite_error_no_church') || 'Por favor, selecciona una iglesia.' });
+            return;
+        }
+
         setIsLoading(true);
         setStatus(null);
         try {
@@ -32,7 +73,7 @@ export const InvitePerson: FC = () => {
                     throw new Error(t('people.invite_error_no_emails') || 'Por favor, ingresa al menos un correo válido.');
                 }
 
-                const result = await peopleService.bulkInvite(emailList);
+                const result = await peopleService.bulkInvite(emailList, selectedChurchId ?? undefined);
                 if (result.success > 0) {
                     setStatus({
                         type: 'success',
@@ -43,7 +84,7 @@ export const InvitePerson: FC = () => {
                     setStatus({ type: 'error', message: t('people.invite_bulk_error') || 'No se pudo enviar ninguna invitación.' });
                 }
             } else {
-                const success = await peopleService.invite(name, email, roleId);
+                const success = await peopleService.invite(name, email, roleId, selectedChurchId ?? undefined);
                 if (success) {
                     setStatus({ type: 'success', message: t('people.invite_success') || 'Invitación enviada correctamente.' });
                     setName('');
@@ -108,6 +149,25 @@ export const InvitePerson: FC = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {isMaster && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <label className="text-overline" style={{ color: '#6B7280' }}>
+                                {t('common.church') || 'Iglesia'} {loadingChurches && <span style={{ fontSize: '10px', marginLeft: '4px', fontStyle: 'italic' }}>(Cargando...)</span>}
+                            </label>
+                            <select
+                                value={selectedChurchId || ''}
+                                onChange={(e) => setSelectedChurchId(parseInt(e.target.value))}
+                                className="w-full"
+                                required
+                                disabled={loadingChurches}
+                            >
+                                <option value="" disabled>{t('common.selectChurch') || 'Selecciona una iglesia'}</option>
+                                {churches.map(c => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {status && (
                         <div style={{

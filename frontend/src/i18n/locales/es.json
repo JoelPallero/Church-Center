@@ -4,35 +4,59 @@
         "register": "Registrarse",
         "cancel": "Cancelar",
         "save": "Guardar",
+        "ok": "OK",
+        "yes": "Sí",
+        "no": "No",
         "edit": "Editar",
+        "deletePermanently": "ELIMINAR PERMANENTEMENTE",
+        "deactivate": "desactivar",
         "delete": "Eliminar",
+        "back": "Volver",
+        "add": "Agregar",
+        "confirm": "Confirmar",
         "actions": "Acciones",
         "loading": "Cargando...",
         "reset": "Restablecer",
         "preview": "Vista Previa",
         "church": "Iglesia",
-        "add": "Añadir",
         "all": "Todos",
         "general": "General",
         "privacy": "Privacidad",
         "individual": "Individual",
         "bulk": "Masiva",
         "sending": "Enviando...",
-        "failed": "fallaron",
+        "failed": "La operación falló",
         "error_unexpected": "Error inesperado",
-        "ministryHub": "Ministry Hub",
-        "smHub": "SM Hub",
-        "churchCenter": "Church Center"
+        "saveChanges": "Guardar Cambios",
+        "configure": "Configurar",
+        "connectionError": "Error de conexión.",
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "sex": "Sexo",
+        "male": "Masculino",
+        "female": "Femenino",
+        "ministryHub": "Portal Alabanza",
+        "smHub": "Portal Redes",
+        "churchCenter": "Perfil de Iglesia"
+    },
+    "worship": {
+        "welcome": "Bienvenido al centro de alabanza."
     },
     "nav": {
         "home": "Inicio",
+        "dashboard": "Dashboard",
         "people": "Personas",
         "teams": "Equipos",
         "reunions": "Reuniones",
+        "calendar": "Calendario",
         "songs": "Canciones",
         "me": "Mi Perfil",
         "reports": "Reportes",
-        "playlists": "Listados"
+        "playlists": "Listados",
+        "areas": "Áreas",
+        "churches": "Iglesias",
+        "settings": "Panel de Control",
+        "privacy": "Privacidad y Soporte"
     },
     "people": {
         "title": "Personas",
@@ -46,6 +70,30 @@
             "active": "Activo (Asignado)"
         },
         "invite": "Invitar",
+        "approvals": "Solicitudes",
+        "worshipTeamDesc": "Integrantes del equipo de Alabanza.",
+        "generalMembersDesc": "Lista general de miembros e integrantes.",
+        "filterByRole": "Filtrar por Rol",
+        "filterByStatus": "Estado",
+        "noResults": "No se encontraron miembros.",
+        "resendInvitation": "Reenviar invitación de login",
+        "invitationSent": "Invitación reenviada correctamente.",
+        "invitationError": "Error al reenviar la invitación.",
+        "deletedSuccess": "Perfil eliminado definitivamente.",
+        "deactivatedSuccess": "Perfil desactivado.",
+        "deleteError": "Error al eliminar el perfil.",
+        "deactivateError": "Error al desactivar el perfil.",
+        "selectRole": "Seleccionar Rol",
+        "selectTeam": "Seleccionar Equipo",
+        "noRole": "Sin Rol",
+        "guest": "Invitado",
+        "mandatoryArea": "Debes seleccionar al menos un área.",
+        "approvalError": "Error al aprobar usuario.",
+        "approving": "Aprobando...",
+        "mandatoryAreaLabel": "Áreas (Requerido)",
+        "teamBasedOnArea": "Equipo (Basado en área principal)",
+        "instruments": "Instrumentos",
+        "confirmDeleteProfile": "¿Estás seguro de que deseas ELIMINAR este perfil permanentemente?\n\nEsta acción borrará todos los registros asociados y no se puede deshacer.",
         "inactive": "Inactivo",
         "filter": "Filtrar por rol",
         "roles": {
@@ -71,11 +119,15 @@
             "invite_error_no_emails": "Por favor, ingresa al menos un correo válido.",
             "invite_bulk_success": "Se enviaron {{count}} invitaciones correctamente.",
             "invite_bulk_error": "No se pudo enviar ninguna invitación.",
-            "bulk_invite_notice": "Las invitaciones masivas se enviarán con el rol de \"Miembro\" por defecto."
+            "bulk_invite_notice": "Las invitaciones masivas se enviarán con el rol de \"Miembro\" por defecto.",
+            "confirmDeleteInvitation": "¿Estás seguro de que deseas eliminar la invitación de {{name}}?",
+            "invitationDeleted": "Invitación eliminada.",
+            "confirmDelete": "¿Estás seguro de que deseas {{action}} el perfil de {{name}}?{{#if isAdmin}}\n\nATENCIÓN: Esta acción borrará todos sus datos y no se puede deshacer.{{/if}}"
         }
     },
     "songs": {
         "title": "Canciones",
+        "description": "Gestiona el repertorio.",
         "search": "Buscar canción...",
         "key": "Tono",
         "transpose": "Transponer",
@@ -131,7 +183,52 @@
         "date": "Fecha",
         "time": "Hora",
         "team": "Equipo",
-        "service_order": "Orden de Servicio"
+        "service_order": "Orden de Servicio",
+        "viewList": "Lista",
+        "viewCalendar": "Calendario",
+        "today": "Hoy",
+        "newMeeting": "Nueva Reunión",
+        "details": "Detalles de la Reunión",
+        "noMeetings": "No hay reuniones programadas para este período.",
+        "form": {
+            "title": "Título de la Reunión",
+            "description": "Descripción (Opcional)",
+            "type": "Tipo de Reunión",
+            "location": "Ubicación",
+            "weeklyConfig": "CONFIGURACIÓN SEMANAL",
+            "day": "Día",
+            "startTime": "Hora Inicio",
+            "endTime": "Hora Fin",
+            "creating": "Creando...",
+            "create": "Crear Reunión",
+            "types": {
+                "special": "Especial / Única vez",
+                "recurrent": "Recurrente semanal"
+            },
+            "placeholders": {
+                "title": "Ej: Ensayo General",
+                "location": "Ej: Auditorio Principal"
+            }
+        },
+        "status": {
+            "recurrent": "RECURRENTE",
+            "special": "ESPECIAL",
+            "withTeam": "CON EQUIPO",
+            "noTeam": "SIN EQUIPO",
+            "withSetlist": "CON SETLIST",
+            "noSetlist": "SIN SETLIST"
+        },
+        "assignedMembers": "{{count}} asignados",
+        "songCount": "{{count}} canciones"
+    },
+    "days": {
+        "0": "Domingo",
+        "1": "Lunes",
+        "2": "Martes",
+        "3": "Miércoles",
+        "4": "Jueves",
+        "5": "Viernes",
+        "6": "Sábado"
     },
     "auth": {
         "email": "Correo Electrónico",
@@ -152,19 +249,32 @@
         "hasAccount": "¿Ya tienes cuenta?",
         "loginAction": "Iniciar Sesión",
         "orContinueWith": "O continuar con",
+        "forgotPasswordTitle": "Recuperar Contraseña",
+        "forgotPasswordSubtitle": "Ingresa tu correo para recibir un enlace de restauración",
+        "sendLink": "Enviar Enlace",
+        "backToLogin": "Volver al inicio de sesión",
+        "resetPasswordTitle": "Nueva Contraseña",
+        "resetPasswordSubtitle": "Ingresa tu nueva clave de acceso",
+        "newPassword": "NUEVA CONTRASEÑA",
+        "confirmPassword": "CONFIRMAR CONTRASEÑA",
+        "updatePassword": "Actualizar Contraseña",
+        "invalidToken": "Link inválido",
+        "invalidTokenDesc": "El token de restauración no está presente.",
+        "passwordsDoNotMatch": "Las contraseñas no coinciden.",
+        "resetError": "Hubo un error al actualizar la contraseña.",
         "emails": "Correos electrónicos",
         "emailsPlaceholder": "Ingresa los correos separados por coma o uno por línea..."
     },
     "dashboard": {
-        "welcome": "Bienvenido, {{name}}",
-        "happeningToday": "Esto es lo que sucede hoy.",
+        "welcome": "¡Bienvenido, {{name}}!",
+        "happeningToday": "¿Qué está pasando hoy?",
         "emptyState": "No hay eventos hoy",
         "sundayService": "Servicio de Domingo",
         "viewPlan": "Ver Plan",
         "serving": "Estoy sirviendo",
         "quickActions": "Acciones Rápidas",
         "newSong": "Nueva Canción",
-        "addPerson": "Añadir Persona",
+        "addPerson": "Agregar Persona",
         "nextReunion": "Próxima Reunión",
         "personalizeExperience": "Personaliza tu experiencia en la plataforma.",
         "activity": {
@@ -210,7 +320,16 @@
             "globalMembers": "Miembros Globales",
             "songsInBase": "Canciones en Base",
             "activeMeetings": "Reuniones Activas"
-        }
+        },
+        "requestSent": "Tu solicitud ha sido enviada a los líderes del equipo. Te avisaremos cuando seas aceptado.",
+        "availableTeams": "Equipos Disponibles",
+        "loadingTeams": "Cargando equipos...",
+        "requestJoin": "Solicitar Unirse",
+        "requesting": "Solicitando...",
+        "noDescription": "Sin descripción",
+        "waitingNotice": "Mientras esperas, puedes personalizar tu perfil y tema.",
+        "pendingRequestsCount": "Tienes {{count}} nuevas solicitudes de ingreso",
+        "pendingRequestsTitle": "Aprobación de nuevos integrantes"
     },
     "profile": {
         "title": "Perfil",
@@ -252,7 +371,13 @@
         "languageSubtitle": "Selecciona tu lenguaje preferido",
         "notificationsSubtitle": "Configura alertas y avisos",
         "documentationSubtitle": "Cómo manejar la plataforma",
-        "supportSubtitle": "Contactar con los desarrolladores"
+        "supportSubtitle": "Contactar con los desarrolladores",
+        "adminPermissions": "Gestor de Permisos",
+        "adminPermissionsSubtitle": "Configurar capacidades por rol",
+        "adminDebug": "Consola de Debug",
+        "adminDebugSubtitle": "Logs en vivo y errores",
+        "adminDiag": "Diagnóstico de API",
+        "adminDiagSubtitle": "Verificar estado del servidor"
     },
     "notifications": {
         "title": "Notificaciones",
@@ -270,7 +395,138 @@
         "inputPlaceholder": "Pregunta lo que sea...",
         "error": "Lo siento, hubo un problema al procesar tu solicitud. Por favor intenta de nuevo."
     },
+    "playlists": {
+        "title": "Listados",
+        "description": "Gestión de canciones por reunión",
+        "createReunion": "Crear reunión",
+        "newPlaylist": "Nuevo Listado",
+        "status": {
+            "completed": "Finalizada",
+            "in_progress": "En curso",
+            "pending": "Pendiente"
+        },
+        "santaCena": "SANTA CENA",
+        "view": "Ver",
+        "repeat": "Repetir",
+        "empty": "No se encontraron listados.",
+        "items": "ítems"
+    },
     "music": {
         "actions": "Acciones de Músico"
+    },
+    "reports": {
+        "activeMembers": "Miembros Activos",
+        "monthlyEvents": "Eventos del Mes",
+        "efficiency": "Eficiencia Global",
+        "newSongs": "Nuevas Canciones",
+        "attendanceGrowth": "Crecimiento de Asistencia (Confirmados)",
+        "areaDistribution": "Distribución por Áreas",
+        "teamEfficiency": "Eficiencia por Equipo (Confirmación vs Asignación)",
+        "operationDetails": "Detalles de Operación",
+        "serverHealth": "SALUD DE SERVIDOR",
+        "storageCapacity": "CAPACIDAD DE ALMACENAMIENTO",
+        "loading": "Cargando estadísticas reales...",
+        "noData": "No hay datos disponibles",
+        "noDataDesc": "No pudimos recopilar estadísticas en este momento."
+    },
+    "pastor": {
+        "loading": "Cargando Reportes de la Iglesia...",
+        "title": "Reportes Pastorales",
+        "subtitle": "Vista general del cumplimiento y actividad de los equipos.",
+        "stats": {
+            "activeTeam": "EQUIPO ACTIVO",
+            "activeMembers": "Miembros participando",
+            "monthlyMeetings": "REUNIONES MES",
+            "monthlyScheduled": "Programadas para este mes",
+            "compliance": "CUMPLIMIENTO",
+            "complianceDesc": "Cumplimiento de tareas"
+        },
+        "tasks": {
+            "title": "Cumplimiento de Tareas",
+            "completed": "COMPLETADA",
+            "due": "Vence: {{date}}",
+            "noDueDate": "Sin fecha",
+            "empty": "No hay tareas pendientes registradas."
+        },
+        "nextMeeting": {
+            "title": "Próxima Reunión: Setlist",
+            "noSongs": "No hay canciones programadas aún."
+        },
+        "viewFullCalendar": "Ver Calendario Completo"
+    },
+    "setup": {
+        "church": {
+            "title": "Nueva Iglesia",
+            "nameLabel": "Nombre de la Congregación",
+            "namePlaceholder": "Ej: Cita con la Vida Central",
+            "slugLabel": "URL Única (Slug)",
+            "slugHint": "Este será el identificador único para esta iglesia.",
+            "addressLabel": "Dirección Física (Opcional)",
+            "addressPlaceholder": "Calle, Ciudad, País",
+            "submit": "Confirmar Registro",
+            "saving": "Creando Iglesia...",
+            "notice": "Al crear una iglesia, se generará una estructura base de ministerios (Alabanza, Sonido, Multimedia) automáticamente.",
+            "errorCreate": "Error al crear la iglesia",
+            "errorConnection": "Error de conexión con el servidor"
+        },
+        "areas": {
+            "title": "Paso 2: Creación de Áreas",
+            "subtitle": "Define las áreas principales de tu iglesia (Ej: Alabanza, Administración, etc.)",
+            "errorEmpty": "Debes crear al menos un área.",
+            "placeholder": "Nombre del Área (Ej: Alabanza)",
+            "addAction": "Agregar otra área",
+            "saving": "Guardando Áreas...",
+            "continue": "Continuar a Equipos",
+            "errorDelay": "Estamos presentando demoras en el servicio, intente más tarde."
+        },
+        "teams": {
+            "title": "Paso 3: Equipos y Líderes",
+            "subtitle": "Crea los equipos de trabajo y asigna a sus líderes.",
+            "errorLoadAreas": "Error al cargar áreas.",
+            "areaLabel": "Área",
+            "teamNameLabel": "Nombre del Equipo",
+            "teamNamePlaceholder": "Ej: Banda Domingo",
+            "inviteLeaderTitle": "Invitar Líder de Equipo (Opcional)",
+            "leaderNamePlaceholder": "Nombre del Líder",
+            "leaderEmailPlaceholder": "Email del Líder",
+            "addAction": "Agregar otro equipo",
+            "saving": "Guardando Configuración...",
+            "finish": "Finalizar y Guardar",
+            "errorEmpty": "Debes crear al menos un equipo.",
+            "errorCreate": "Error al crear equipo.",
+            "errorInvite": "Error al invitar al líder."
+        }
+    },
+    "churches": {
+        "title": "Iglesias",
+        "new": "Nueva Iglesia",
+        "search": "Buscar iglesias...",
+        "noResults": "No se encontraron iglesias.",
+        "filters": {
+            "upcoming": "Próximamente: Filtros avanzados por región o estado."
+        }
+    },
+    "teams": {
+        "configTitle": "Configurar Equipo: {{name}}",
+        "configDesc": "Selecciona los miembros que pertenecen a este equipo.",
+        "saveSuccess": "Asignaciones guardadas correctamente.",
+        "saveError": "Error al guardar asignaciones.",
+        "saving": "Guardando...",
+        "saveAction": "Guardar Asignaciones",
+        "newTeam": "Nuevo Equipo",
+        "newTeamTitle": "Crear Nuevo Equipo",
+        "teamNamePlaceholder": "Nombre del equipo (ej. Sonido)",
+        "selectLeader": "Seleccionar Líder / Coordinador",
+        "createAction": "Crear",
+        "deleteConfirm": "¿Estás seguro de eliminar este equipo?",
+        "emptyMyTeam": "No hay integrantes en tu equipo todavía.",
+        "inviteMember": "Invitar Miembro",
+        "myTeam": "Mi Equipo",
+        "manageMyTeam": "Gestiona a los integrantes de tu equipo.",
+        "manageAllTeams": "Gestiona los ministerios y equipos de servicio.",
+        "leaderLabel": "Líder: {{name}}",
+        "noDescription": "Sin descripción",
+        "viewMembers": "Ver Miembros",
+        "deleteError": "Error al eliminar equipo."
     }
 }

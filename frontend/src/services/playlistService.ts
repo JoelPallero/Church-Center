@@ -27,10 +27,10 @@ const MOCK_PLAYLISTS: Playlist[] = [
 ];
 
 export const playlistService = {
-    getAll: async (churchId: number): Promise<Playlist[]> => {
+    getAll: async (churchId?: number): Promise<Playlist[]> => {
         if (IS_DEV) return MOCK_PLAYLISTS;
         try {
-            const response = await api.get(`/playlists.php?churchId=${churchId}`);
+            const response = await api.get(`/playlists${churchId ? `?churchId=${churchId}` : ''}`);
             return response.data.playlists || [];
         } catch (error) {
             console.error('Failed to fetch playlists', error);
@@ -38,10 +38,10 @@ export const playlistService = {
         }
     },
 
-    getById: async (id: number): Promise<Playlist | null> => {
+    getById: async (id: number, churchId?: number): Promise<Playlist | null> => {
         if (IS_DEV) return MOCK_PLAYLISTS.find(p => p.id === id) || null;
         try {
-            const response = await api.get(`/playlists.php?id=${id}`);
+            const response = await api.get(`/playlists/${id}${churchId ? `?churchId=${churchId}` : ''}`);
             return response.data.playlist || null;
         } catch (error) {
             console.error('Failed to fetch playlist detail', error);
@@ -51,7 +51,7 @@ export const playlistService = {
 
     create: async (data: any): Promise<any> => {
         try {
-            const response = await api.post('/playlists.php?action=create', data);
+            const response = await api.post('/playlists', data);
             return response.data;
         } catch (error) {
             console.error('Failed to create playlist', error);
@@ -61,7 +61,7 @@ export const playlistService = {
 
     delete: async (id: number): Promise<boolean> => {
         try {
-            const response = await api.post('/playlists.php?action=delete', { id });
+            const response = await api.delete(`/playlists/${id}`);
             return response.data.success;
         } catch (error) {
             console.error('Failed to delete playlist', error);

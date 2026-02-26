@@ -1,12 +1,13 @@
 import type { FC } from 'react';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { songService } from '../../../services/songService';
 import type { Song, MemberKey, User } from '../../../types/domain';
-import { AuthService } from '../../../services/authService';
+import { useAuth } from '../../../hooks/useAuth';
+import { useToast } from '../../../context/ToastContext';
 
 import { peopleService } from '../../../services/peopleService';
 
@@ -16,6 +17,7 @@ export const SongEditor: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
+    const [searchParams] = useSearchParams();
     const isEditing = !!id && id !== 'new';
 
     const [form, setForm] = useState<Omit<Song, 'id' | 'churchId'>>({
@@ -31,13 +33,23 @@ export const SongEditor: FC = () => {
     });
 
     const [loading, setLoading] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
+    const { user, isMaster } = useAuth();
+    const { addToast } = useToast();
     const [singers, setSingers] = useState<User[]>([]);
 
+    const churchIdFromUrl = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
+    const isPastor = user?.role?.name === 'pastor';
+    const finalChurchId = churchIdFromUrl || user?.churchId;
+
     useEffect(() => {
-        AuthService.getCurrentUser().then(setUser);
-        peopleService.getAll().then(setSingers);
-    }, []);
+        // Redirigir si no hay contexto de iglesia en absoluto
+        if (!finalChurchId && (isPastor || isMaster)) {
+            navigate('/mainhub/select-church/songs');
+            return;
+        }
+
+        peopleService.getAll(finalChurchId || undefined).then(setSingers);
+    }, [finalChurchId, isMaster, isPastor, navigate]);
 
     useEffect(() => {
         if (isEditing) {
@@ -46,7 +58,7 @@ export const SongEditor: FC = () => {
     }, [id]);
 
     const loadSong = async () => {
-        const song = await songService.getById(id!);
+        const song = await songService.getById(id!, finalChurchId || undefined);
         if (song) {
             setForm({
                 title: song.title,
@@ -64,7 +76,7 @@ export const SongEditor: FC = () => {
 
     const addMemberKey = () => {
         if (singers.length === 0) {
-            alert(t('people.noSingers') || 'No hay cantantes registrados para asignar.');
+            addToast(t('people.noSingers') || 'No hay cantantes registrados para asignar.', 'warning');
             return;
         }
         const firstAvailableSinger = singers[0];
@@ -108,7 +120,7 @@ export const SongEditor: FC = () => {
             if (isEditing) {
                 if (isAuthorizedToDirectEdit) {
                     await songService.update(id!, form);
-                    alert(t('songs.saveSuccess') || 'Cambios guardados correctamente.');
+                    addToast(t('songs.saveSuccess') || 'Cambios guardados correctamente.', 'success');
                 } else {
                     // Members must submit for approval
                     await songService.submitEdit({
@@ -122,20 +134,21 @@ export const SongEditor: FC = () => {
                         proposedTimeSignature: form.timeSignature,
                         proposedBpmType: form.bpmType
                     });
-                    alert(t('songs.submitApprovalSuccess') || 'Tus cambios han sido enviados para revisión por un líder.');
+                    addToast(t('songs.submitApprovalSuccess') || 'Tus cambios han sido enviados para revisión por un líder.', 'success');
                 }
             } else {
                 // New songs likewise: leaders add directly, members submit?
                 // For now, let's allow adding directly or keep it simple
-                await songService.add(form);
+                await songService.add(form, finalChurchId || undefined);
+                addToast(t('songs.addSuccess') || 'Canción añadida correctamente.', 'success');
             }
-            navigate('/songs');
+            navigate('/worship/songs' + (finalChurchId ? `?church_id=${finalChurchId}` : ''));
         } catch (error: any) {
             console.error('Save failed', error);
             if (error.response?.status === 403) {
-                alert(t('songs.forbiddenEdit') || 'No tienes permisos para editar esta canción directamente.');
+                addToast(t('songs.forbiddenEdit') || 'No tienes permisos para editar esta canción directamente.', 'error');
             } else {
-                alert(t('common.error') || 'Ocurrió un error al guardar.');
+                addToast(t('common.error') || 'Ocurrió un error al guardar.', 'error');
             }
         } finally {
             setLoading(false);

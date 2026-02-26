@@ -1,115 +1,52 @@
 # MinistryHub
 
-MinistryHub is a modular platform designed to manage different areas of a ministry, such as Alabanza (Praise), Social Media, Multimedia, and more. Each module can be enabled independently based on the needs of the church.
+MinistryHub is a professional, modular, and multi-tenant platform designed for comprehensive church management. It features a scalable **Multi-Hub** architecture that allows churches to enable specific modules (Worship, Social Media, etc.) based on their needs.
 
+## 🚀 Key Features
 
-Currently, two official plugins are available:
+- **Multi-tenancy & Church Switching**: Manage multiple congregations with a single account.
+- **Master Global Control**: A dedicated administrative role with unrestricted access across all churches and modules.
+- **Worship Module**: Full song library (ChordPro), setlist management, and collaborator moderation flow.
+- **Integrated Calendar**: List and Monthly Grid views for managing reunions and service orders.
+- **Setup Flow**: Sequential wizard for onboarding new churches (Church -> Areas -> Teams -> Leaders).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🏗️ Project Architecture & Deployment
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-## 🏗️ MinistryHub: Arquitectura Multi-Hub SaaS Professional
-
-MinistryHub es una plataforma modular y escalable diseñada para la gestión integral de congregaciones. Utiliza una arquitectura **Multi-Hub** que permite habilitar módulos contextuales (Worship, Social Media, etc.) según las necesidades.
-
-### Estructura del Proyecto
+The project is structured so that the `frontend` handles the build and the `backend` handles the private logic.
 
 ```text
-/
-├── frontend/             # Aplicación React + Vite
-│   ├── src/              # Código fuente (TypeScript)
-│   └── public/           # Assets estáticos del frontend
-├── backend/              # Lógica de negocio y servicios
-│   ├── src/              # Clases PHP (Auth, Managers, Middleware)
-│   ├── api/              # Puntos de entrada públicos (Controladores)
-│   ├── .docker/          # Configuración de Docker (PHP, Apache)
-│   └── docker-compose.yml # Orquestación local
+/public_html (Carpeta Pública)
+├── assets/          # Generado por el build de React
+├── api/             # Endpoints PHP (Copiados desde frontend/dist/api)
+├── index.html       # Entrada de la App
+└── .htaccess        # Rutas de React y API
+
+/backend (Carpeta Privada - Al mismo nivel que public_html)
+├── src/             # Lógica Core (Managers, Auth, Middleware)
+└── config/          # Configuración y base de datos (.env)
 ```
 
-## 🚀 Inicio Rápido (Docker)
+### 📦 Deployment Steps
 
-Para comenzar el desarrollo local:
+1.  **Build Frontend**:
+    - `cd frontend`
+    - `npm run build`
+2.  **Upload to Hosting**:
+    - Upload **everything inside** `frontend/dist/` to your `public_html/`.
+    - Upload the **entire** `backend/` folder to your server root (as a sibling of `public_html`).
+3.  **Database**:
+    - Configure `backend/config/database.env` with your production DB credentials.
+    - Import your SQL schemas.
 
-1.  `cd backend`
-2.  `docker-compose up -d`
-3.  Accede a `http://localhost:5173` para el frontend y `http://localhost:8080/api/` para la API.
+## 📝 Roadmap & Progress
 
-Para más detalles sobre la instalación y despliegue, consulta **[BACKEND_SETUP.md](file:///c:/Programacion/GitHub/MSM2/BACKEND_SETUP.md)**.
-
-## 📝 Próximos Pasos y Tareas
-
-- [x] Refactorización de Arquitectura Multi-Hub (Base de datos y Backend).
-- [x] Implementación de Middleware de Autorización contextual.
-- [x] Restructuración de carpetas y Dockerización.
-- [ ] **Frontend**: Adaptar los stores y componentes para consumir el nuevo mapa de permisos.
-- [ ] **Asistente AI (Chatbot)**: Refinar la lógica del asistente (Actualmente en `backend/src/modules/chatbot`).
+- [x] Multi-tenant Architecture & Church Selection.
+- [x] Master Role Global Control & Authorization Bypass.
+- [x] Improved Calendar (Monthly Grid view).
+- [x] Setup Flow for Areas and Teams.
+- [x] Translation & Internationalization (ES, EN, PT).
+- [x] Final Production Build optimization.
 
 ---
 
-MinistryHub es un ecosistema diseñado para crecer. Cada módulo (Praise, Social Media, Multimedia) funciona bajo un dominio centralizado, permitiendo escalabilidad y personalización por cliente (Tenancy).
-
+MinistryHub is designed to scale from small communities to large multi-site organizations.

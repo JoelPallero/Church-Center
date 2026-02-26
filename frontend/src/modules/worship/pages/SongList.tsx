@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { songService } from '../../../services/songService';
@@ -14,7 +14,8 @@ import type { User } from '../../../types/domain';
 export const SongList: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { hasPermission } = useAuth();
+    const [searchParams] = useSearchParams();
+    const { hasPermission, isMaster, user } = useAuth();
     const [songs, setSongs] = useState<Song[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -30,20 +31,33 @@ export const SongList: FC = () => {
     const [filterSinger, setFilterSinger] = useState<number | null>(null);
     const [showFilters, setShowFilters] = useState(false);
 
+    const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
+    const isPastor = user?.role?.name === 'pastor';
+    const profileChurchId = user?.churchId;
+    const finalChurchId = churchId || profileChurchId;
+
     useEffect(() => {
+        // Redirect if no church context at all and user is Pastor (multitenant context)
+        // Master users bypass selection and see global songs
+        // If user has a church in their profile, use it as fallback before redirecting
+        if (!finalChurchId && isPastor && !isMaster) {
+            navigate('/mainhub/select-church/songs');
+            return;
+        }
+
         loadSongs();
         loadSingers();
-    }, []);
+    }, [finalChurchId, isMaster, isPastor]);
 
     const loadSingers = async () => {
-        const data = await peopleService.getAll();
+        const data = await peopleService.getAll(finalChurchId || undefined);
         setSingers(data);
     };
 
     const loadSongs = async () => {
         try {
-            if (songs.length === 0) setLoading(true);
-            const data = await songService.getAll();
+            setLoading(true);
+            const data = await songService.getAll(finalChurchId || undefined);
             setSongs(data);
         } finally {
             setLoading(false);
@@ -108,7 +122,7 @@ export const SongList: FC = () => {
                             variant="primary"
                             icon="add"
                             label={t('songs.add')}
-                            onClick={() => navigate('/songs/new')}
+                            onClick={() => navigate('/worship/songs/new' + (finalChurchId ? `?church_id=${finalChurchId}` : ''))}
                         />
                     )}
                 </div>
@@ -207,7 +221,7 @@ export const SongList: FC = () => {
                                 onClick={() => setPage(p => p + 1)}
                                 style={{ marginTop: '12px', width: '100%' }}
                             >
-                                Cargar más canciones
+                                {t('songs.loadMore')}
                             </Button>
                         )}
                     </>

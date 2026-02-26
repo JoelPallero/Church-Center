@@ -31,7 +31,7 @@ export const Login: FC = () => {
             await login(email, password);
         } catch (err: any) {
             console.error('Login error details:', err);
-            const detail = err.response?.data?.message || err.message;
+            const detail = err.response?.data?.error || err.response?.data?.message || err.message;
             const status = err.response?.status ? ` (${err.response.status})` : '';
             setError(`${detail}${status}`);
         } finally {

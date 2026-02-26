@@ -17,7 +17,7 @@ export const ForgotPassword: FC = () => {
         setMessage(null);
 
         try {
-            const response = await fetch('/api/forgot_password.php', {
+            const response = await fetch('/api/auth/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
@@ -27,10 +27,10 @@ export const ForgotPassword: FC = () => {
             if (data.success) {
                 setMessage({ type: 'success', text: data.message });
             } else {
-                setMessage({ type: 'error', text: data.error || 'Hubo un error al procesar tu solicitud.' });
+                setMessage({ type: 'error', text: data.error || t('auth.resetError') });
             }
         } catch (err) {
-            setMessage({ type: 'error', text: 'Error de conexión con el servidor.' });
+            setMessage({ type: 'error', text: t('common.connectionError') });
         } finally {
             setIsLoading(false);
         }
@@ -43,8 +43,8 @@ export const ForgotPassword: FC = () => {
         }}>
             <div style={{ marginBottom: '32px', textAlign: 'center' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--color-brand-blue)' }}>lock_reset</span>
-                <h1 className="text-h1" style={{ marginTop: '16px' }}>Recuperar Contraseña</h1>
-                <p className="text-body" style={{ color: '#6B7280' }}>Ingresa tu correo para recibir un enlace de restauración</p>
+                <h1 className="text-h1" style={{ marginTop: '16px' }}>{t('auth.forgotPasswordTitle')}</h1>
+                <p className="text-body" style={{ color: '#6B7280' }}>{t('auth.forgotPasswordSubtitle')}</p>
             </div>
 
             <Card style={{ padding: '32px', width: '100%', maxWidth: '400px' }}>
@@ -74,7 +74,7 @@ export const ForgotPassword: FC = () => {
 
                     <Button
                         type="submit"
-                        label={isLoading ? "Enviando..." : "Enviar Enlace"}
+                        label={isLoading ? t('common.sending') : t('auth.sendLink')}
                         variant="primary"
                         disabled={isLoading}
                         style={{ width: '100%', marginTop: '8px' }}
@@ -83,7 +83,7 @@ export const ForgotPassword: FC = () => {
 
                 <div style={{ marginTop: '24px', textAlign: 'center' }}>
                     <Link to="/login" style={{ color: 'var(--color-brand-blue)', fontWeight: 600, textDecoration: 'none', fontSize: '14px' }}>
-                        Volver al inicio de sesión
+                        {t('auth.backToLogin')}
                     </Link>
                 </div>
             </Card>

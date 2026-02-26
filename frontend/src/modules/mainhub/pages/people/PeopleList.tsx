@@ -1,11 +1,12 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card } from '../../../../components/ui/Card';
 import { Button } from '../../../../components/ui/Button';
 import { peopleService } from '../../../../services/peopleService';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../hooks/useAuth';
+import { useToast } from '../../../../context/ToastContext';
 import type { User, UserRoleName } from '../../../../context/AuthContext';
 import { EditMemberModal } from '../../../../components/people/EditMemberModal';
 
@@ -13,6 +14,9 @@ export const PeopleList: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, hasPermission } = useAuth();
+    const { addToast } = useToast();
+    const [searchParams] = useSearchParams();
+    const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [filterRole, setFilterRole] = useState<UserRoleName | 'all'>('all');
@@ -58,7 +62,7 @@ export const PeopleList: FC = () => {
             setLoading(true);
             const data = isPlainMember
                 ? await peopleService.getTeam()
-                : await peopleService.getAll();
+                : await peopleService.getAll(churchId || undefined);
             setUsers(data);
         } finally {
             setLoading(false);
@@ -69,9 +73,9 @@ export const PeopleList: FC = () => {
         if (!user.email) return;
         const success = await peopleService.resendInvitation(user.email);
         if (success) {
-            alert('Invitación reenviada correctamente.');
+            addToast(t('people.invitationSent') || 'Invitación enviada correctamente', 'success');
         } else {
-            alert('Error al reenviar la invitación.');
+            addToast(t('people.invitationError') || 'Error al enviar invitación', 'error');
         }
     };
 
@@ -82,18 +86,18 @@ export const PeopleList: FC = () => {
 
         if (isInvitation) {
             if (!target.email) return;
-            if (!window.confirm(`¿Estás seguro de que deseas eliminar la invitación de ${target.name}?`)) return;
+            if (!window.confirm(t('people.confirmDeleteInvitation', { name: target.name }) || `¿Estás seguro de que deseas eliminar la invitación de ${target.name}?`)) return;
             const success = await peopleService.deleteInvitation(target.email);
             if (success) {
-                alert('Invitación eliminada.');
+                addToast(t('people.invitationDeleted') || 'Invitación eliminada.', 'success');
                 loadUsers();
             } else {
-                alert('Error al eliminar la invitación.');
+                addToast(t('common.failed') || 'Error al eliminar la invitación.', 'error');
             }
         } else {
             const isAdmin = user?.role?.level && user.role.level <= 10;
-            const actionText = isAdmin ? 'ELIMINAR PERMANENTEMENTE' : 'desactivar';
-            const confirmMsg = `¿Estás seguro de que deseas ${actionText} el perfil de ${target.name}?${isAdmin ? '\n\nATENCIÓN: Esta acción borrará todos sus datos y no se puede deshacer.' : ''}`;
+            const actionText = isAdmin ? t('common.deletePermanently') || 'ELIMINAR PERMANENTEMENTE' : t('common.deactivate') || 'desactivar';
+            const confirmMsg = t('people.confirmDelete', { action: actionText, name: target.name }) || `¿Estás seguro de que deseas ${actionText} el perfil de ${target.name}?${isAdmin ? '\n\nATENCIÓN: Esta acción borrará todos sus datos y no se puede deshacer.' : ''}`;
 
             if (!window.confirm(confirmMsg)) return;
 
@@ -102,10 +106,10 @@ export const PeopleList: FC = () => {
                 : await peopleService.updateStatus(target.id, 2); // 2 = Inactive
 
             if (success) {
-                alert(isAdmin ? 'Perfil eliminado definitivamente.' : 'Perfil desactivado.');
+                addToast(isAdmin ? t('people.deletedSuccess') : t('people.deactivatedSuccess'), 'success');
                 loadUsers();
             } else {
-                alert(`Error al ${isAdmin ? 'eliminar' : 'desactivar'} el perfil.`);
+                addToast(isAdmin ? t('people.deleteError') : t('people.deactivateError'), 'error');
             }
         }
     };
@@ -144,7 +148,6 @@ export const PeopleList: FC = () => {
         if (item.status === 'active' && item.role_name === 'guest') return t('people.status.accepted');
         return t('people.status.active');
     };
-    const getRoleText = (roleName: any) => t(`people.roles.${roleName || 'member'}`);
 
 
 
@@ -168,15 +171,15 @@ export const PeopleList: FC = () => {
                         {(hasPermission('users.approve') || !isPlainMember) && (
                             <Button
                                 variant="secondary"
-                                onClick={() => navigate('/people/approvals')}
+                                onClick={() => navigate(`/mainhub/people/approvals${churchId ? `?church_id=${churchId}` : ''}`)}
                                 icon="how_to_reg"
-                                label="Solicitudes"
+                                label={t('people.approvals')}
                             />
                         )}
                         {hasPermission('users.invite') && (
                             <Button
                                 variant="primary"
-                                onClick={() => navigate('/people/invite')}
+                                onClick={() => navigate(`/mainhub/people/invite${churchId ? `?church_id=${churchId}` : ''}`)}
                                 icon="person_add"
                                 label={t('people.invite')}
                             />
@@ -184,7 +187,7 @@ export const PeopleList: FC = () => {
                     </div>
                 </div>
                 <p className="text-body" style={{ color: '#6B7280', marginBottom: '16px' }}>
-                    {isPlainMember ? "Integrantes del equipo de Alabanza." : "Lista general de miembros e integrantes."}
+                    {isPlainMember ? t('people.worshipTeamDesc') : t('people.generalMembersDesc')}
                 </p>
 
                 <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
@@ -194,7 +197,7 @@ export const PeopleList: FC = () => {
                         }}>search</span>
                         <input
                             type="text"
-                            placeholder={t('people.searchPlaceholder') || "Buscar miembros..."}
+                            placeholder={t('people.searchPlaceholder')}
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
                             style={{
@@ -223,7 +226,7 @@ export const PeopleList: FC = () => {
                 {
                     showFilters && (
                         <Card style={{ padding: '16px' }}>
-                            <label className="text-overline" style={{ color: 'gray', display: 'block', marginBottom: '8px' }}>Filtrar por Rol</label>
+                            <label className="text-overline" style={{ color: 'gray', display: 'block', marginBottom: '8px' }}>{t('people.filterByRole')}</label>
                             <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
                                 {(['all', 'admin', 'pastor', 'leader', 'coordinator', 'member'] as const).map(role => (
                                     <button
@@ -241,12 +244,12 @@ export const PeopleList: FC = () => {
                                             whiteSpace: 'nowrap',
                                         }}
                                     >
-                                        {role === 'all' ? 'Todos' : t(`people.roles.${role}`)}
+                                        {role === 'all' ? t('common.all') : t(`people.roles.${role}`)}
                                     </button>
                                 ))}
                             </div>
 
-                            <label className="text-overline" style={{ color: 'gray', display: 'block', marginBottom: '8px', marginTop: '12px' }}>Estado</label>
+                            <label className="text-overline" style={{ color: 'gray', display: 'block', marginBottom: '8px', marginTop: '12px' }}>{t('people.filterByStatus')}</label>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 {(['all', 'active', 'pending'] as const).map(status => (
                                     <button
@@ -263,7 +266,7 @@ export const PeopleList: FC = () => {
                                             transition: 'all 0.2s'
                                         }}
                                     >
-                                        {status === 'all' ? 'Todos' : t(`people.${status}`)}
+                                        {status === 'all' ? t('common.all') : t(`people.${status}`)}
                                     </button>
                                 ))}
                             </div>
@@ -278,7 +281,7 @@ export const PeopleList: FC = () => {
                         <div className="spinner" />
                     </div>
                 ) : filteredUsers.length === 0 ? (
-                    <p className="text-body" style={{ textAlign: 'center', color: 'gray', marginTop: '40px' }}>No se encontraron miembros.</p>
+                    <p className="text-body" style={{ textAlign: 'center', color: 'gray', marginTop: '40px' }}>{t('people.noResults')}</p>
                 ) : (
                     filteredUsers.map((item: any) => (
                         <Card
@@ -321,9 +324,17 @@ export const PeopleList: FC = () => {
                                     <div>
                                         <h3 className="text-card-title" style={{ color: 'white' }}>{item.name}</h3>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                                            <p className="text-body" style={{ color: '#94A3B8', fontSize: '14px', margin: 0 }}>
-                                                {getRoleText(item.role_name)}
+                                            <p className="text-body" style={{ color: '#94A3B8', fontSize: '13px' }}>
+                                                {item.role?.displayName || t('people.roles.member')}
                                             </p>
+                                            {isMaster && (item as any).church_name && (
+                                                <>
+                                                    <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#475569' }}></span>
+                                                    <p className="text-body" style={{ color: 'var(--color-brand-blue)', fontSize: '13px', fontWeight: 600 }}>
+                                                        {(item as any).church_name}
+                                                    </p>
+                                                </>
+                                            )}
                                             <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#475569' }}></span>
                                             <div style={{
                                                 fontSize: '11px',
@@ -368,7 +379,7 @@ export const PeopleList: FC = () => {
                                                         className="dropdown-item"
                                                     >
                                                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>send</span>
-                                                        Reenviar invitación de login
+                                                        {t('people.resendInvitation')}
                                                     </div>
                                                     <div
                                                         onClick={(e) => { e.stopPropagation(); handleDelete(item); setActiveMenu(null); }}
@@ -376,7 +387,7 @@ export const PeopleList: FC = () => {
                                                         style={{ color: '#EF4444' }}
                                                     >
                                                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
-                                                        Eliminar
+                                                        {t('common.delete')}
                                                     </div>
                                                 </>
                                             ) : (
@@ -386,7 +397,7 @@ export const PeopleList: FC = () => {
                                                         className="dropdown-item"
                                                     >
                                                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
-                                                        Editar
+                                                        {t('common.edit')}
                                                     </div>
                                                     <div
                                                         onClick={(e) => { e.stopPropagation(); handleDelete(item); setActiveMenu(null); }}
@@ -394,7 +405,7 @@ export const PeopleList: FC = () => {
                                                         style={{ color: '#EF4444' }}
                                                     >
                                                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
-                                                        Eliminar
+                                                        {t('common.delete')}
                                                     </div>
                                                 </>
                                             )}

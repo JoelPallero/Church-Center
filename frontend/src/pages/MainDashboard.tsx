@@ -27,7 +27,7 @@ export const MainDashboard: FC = () => {
     const isGuest = user?.role?.level === 200;
     const isLeader = (user?.role?.level || 100) <= 50;
 
-    const isMaster = user?.role?.name === 'master';
+    const isMaster = user?.isMaster || user?.role?.name === 'master' || user?.role?.name === 'superadmin';
     const isPastor = user?.role?.name === 'pastor';
     const isMember = user?.role?.name === 'member' || (!isPastor && !isMaster && !isLeader && !isGuest);
 
@@ -37,8 +37,10 @@ export const MainDashboard: FC = () => {
         }
         if (isMaster || isPastor) {
             peopleService.getAll().then(users => {
-                const pending = users.filter((u: any) => u.status === 'pending');
-                setPendingMembers(pending.length);
+                if (Array.isArray(users)) {
+                    const pending = users.filter((u: any) => u.status === 'pending');
+                    setPendingMembers(pending.length);
+                }
             });
         }
         if (isGuest) {
@@ -50,21 +52,21 @@ export const MainDashboard: FC = () => {
         setRequestingId(groupId);
         setTimeout(() => {
             setRequestingId(null);
-            alert('Tu solicitud ha sido enviada a los líderes del equipo. Te avisaremos cuando seas aceptado.');
+            alert(t('dashboard.requestSent'));
         }, 1000);
     };
 
     // Role-based HOME selection
+    if (isMaster) return <MasterDashboard />;
     if (isPastor) return <Reports />;
     if (isMember) return <Playlists />;
-    if (isMaster) return <MasterDashboard />;
 
     if (isGuest) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 <header>
                     <h1 className="text-h1" style={{ marginBottom: '8px' }}>
-                        ¡Bienvenido, {user?.name}!
+                        {t('dashboard.welcome', { name: user?.name })}
                     </h1>
                     <Card style={{ backgroundColor: 'var(--color-brand-blue-light)', border: '1px solid var(--color-brand-blue)' }}>
                         <p className="text-body" style={{ color: 'var(--color-brand-blue)', fontWeight: 500 }}>
@@ -74,19 +76,19 @@ export const MainDashboard: FC = () => {
                 </header>
 
                 <section>
-                    <h2 className="text-h2" style={{ marginBottom: '16px' }}>Equipos Disponibles</h2>
+                    <h2 className="text-h2" style={{ marginBottom: '16px' }}>{t('dashboard.availableTeams')}</h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {groups.length === 0 ? (
-                            <p className="text-body" style={{ color: 'gray' }}>Cargando equipos...</p>
+                            <p className="text-body" style={{ color: 'gray' }}>{t('dashboard.loadingTeams')}</p>
                         ) : (
                             groups.map(group => (
                                 <Card key={group.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <p className="text-card-title">{group.name}</p>
-                                        <p className="text-overline" style={{ color: 'gray' }}>{group.description || 'Sin descripción'}</p>
+                                        <p className="text-overline" style={{ color: 'gray' }}>{group.description || t('dashboard.noDescription')}</p>
                                     </div>
                                     <Button
-                                        label={requestingId === group.id ? 'Solicitando...' : 'Solicitar Unirse'}
+                                        label={requestingId === group.id ? t('dashboard.requesting') : t('dashboard.requestJoin')}
                                         variant="secondary"
                                         disabled={requestingId !== null}
                                         onClick={() => handleRequestJoin(group.id)}
@@ -101,7 +103,7 @@ export const MainDashboard: FC = () => {
                     <Card style={{ backgroundColor: 'var(--color-ui-surface)', textAlign: 'center', padding: '24px' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'gray', marginBottom: '12px' }}>info</span>
                         <p className="text-body" style={{ color: 'gray', margin: 0 }}>
-                            Mientras esperas, puedes personalizar tu <span style={{ color: 'var(--color-brand-blue)', cursor: 'pointer', fontWeight: 600 }} onClick={() => navigate('/profile')}>perfil y tema</span>.
+                            {t('dashboard.waitingNotice')}
                         </p>
                     </Card>
                 </section>
@@ -125,7 +127,7 @@ export const MainDashboard: FC = () => {
 
                     {isLeader && pendingCount > 0 && (
                         <Card
-                            onClick={() => navigate('/songs/approvals')}
+                            onClick={() => navigate('/worship/songs/approvals')}
                             style={{
                                 backgroundColor: 'var(--color-brand-blue-light)',
                                 border: '1px solid var(--color-brand-blue)',
@@ -154,7 +156,7 @@ export const MainDashboard: FC = () => {
 
                     {pendingMembers > 0 && (
                         <Card
-                            onClick={() => navigate('/people/approvals')}
+                            onClick={() => navigate('/mainhub/people/approvals')}
                             style={{
                                 backgroundColor: 'var(--color-brand-blue-light)',
                                 border: '1px solid var(--color-brand-blue)',
@@ -169,10 +171,10 @@ export const MainDashboard: FC = () => {
                                 <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)', fontSize: '28px' }}>person_add</span>
                                 <div>
                                     <p className="text-card-title" style={{ color: 'var(--color-brand-blue)', marginBottom: '2px' }}>
-                                        {pendingMembers === 1 ? 'Tienes 1 nueva solicitud de ingreso' : `Tienes ${pendingMembers} solicitudes de ingreso`}
+                                        {t('dashboard.pendingRequestsCount', { count: pendingMembers })}
                                     </p>
                                     <p className="text-overline" style={{ color: 'var(--color-brand-blue)', opacity: 0.8 }}>
-                                        Aprobación de nuevos integrantes
+                                        {t('dashboard.pendingRequestsTitle')}
                                     </p>
                                 </div>
                             </div>
@@ -188,7 +190,7 @@ export const MainDashboard: FC = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
                         <Card
                             className="flex-center"
-                            onClick={() => navigate('/songs/new')}
+                            onClick={() => navigate('/worship/songs/new')}
                             style={{ flexDirection: 'column', padding: '24px 16px', gap: '8px', cursor: 'pointer' }}
                         >
                             <span className="material-symbols-outlined" style={{ fontSize: '32px', color: 'var(--color-brand-blue)' }}>add_circle</span>
@@ -196,7 +198,7 @@ export const MainDashboard: FC = () => {
                         </Card>
                         <Card
                             className="flex-center"
-                            onClick={() => navigate('/people')}
+                            onClick={() => navigate('/mainhub/people')}
                             style={{ flexDirection: 'column', padding: '24px 16px', gap: '8px', cursor: 'pointer' }}
                         >
                             <span className="material-symbols-outlined" style={{ fontSize: '32px', color: 'var(--color-brand-blue)' }}>person_add</span>

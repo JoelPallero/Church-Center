@@ -5,9 +5,10 @@ export type UserStatus = 'active' | 'inactive' | 'pending';
 
 
 export const peopleService = {
-    getAll: async (): Promise<User[]> => {
+    getAll: async (churchId?: number): Promise<User[]> => {
         try {
-            const response = await api.get('/people.php?action=list');
+            const url = churchId ? `/people?church_id=${churchId}` : '/people';
+            const response = await api.get(url);
             return response.data.success ? response.data.users : [];
         } catch (error) {
             console.error('Failed to fetch people', error);
@@ -17,7 +18,7 @@ export const peopleService = {
 
     getTeam: async (): Promise<User[]> => {
         try {
-            const response = await api.get('/people.php?action=team');
+            const response = await api.get('/people/team');
             if (response.data.success) {
                 return response.data.users;
             }
@@ -30,8 +31,8 @@ export const peopleService = {
 
     updateRole: async (userId: number, roleId: number): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=update_role', { userId, roleId });
-            return response.data.success;
+            await api.put(`/people/${userId}/role`, { roleId });
+            return true;
         } catch (error) {
             console.error('Failed to update role', error);
             return false;
@@ -40,8 +41,8 @@ export const peopleService = {
 
     updateStatus: async (userId: number, statusId: number): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=update_status', { userId, statusId });
-            return response.data.success;
+            await api.put(`/people/${userId}/status`, { statusId });
+            return true;
         } catch (error) {
             console.error('Failed to update status', error);
             return false;
@@ -50,27 +51,27 @@ export const peopleService = {
 
     deleteMember: async (memberId: number): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=delete_member', { memberId });
-            return response.data.success;
+            await api.delete(`/people/${memberId}`);
+            return true;
         } catch (error) {
             console.error('Failed to delete member', error);
             return false;
         }
     },
 
-    invite: async (name: string, email: string, roleId: number): Promise<boolean> => {
+    invite: async (name: string, email: string, roleId: number, churchId?: number): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=invite', { name, email, roleId });
-            return response.data.success;
+            await api.post('/people/invite', { name, email, roleId, churchId });
+            return true;
         } catch (error) {
             console.error('Failed to invite person', error);
             return false;
         }
     },
 
-    bulkInvite: async (emails: string[]): Promise<any> => {
+    bulkInvite: async (emails: string[], churchId?: number): Promise<any> => {
         try {
-            const response = await api.post('/people.php?action=bulk_invite', { emails });
+            const response = await api.post('/people/invite/bulk', { emails, churchId });
             return response.data;
         } catch (error) {
             console.error('Failed bulk invite', error);
@@ -80,8 +81,8 @@ export const peopleService = {
 
     resendInvitation: async (email: string): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=resend_invite', { email });
-            return response.data.success;
+            await api.post('/people/invite/resend', { email });
+            return true;
         } catch (error) {
             console.error('Failed to resend invitation', error);
             return false;
@@ -90,18 +91,17 @@ export const peopleService = {
 
     deleteInvitation: async (email: string): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=delete_invite', { email });
-            return response.data.success;
+            await api.delete('/people/invite', { data: { email } });
+            return true;
         } catch (error) {
             console.error('Failed to delete invitation', error);
             return false;
         }
     },
 
-    getGroups: async (areaId?: number): Promise<any[]> => {
+    getGroups: async (churchId?: number, areaId?: number): Promise<any[]> => {
         try {
-            const url = areaId ? `/people.php?action=list_groups&areaId=${areaId}` : '/people.php?action=list_groups';
-            const response = await api.get(url);
+            const response = await api.get('/teams', { params: { churchId, areaId } });
             return response.data.groups || [];
         } catch (error) {
             console.error('Failed to fetch groups', error);
@@ -109,9 +109,9 @@ export const peopleService = {
         }
     },
 
-    getAreas: async (): Promise<any[]> => {
+    getAreas: async (churchId?: number): Promise<any[]> => {
         try {
-            const response = await api.get('/people.php?action=list_areas');
+            const response = await api.get('/areas', { params: { churchId } });
             return response.data.areas || [];
         } catch (error) {
             console.error('Failed to fetch areas', error);
@@ -121,8 +121,8 @@ export const peopleService = {
 
     joinGroup: async (groupId: number): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=join_group', { groupId });
-            return response.data.success;
+            await api.post(`/teams/${groupId}/join`);
+            return true;
         } catch (error) {
             console.error('Failed to join group', error);
             return false;
@@ -131,8 +131,8 @@ export const peopleService = {
 
     saveInstruments: async (instruments: number[]): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=save_instruments', { instruments });
-            return response.data.success;
+            await api.post('/instruments/mine', { instruments });
+            return true;
         } catch (error) {
             console.error('Failed to save instruments', error);
             return false;
@@ -141,7 +141,7 @@ export const peopleService = {
 
     getInstruments: async (): Promise<any[]> => {
         try {
-            const response = await api.get('/people.php?action=list_instruments');
+            const response = await api.get('/instruments');
             return response.data.instruments || [];
         } catch (error) {
             console.error('Failed to fetch instruments', error);
@@ -151,7 +151,7 @@ export const peopleService = {
 
     getRoles: async (): Promise<any[]> => {
         try {
-            const response = await api.get('/people.php?action=list_roles');
+            const response = await api.get('/roles');
             return response.data.roles || [];
         } catch (error) {
             console.error('Failed to fetch roles', error);
@@ -159,21 +159,20 @@ export const peopleService = {
         }
     },
 
-    addGroup: async (name: string, leaderId: number | null = null, areaId: number | null = null, description: string = '', isServiceTeam: boolean = true): Promise<any> => {
+    addGroup: async (name: string, leaderId: number | null = null, areaId: number | null = null, churchId?: number, description: string = '', isServiceTeam: boolean = true): Promise<any> => {
         try {
-            const response = await api.post('/people.php?action=add_group', { name, leaderId, areaId, description, isServiceTeam });
-            if (response.data.success) return response.data;
-            return null;
+            const response = await api.post('/teams', { name, leaderId, areaId, churchId, description, isServiceTeam });
+            return response.data;
         } catch (error) {
             console.error('Failed to add group', error);
             return null;
         }
     },
 
-    addArea: async (name: string): Promise<boolean> => {
+    addArea: async (name: string, churchId?: number): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=add_area', { name });
-            return response.data.success;
+            await api.post('/areas', { name, churchId });
+            return true;
         } catch (error) {
             console.error('Failed to add area', error);
             return false;
@@ -182,18 +181,18 @@ export const peopleService = {
 
     assignTeam: async (memberId: number, teamId: number, roleInGroup: string): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=assign_team', { memberId, teamId, roleInGroup });
-            return response.data.success;
+            await api.post(`/teams/${teamId}/members`, { memberId, roleInGroup });
+            return true;
         } catch (error) {
             console.error('Failed to assign team', error);
             return false;
         }
     },
 
-    deleteGroup: async (groupId: number): Promise<boolean> => {
+    deleteGroup: async (groupId: number, churchId?: number): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=delete_group', { groupId });
-            return response.data.success;
+            await api.delete(`/teams/${groupId}`, { params: { churchId } });
+            return true;
         } catch (error) {
             console.error('Failed to delete group', error);
             return false;
@@ -202,17 +201,17 @@ export const peopleService = {
 
     assignTeamBulk: async (groupId: number, memberIds: number[]): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=assign_team_bulk', { groupId, memberIds });
-            return response.data.success;
+            await api.post(`/teams/${groupId}/members/bulk`, { memberIds });
+            return true;
         } catch (error) {
             console.error('Failed bulk assignment', error);
             return false;
         }
     },
 
-    getTeamMembers: async (groupId: number): Promise<any[]> => {
+    getTeamMembers: async (groupId: number, churchId?: number): Promise<any[]> => {
         try {
-            const response = await api.get(`/people.php?action=list_group_members&groupId=${groupId}`);
+            const response = await api.get(`/teams/${groupId}/members`, { params: { churchId } });
             return response.data.users || [];
         } catch (error) {
             console.error('Failed to fetch team members', error);
@@ -220,9 +219,9 @@ export const peopleService = {
         }
     },
 
-    getMyTeamMembers: async (): Promise<any[]> => {
+    getMyTeamMembers: async (churchId?: number): Promise<any[]> => {
         try {
-            const response = await api.get('/people.php?action=my_team_members');
+            const response = await api.get('/people/team_members', { params: { churchId } });
             return response.data.success ? response.data.users : [];
         } catch (error) {
             console.error('Failed to fetch my team members', error);
@@ -232,8 +231,8 @@ export const peopleService = {
 
     approveUser: async (memberId: number, roleId: number, groups: number[] = [], areaIds: number[] = []): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=approve_user', { memberId, roleId, groups, areaIds });
-            return response.data.success;
+            await api.post(`/people/${memberId}/approve`, { roleId, groups, areaIds });
+            return true;
         } catch (error) {
             console.error('Failed to approve user', error);
             return false;
@@ -242,7 +241,7 @@ export const peopleService = {
 
     getMemberAreas: async (memberId: number): Promise<number[]> => {
         try {
-            const response = await api.get(`/people.php?action=get_member_areas&memberId=${memberId}`);
+            const response = await api.get(`/people/${memberId}/areas`);
             return response.data.areaIds || [];
         } catch (error) {
             console.error('Failed to fetch member areas', error);
@@ -252,8 +251,8 @@ export const peopleService = {
 
     updateMemberProfile: async (memberId: number, data: any): Promise<boolean> => {
         try {
-            const response = await api.post('/people.php?action=update_member_profile', { memberId, ...data });
-            return response.data.success;
+            await api.put(`/people/${memberId}/profile`, data);
+            return true;
         } catch (error) {
             console.error('Failed to update member profile', error);
             return false;

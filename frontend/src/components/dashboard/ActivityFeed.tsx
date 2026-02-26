@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card } from '../ui/Card';
 import { useAuth } from '../../hooks/useAuth';
@@ -17,17 +18,18 @@ interface Activity {
 
 export const ActivityFeed: FC = () => {
     const { t } = useTranslation();
-    const { user } = useAuth();
+    const { hasPermission, user } = useAuth();
+    const [searchParams] = useSearchParams();
     const [activities, setActivities] = useState<Activity[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
-    const isAuthorized = user?.role?.name === 'master' || user?.role?.name === 'pastor';
+    const isAuthorized = hasPermission('users.view');
 
     useEffect(() => {
         const fetchInitial = async () => {
             try {
                 const token = localStorage.getItem('auth_token');
-                const response = await fetch('/api/activities.php?limit=30', {
+                const churchId = searchParams.get('church_id') || user?.churchId;
+                const response = await fetch(`/api/activities?limit=30${churchId ? `&church_id=${churchId}` : ''}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -49,7 +51,8 @@ export const ActivityFeed: FC = () => {
             const token = localStorage.getItem('auth_token');
             if (!token) return;
 
-            const url = `/api/activities_stream.php?token=${encodeURIComponent(token)}&lastId=${lastId}`;
+            const churchId = searchParams.get('church_id') || user?.churchId;
+            const url = `/api/activities/stream?token=${encodeURIComponent(token)}&lastId=${lastId}${churchId ? `&church_id=${churchId}` : ''}`;
             eventSource = new EventSource(url);
 
             eventSource.onmessage = (event) => {
@@ -91,7 +94,7 @@ export const ActivityFeed: FC = () => {
 
         // Pass common parameters
         const params = {
-            user: user_name,
+            user: user_name || t('people.roles.member'),
             title: details?.title || '',
             name: details?.name || '',
             action: action

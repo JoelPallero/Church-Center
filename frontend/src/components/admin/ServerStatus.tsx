@@ -14,7 +14,7 @@ export const ServerStatus: FC = () => {
         const fetchStatus = async () => {
             try {
                 const token = localStorage.getItem('auth_token');
-                const response = await fetch('/api/admin.php?action=stats', {
+                const response = await fetch('/api/reports', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
