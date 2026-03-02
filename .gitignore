@@ -26,5 +26,6 @@ dist-ssr
 # Environment Variables
 .env
 backend/config/database.env
+User SQL/credentials.sql
 _legacy_backend
 _legacy_backend/*

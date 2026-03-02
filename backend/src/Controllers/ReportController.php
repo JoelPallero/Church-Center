@@ -12,7 +12,8 @@ class ReportController
         if ($method === 'GET') {
             if ($action === 'pastor_stats') {
                 $this->pastorStats($memberId);
-            } else {
+            }
+            else {
                 $this->dashboard($memberId);
             }
         }
@@ -42,14 +43,25 @@ class ReportController
 
         if ($churchId) {
             $stats = \App\Repositories\ReportRepo::getChurchStats($churchId);
+            $dbStatus = $stats['db_status'] ?? ['main' => 'online', 'music' => 'error'];
+            unset($stats['db_status']);
+
             Response::json([
                 'success' => true,
+                'db_status' => $dbStatus,
                 'data' => $stats
             ]);
         }
 
         // Fallback to global dashboard stats if no church context
         $stats = \App\Repositories\ReportRepo::getGlobalStats();
-        Response::json(array_merge(['success' => true], ['data' => $stats]));
+        $dbStatus = $stats['db_status'] ?? ['main' => 'online', 'music' => 'error'];
+        unset($stats['db_status']);
+
+        Response::json([
+            'success' => true,
+            'db_status' => $dbStatus,
+            'data' => $stats
+        ]);
     }
 }

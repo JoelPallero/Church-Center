@@ -1,8 +1,12 @@
 RewriteEngine On
 
 # API Routing
-RewriteRule ^api/?$ api/index.php [L]
-RewriteRule ^api/(.*)$ api/index.php [L]
+RewriteRule ^api/?$ api/index.php [QSA,L]
+RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+# Ensure Authorization header is visible to PHP
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
 
 # SPA Routing
 RewriteCond %{REQUEST_FILENAME} !-f

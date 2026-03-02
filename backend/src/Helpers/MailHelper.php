@@ -14,7 +14,8 @@ class MailHelper
             $configPath = APP_ROOT . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'database.env';
             if (file_exists($configPath)) {
                 self::$config = parse_ini_file($configPath);
-            } else {
+            }
+            else {
                 self::$config = [];
             }
         }
@@ -46,10 +47,9 @@ class MailHelper
             $html = file_get_contents($templatePath);
         }
 
-        // Base URL for invite link
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-        $host = $_SERVER['HTTP_HOST'] ?? 'musicservicemanager.net';
-        $inviteUrl = $protocol . $host . "/accept-invite?token=" . ($inviteToken ?? '');
+        // Base URL from config
+        $baseUrl = self::$config['APP_URL'] ?? 'https://musicservicemanager.net';
+        $inviteUrl = rtrim($baseUrl, '/') . "/accept-invite?token=" . ($inviteToken ?? '');
 
         // Replacements
         $replacements = [
@@ -57,7 +57,8 @@ class MailHelper
             '{{USER_NAME}}' => $toName,
             '{{ROLE_NAME}}' => $roleName,
             '{{ROLE_LOWER}}' => strtolower($roleName),
-            '{{INVITE_URL}}' => $inviteUrl
+            '{{INVITE_URL}}' => $inviteUrl,
+            '{{YEAR}}' => date('Y')
         ];
 
         foreach ($replacements as $key => $value) {
@@ -78,11 +79,13 @@ class MailHelper
             if ($sent) {
                 Logger::info("MailHelper: Invitation sent successfully to $toEmail");
                 return true;
-            } else {
+            }
+            else {
                 Logger::error("MailHelper: Native mail() failed for $toEmail");
                 return false;
             }
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             Logger::error("MailHelper Error: " . $e->getMessage());
             return false;
         }

@@ -32,19 +32,15 @@ class BootstrapController
         return Response::json([
             'success' => true,
             'data' => [
-                'user' => [
-                    'id' => $member['id'],
-                    'name' => $member['name'],
-                    'email' => $member['email']
-                ],
+                'user' => $member,
                 'is_superadmin' => $isSuper,
                 'church' => $church,
                 'permissions' => $permissions,
                 'roles' => $roles,
                 'services' => array_unique($serviceKeys),
                 'features' => [
-                    'music' => in_array('ministry_hub', $serviceKeys),
-                    'social_media' => in_array('sm_hub', $serviceKeys)
+                    'music' => in_array('worship', $serviceKeys),
+                    'social_media' => in_array('social', $serviceKeys)
                 ]
             ]
         ]);

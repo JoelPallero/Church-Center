@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Middleware\PermissionMiddleware;
 use App\Helpers\Response;
+use App\Helpers\Logger;
 
 class PeopleController
 {
@@ -27,24 +28,28 @@ class PeopleController
                 $this->approve($memberId);
                 return;
             }
-        } elseif ($method === 'PUT') {
+        }
+        elseif ($method === 'PUT') {
             $pathParts = explode('/', $action);
-            $targetId = is_numeric($pathParts[0]) ? (int) $pathParts[0] : null;
+            $targetId = is_numeric($pathParts[0]) ? (int)$pathParts[0] : null;
             $subAction = $pathParts[1] ?? '';
 
             if ($targetId) {
                 if ($subAction === 'role') {
                     PermissionMiddleware::require($memberId, 'users.approve');
                     $this->updateRole($targetId);
-                } elseif ($subAction === 'status') {
+                }
+                elseif ($subAction === 'status') {
                     PermissionMiddleware::require($memberId, 'users.approve');
                     $this->updateStatus($targetId);
-                } elseif ($subAction === 'profile') {
+                }
+                elseif ($subAction === 'profile') {
                     $this->updateProfile($memberId, $targetId);
                 }
                 return;
             }
-        } elseif ($method === 'DELETE') {
+        }
+        elseif ($method === 'DELETE') {
             if ($action === 'invite') {
                 PermissionMiddleware::require($memberId, 'users.invite');
                 $this->deleteInvitation();
@@ -52,17 +57,41 @@ class PeopleController
             }
             if (is_numeric($action)) {
                 PermissionMiddleware::require($memberId, 'users.delete');
-                $this->deleteMember((int) $action);
+                $this->deleteMember((int)$action);
                 return;
             }
         }
 
-        PermissionMiddleware::require($memberId, 'church.read');
+        if ($method === 'GET') {
+            PermissionMiddleware::require($memberId, 'church.read');
 
-        $churchId = $_GET['church_id'] ?? null;
-        $users = \App\Repositories\UserRepo::getAllWithChurch($churchId);
+            $pathParts = explode('/', $action);
+            $targetId = is_numeric($pathParts[0]) ? (int)$pathParts[0] : null;
+            $subAction = $pathParts[1] ?? '';
 
-        Response::json(['success' => true, 'users' => $users]);
+            if ($targetId) {
+                if ($subAction === 'areas') {
+                    $areas = \App\Repositories\UserRepo::getUserAreas($targetId);
+                    Response::json(['success' => true, 'areaIds' => array_map(fn($a) => $a['id'], $areas)]);
+                }
+                elseif ($subAction === 'groups') {
+                    $db = \App\Database::getInstance();
+                    $stmt = $db->prepare("SELECT group_id FROM group_members WHERE member_id = ?");
+                    $stmt->execute([$targetId]);
+                    Response::json(['success' => true, 'groupIds' => $stmt->fetchAll(\PDO::FETCH_COLUMN)]);
+                }
+                else {
+                    $user = \App\Repositories\UserRepo::getMemberData($targetId);
+                    Response::json(['success' => true, 'user' => $user]);
+                }
+                return;
+            }
+
+            $churchId = $_GET['church_id'] ?? null;
+            $users = \App\Repositories\UserRepo::getAllWithChurch($churchId);
+
+            Response::json(['success' => true, 'users' => $users]);
+        }
     }
 
     private function bulkInvite($memberId)
@@ -96,7 +125,8 @@ class PeopleController
             }
 
             $name = explode('@', $email)[0];
-            $token = bin2hex(random_bytes(32));
+            $rawToken = bin2hex(random_bytes(32));
+            $tokenHash = hash('sha256', $rawToken);
             $expiresAt = date('Y-m-d H:i:s', strtotime('+48 hours'));
 
             $newId = \App\Repositories\UserRepo::createMember([
@@ -104,19 +134,20 @@ class PeopleController
                 'email' => $email,
                 'church_id' => $churchId,
                 'status' => 'pending',
-                'invite_token' => $token,
+                'invite_token' => $tokenHash,
                 'token_expires_at' => $expiresAt
             ]);
 
             if ($newId) {
-                \App\Repositories\UserRepo::assignRole($newId, $churchId, 5, 'church_center'); // 5 = Member
+                \App\Repositories\UserRepo::assignRole($newId, $churchId, 5, 'mainhub'); // 5 = Member
                 $success++;
                 \App\Repositories\ActivityRepo::log($churchId, $memberId, 'invited', 'member', $newId, ['name' => $name]);
 
                 // Send email
                 $church = \App\Repositories\ChurchRepo::findById($churchId);
-                \App\Helpers\MailHelper::sendInvitation($email, ucfirst($name), 'Miembro', $church['name'] ?? 'Tu Iglesia', $churchId, $token);
-            } else {
+                \App\Helpers\MailHelper::sendInvitation($email, ucfirst($name), 'Miembro', "Church Center - " . ($church['name'] ?? 'Tu Iglesia'), $churchId, $rawToken);
+            }
+            else {
                 $failed++;
             }
         }
@@ -128,12 +159,12 @@ class PeopleController
         ]);
     }
 
-    private function invite($memberId)
+    public function invite($memberId)
     {
-        $data = json_decode(file_get_contents('php://input'), true);
-
-        $name = $data['name'] ?? null;
-        $email = $data['email'] ?? null;
+        Logger::info("PeopleController::invite called by admin ID: $memberId");
+        $data = json_decode(file_get_contents("php://input"), true);
+        $email = $data['email'] ?? '';
+        $name = $data['name'] ?? '';
         $roleId = $data['roleId'] ?? $data['role_id'] ?? null;
         $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
 
@@ -151,7 +182,8 @@ class PeopleController
                 Response::error("Member already exists with this email", 400);
             }
 
-            $token = bin2hex(random_bytes(32));
+            $rawToken = bin2hex(random_bytes(32));
+            $tokenHash = hash('sha256', $rawToken);
             $expiresAt = date('Y-m-d H:i:s', strtotime('+48 hours'));
 
             $newMemberId = \App\Repositories\UserRepo::createMember([
@@ -159,18 +191,18 @@ class PeopleController
                 'email' => $email,
                 'church_id' => $churchId,
                 'status' => 'pending',
-                'invite_token' => $token,
+                'invite_token' => $tokenHash,
                 'token_expires_at' => $expiresAt
             ]);
 
             if ($newMemberId) {
                 $roleName = 'Miembro';
                 if ($roleId) {
-                    \App\Repositories\UserRepo::assignRole($newMemberId, $churchId, $roleId, 'church_center');
+                    \App\Repositories\UserRepo::assignRole($newMemberId, $churchId, $roleId, 'mainhub');
 
                     // Fetch role display name for email
                     $stmt = $db->prepare("SELECT display_name FROM roles WHERE id = ?");
-                    $stmt->execute([(int) $roleId]);
+                    $stmt->execute([(int)$roleId]);
                     $roleRes = $stmt->fetch();
                     if ($roleRes)
                         $roleName = $roleRes['display_name'];
@@ -178,15 +210,17 @@ class PeopleController
 
                 \App\Repositories\ActivityRepo::log($churchId, $memberId, 'invited', 'member', $newMemberId, ['name' => $name]);
 
-                // Send email
+                // Send email with RAW token
                 $church = \App\Repositories\ChurchRepo::findById($churchId);
-                \App\Helpers\MailHelper::sendInvitation($email, $name, $roleName, $church['name'] ?? 'Tu Iglesia', $churchId, $token);
+                \App\Helpers\MailHelper::sendInvitation($email, $name, $roleName, "Church Center - " . ($church['name'] ?? 'Tu Iglesia'), $churchId, $rawToken);
 
                 Response::json(['success' => true, 'message' => 'Member invited successfully', 'id' => $newMemberId]);
-            } else {
+            }
+            else {
                 Response::error("Failed to create member record", 500);
             }
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             \App\Helpers\Logger::error("PeopleController::invite error: " . $e->getMessage());
             Response::error("Error al invitar al integrante. Intente nuevamente.", 500);
         }
@@ -195,7 +229,7 @@ class PeopleController
     private function approve($memberId)
     {
         $pathParts = explode('/', $_GET['action'] ?? '');
-        $targetMemberId = (int) ($pathParts[0] ?? 0);
+        $targetMemberId = (int)($pathParts[0] ?? 0);
 
         $data = json_decode(file_get_contents('php://input'), true);
         $roleId = $data['roleId'] ?? $data['role_id'] ?? null;
@@ -214,7 +248,7 @@ class PeopleController
         \App\Repositories\UserRepo::updateMemberRole($targetMemberId, $roleId);
 
         // 2. Assign service role for Church Center
-        \App\Repositories\UserRepo::assignRole($targetMemberId, $member['church_id'], $roleId, 'church_center');
+        \App\Repositories\UserRepo::assignRole($targetMemberId, $member['church_id'], $roleId, 'mainhub');
 
         \App\Repositories\ActivityRepo::log($member['church_id'], $memberId, 'approved', 'member', $targetMemberId, ['name' => $member['name']]);
 

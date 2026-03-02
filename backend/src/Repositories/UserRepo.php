@@ -25,7 +25,78 @@ class UserRepo
         $db = Database::getInstance();
         $stmt = $db->prepare("SELECT * FROM member WHERE id = ?");
         $stmt->execute([$memberId]);
-        return $stmt->fetch();
+        $member = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($member) {
+            $member['instruments'] = self::getUserInstruments($memberId);
+            $member['areas'] = self::getUserAreas($memberId);
+
+            // Get role
+            $stmt = $db->prepare("
+                SELECT r.id, r.name, r.display_name as displayName
+                FROM roles r
+                JOIN user_service_roles usr ON r.id = usr.role_id
+                JOIN services s ON usr.service_id = s.id
+                WHERE usr.member_id = ? AND s.key = 'mainhub'
+            ");
+            $stmt->execute([$memberId]);
+            $member['role'] = $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        return $member;
+    }
+
+    public static function getUserInstruments($memberId)
+    {
+        $db = Database::getInstance();
+        try {
+            $stmt = $db->prepare("
+                SELECT i.* 
+                FROM instruments i
+                JOIN member_instruments mi ON i.id = mi.instrument_id
+                WHERE mi.member_id = ?
+            ");
+            $stmt->execute([$memberId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    public static function setUserInstruments($memberId, $instrumentIds)
+    {
+        $db = Database::getInstance();
+        try {
+            $db->beginTransaction();
+
+            // Delete old ones
+            $stmt = $db->prepare("DELETE FROM member_instruments WHERE member_id = ?");
+            $stmt->execute([$memberId]);
+
+            // Insert new ones
+            if (!empty($instrumentIds)) {
+                $sql = "INSERT INTO member_instruments (member_id, instrument_id) VALUES ";
+                $placeholders = [];
+                $params = [];
+                foreach ($instrumentIds as $id) {
+                    $placeholders[] = "(?, ?)";
+                    $params[] = $memberId;
+                    $params[] = $id;
+                }
+                $sql .= implode(", ", $placeholders);
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+            }
+
+            $db->commit();
+            return true;
+        }
+        catch (\Exception $e) {
+            if ($db->inTransaction())
+                $db->rollBack();
+            return false;
+        }
     }
 
     public static function findById($memberId)
@@ -49,7 +120,7 @@ class UserRepo
             SELECT m.*, r.name as role_name, r.display_name as role_display, c.name as church_name
             FROM member m
             LEFT JOIN church c ON m.church_id = c.id
-            LEFT JOIN services s ON s.key = 'church_center'
+            LEFT JOIN services s ON s.key = 'mainhub'
             LEFT JOIN user_service_roles usr ON m.id = usr.member_id AND (m.church_id = usr.church_id OR m.church_id IS NULL) AND usr.service_id = s.id
             LEFT JOIN roles r ON usr.role_id = r.id
             WHERE m.status != 'deleted'
@@ -62,7 +133,23 @@ class UserRepo
         $sql .= " ORDER BY m.created_at DESC";
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Fetch areas and instruments for each user (inefficient but safe for small volumes, or use a better join)
+        foreach ($users as &$u) {
+            $u['areas'] = self::getUserAreas($u['id']);
+            $u['instruments'] = self::getUserInstruments($u['id']);
+            // Standardize role display
+            if (isset($u['role_display'])) {
+                $u['role'] = [
+                    'id' => $u['role_id'] ?? null,
+                    'name' => $u['role_name'],
+                    'displayName' => $u['role_display']
+                ];
+            }
+        }
+
+        return $users;
     }
 
     public static function createMember($data)
@@ -92,7 +179,7 @@ class UserRepo
         return $stmt->execute([$status, $memberId]);
     }
 
-    public static function assignRole($memberId, $churchId, $roleId, $serviceKey = 'church_center')
+    public static function assignRole($memberId, $churchId, $roleId, $serviceKey = 'mainhub')
     {
         $db = Database::getInstance();
 
@@ -118,7 +205,7 @@ class UserRepo
         $member = self::getMemberData($memberId);
         if (!$member)
             return false;
-        return self::assignRole($memberId, $member['church_id'], $roleId, 'church_center');
+        return self::assignRole($memberId, $member['church_id'], $roleId, 'mainhub');
     }
 
     public static function hardDelete($memberId)
@@ -132,7 +219,8 @@ class UserRepo
             $result = $db->prepare("DELETE FROM member WHERE id = ?")->execute([$memberId]);
             $db->commit();
             return $result;
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             if ($db->inTransaction())
                 $db->rollBack();
             throw $e;
@@ -159,6 +247,11 @@ class UserRepo
             $fields[] = "surname = ?";
             $params[] = $data['surname'];
         }
+        if (isset($data['lastName'])) {
+            // Handle case where frontend sends lastName
+            $fields[] = "surname = ?";
+            $params[] = $data['lastName'];
+        }
         if (isset($data['phone'])) {
             $fields[] = "phone = ?";
             $params[] = $data['phone'];
@@ -168,16 +261,82 @@ class UserRepo
             $params[] = $data['sex'];
         }
 
-        if (empty($fields))
-            return false;
+        if (!empty($fields)) {
+            $params[] = $memberId;
+            $sql = "UPDATE member SET " . implode(", ", $fields) . " WHERE id = ?";
+            $db->prepare($sql)->execute($params);
+        }
 
-        $params[] = $memberId;
-        $sql = "UPDATE member SET " . implode(", ", $fields) . " WHERE id = ?";
-        return $db->prepare($sql)->execute($params);
+        // Handle Role
+        if (isset($data['roleId'])) {
+            self::updateMemberRole($memberId, (int)$data['roleId']);
+        }
+
+        // Handle Areas
+        if (isset($data['areaIds'])) {
+            self::setUserAreas($memberId, $data['areaIds']);
+        }
+
+        // Handle Instruments
+        if (isset($data['instruments'])) {
+            self::setUserInstruments($memberId, $data['instruments']);
+        }
+
+        return true;
     }
 
-    public static function findByInviteToken($token)
+    public static function getUserAreas($memberId)
     {
+        $db = Database::getInstance();
+        try {
+            $stmt = $db->prepare("
+                SELECT a.id, a.name 
+                FROM areas a
+                JOIN member_areas ma ON a.id = ma.area_id
+                WHERE ma.member_id = ?
+            ");
+            $stmt->execute([$memberId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    public static function setUserAreas($memberId, $areaIds)
+    {
+        $db = Database::getInstance();
+        try {
+            $db->beginTransaction();
+            $stmt = $db->prepare("DELETE FROM member_areas WHERE member_id = ?");
+            $stmt->execute([$memberId]);
+
+            if (!empty($areaIds)) {
+                $sql = "INSERT INTO member_areas (member_id, area_id) VALUES ";
+                $placeholders = [];
+                $params = [];
+                foreach ($areaIds as $id) {
+                    $placeholders[] = "(?, ?)";
+                    $params[] = (int)$memberId;
+                    $params[] = (int)$id;
+                }
+                $sql .= implode(", ", $placeholders);
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+            }
+            $db->commit();
+            return true;
+        }
+        catch (\Exception $e) {
+            if ($db->inTransaction())
+                $db->rollBack();
+            return false;
+        }
+    }
+
+    public static function findByInviteToken($rawToken)
+    {
+        $tokenHash = hash('sha256', $rawToken);
         $db = Database::getInstance();
         $stmt = $db->prepare("
             SELECT m.*, c.name as church_name 
@@ -185,7 +344,7 @@ class UserRepo
             LEFT JOIN church c ON m.church_id = c.id
             WHERE m.invite_token = ? AND m.token_expires_at > NOW() AND m.status = 'pending'
         ");
-        $stmt->execute([$token]);
+        $stmt->execute([$tokenHash]);
         return $stmt->fetch();
     }
 
@@ -219,7 +378,8 @@ class UserRepo
 
             $db->commit();
             return true;
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             if ($db->inTransaction())
                 $db->rollBack();
             \App\Helpers\Logger::error("UserRepo::completeInvitation error: " . $e->getMessage());

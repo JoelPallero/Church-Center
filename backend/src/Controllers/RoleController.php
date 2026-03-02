@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Controllers;
 
@@ -8,7 +8,7 @@ class RoleController
 {
     public function handle($memberId, $action, $method)
     {
-        if ($method === 'GET') {
+        if ($method === "GET") {
             $this->list();
         }
     }
@@ -16,8 +16,8 @@ class RoleController
     private function list()
     {
         $db = \App\Database::getInstance();
-        $stmt = $db->query("SELECT id, name, display_name FROM roles ORDER BY display_name ASC");
+        $stmt = $db->query("SELECT id, name, display_name as displayName FROM roles ORDER BY display_name ASC");
         $roles = $stmt->fetchAll();
-        Response::json(['success' => true, 'roles' => $roles]);
+        Response::json(["success" => true, "roles" => $roles]);
     }
 }

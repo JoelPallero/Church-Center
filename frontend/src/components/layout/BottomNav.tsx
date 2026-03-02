@@ -44,11 +44,11 @@ export const BottomNav: FC = () => {
             { path: '/worship/calendar', icon: 'event', label: t('nav.calendar') }
         ];
     } else if (isMember) {
-        // Miembros: Listados, Canciones, Calendario
+        // Miembros: Dashboard, Biblioteca, Calendario (Off)
         navItems = [
-            { path: '/worship/playlists', icon: 'reorder', label: t('nav.playlists') },
+            { path: '/', icon: 'dashboard', label: t('nav.dashboard') },
             { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), isCentral: true },
-            { path: '/worship/calendar', icon: 'event', label: t('nav.calendar') }
+            { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), isDisabled: true }
         ];
     } else if (isGuest) {
         // Invitados: Inicio, Mi Perfil
@@ -82,18 +82,21 @@ export const BottomNav: FC = () => {
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}
-                        to={item.path}
+                        to={item.isDisabled ? '#' : item.path}
                         end={item.path === '/'}
-                        className={({ isActive }) => clsx('nav-link', isActive ? 'text-brand-blue' : 'text-gray-500')}
+                        className={({ isActive }) => clsx('nav-link', isActive && !item.isDisabled ? 'text-brand-blue' : 'text-gray-500')}
+                        onClick={(e) => { if (item.isDisabled) e.preventDefault(); }}
                         style={({ isActive }) => ({
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             textDecoration: 'none',
-                            color: isActive ? 'var(--color-brand-blue)' : '#9CA3AF',
+                            color: (isActive && !item.isDisabled) ? 'var(--color-brand-blue)' : '#9CA3AF',
                             transition: 'all 0.2s ease',
                             flex: 1,
-                            position: 'relative'
+                            position: 'relative',
+                            opacity: item.isDisabled ? 0.4 : 1,
+                            cursor: item.isDisabled ? 'default' : 'pointer'
                         })}
                     >
                         {({ isActive }) => (
@@ -102,12 +105,12 @@ export const BottomNav: FC = () => {
                                     width: '64px',
                                     height: '64px',
                                     borderRadius: '50%',
-                                    backgroundColor: 'var(--color-brand-blue)',
+                                    backgroundColor: item.isDisabled ? '#4B5563' : 'var(--color-brand-blue)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     marginTop: '-40px',
-                                    boxShadow: '0 8px 16px rgba(61, 104, 223, 0.4)',
+                                    boxShadow: item.isDisabled ? 'none' : '0 8px 16px rgba(61, 104, 223, 0.4)',
                                     border: '4px solid var(--color-ui-bg)',
                                     color: 'white'
                                 }}>
@@ -118,14 +121,14 @@ export const BottomNav: FC = () => {
                             ) : (
                                 <>
                                     <span className="material-symbols-outlined" style={{
-                                        fontVariationSettings: isActive ? "'FILL' 1, 'wght' 600" : "'FILL' 0, 'wght' 400",
+                                        fontVariationSettings: (isActive && !item.isDisabled) ? "'FILL' 1, 'wght' 600" : "'FILL' 0, 'wght' 400",
                                         fontSize: '28px',
                                         marginBottom: '4px'
                                     }}>
                                         {item.icon}
                                     </span>
                                     {item.label && (
-                                        <span className="text-overline" style={{ fontSize: '10px', fontWeight: isActive ? 700 : 500 }}>
+                                        <span className="text-overline" style={{ fontSize: '10px', fontWeight: (isActive && !item.isDisabled) ? 700 : 500 }}>
                                             {item.label}
                                         </span>
                                     )}

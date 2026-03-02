@@ -120,7 +120,7 @@ export const PrivacySupport: FC = () => {
                 </div>
                 <p className="text-overline" style={{ color: '#4B5563' }}>
                     Church Management Platform v2.4.0<br />
-                    © 2024 Todos los derechos reservados.
+                    © {new Date().getFullYear()} Todos los derechos reservados.
                 </p>
             </footer>
         </div>

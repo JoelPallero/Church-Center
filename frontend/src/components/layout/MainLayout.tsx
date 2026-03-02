@@ -23,12 +23,16 @@ export const MainLayout: FC = () => {
     };
 
     const getHubTitle = () => {
-        if (isSuperAdmin || isMaster) {
-            return t('people.roles.master') || "Super Administrador";
+        if (!user) return "";
+
+        // Members see their name and role
+        if (!hasPermission('church.update') && !isSuperAdmin) {
+            const roleName = user.role?.displayName || user.role?.name || "";
+            return `${user.name} / ${roleName}`;
         }
 
-        if (hasPermission('church.update')) {
-            return t('common.churchCenter');
+        if (isSuperAdmin || isMaster) {
+            return t('people.roles.master') || "Super Administrador";
         }
 
         if (location.pathname.startsWith('/worship')) {
@@ -137,7 +141,8 @@ export const MainLayout: FC = () => {
                                 } else if (isLeader) {
                                     footerPaths = ['/', '/teams', '/playlists', '/songs', '/reunions'];
                                 } else {
-                                    footerPaths = ['/', '/songs', '/reunions'];
+                                    // Member
+                                    footerPaths = ['/', '/worship/songs', '/worship/calendar'];
                                 }
 
                                 const navItemsMetadata = [
@@ -147,11 +152,11 @@ export const MainLayout: FC = () => {
                                     { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'area.create' },
                                     { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'reunions.view' },
                                     { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'teams.view' },
-                                    { path: '/mainhub/ushers', icon: 'how_to_reg', label: t('nav.ushers'), permission: 'church.read' },
+                                    { path: '/mainhub/ushers', icon: 'how_to_reg', label: t('nav.ushers'), permission: 'church.update' },
                                     { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'users.view' },
                                     { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports'), permission: 'reports.view' },
                                     { path: '/worship/playlists', icon: 'reorder', label: t('nav.playlists'), permission: 'songs.view' },
-                                    { path: '/settings', icon: 'settings', label: t('nav.settings'), permission: null }
+                                    { path: '/settings', icon: 'settings', label: t('nav.settings') || 'Panel de Control', permission: null }
                                 ];
 
                                 const uniqueItems = navItemsMetadata.filter(item => {

@@ -32,7 +32,8 @@ class AuthController
         Logger::info("Querying UserRepo::findByEmail...");
         try {
             $user = UserRepo::findByEmail($email);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             Logger::error("DB Exception in findByEmail: " . $e->getMessage());
             return Response::error("Error interno del servidor", 500);
         }
@@ -54,6 +55,7 @@ class AuthController
         Logger::info("- Provided Password Length: $providedPassLen");
         Logger::info("- Stored Hash Length: $storedHashLen");
         Logger::info("- Stored Hash Start: " . substr($storedHash, 0, 7) . "...");
+        Logger::info("- Stored Hash Hex (first 10): " . bin2hex(substr($storedHash, 0, 5)));
         Logger::info("- Hash Info (Algo Name): " . ($hashInfo['algoName'] ?? 'unknown'));
         Logger::info("- Verify Result: " . ($verify ? "SUCCESS" : "FAILURE"));
 
@@ -64,14 +66,13 @@ class AuthController
             if (trim($password) !== $password) {
                 Logger::info("! WARNING: Provided password has whitespace at edges.");
             }
-            if (bin2hex($password) !== bin2hex(trim($password))) {
-                Logger::info("! Raw hex provided pass: " . bin2hex($password));
-            }
+            // Log hex of input password (securely, only length or partial if absolutely needed, but here we log full hex for audit)
+            Logger::info("- Raw hex provided pass: " . bin2hex($password));
 
             // Log environment info that could affect hashing
             Logger::info("System Environment Info:");
             Logger::info("- PHP Version: " . PHP_VERSION);
-            Logger::info("- Default Password Algo: " . password_hash("test", PASSWORD_DEFAULT));
+            Logger::info("- Default Password Algo: " . (defined('PASSWORD_BCRYPT') ? 'BCRYPT' : 'UNKNOWN'));
         }
 
         if (!$verify) {
@@ -192,15 +193,20 @@ class AuthController
     public function verifyInvitation()
     {
         $token = $_GET['token'] ?? '';
+        Logger::info("AuthController::verifyInvitation attempt for token: " . substr($token, 0, 8) . "...");
+
         if (empty($token)) {
+            Logger::error("verifyInvitation failed: Empty token.");
             return Response::error("Falta el token de invitación", 400);
         }
 
         $invitation = \App\Repositories\UserRepo::findByInviteToken($token);
         if (!$invitation) {
+            Logger::error("verifyInvitation failed: Token not found or expired ($token)");
             return Response::error("La invitación es inválida o ha expirado", 400);
         }
 
+        Logger::info("verifyInvitation success for email: " . $invitation['email']);
         return Response::json([
             'success' => true,
             'invitation' => [

@@ -23,8 +23,9 @@ class SongRepo
             $sql .= " ORDER BY title ASC";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
-            return $stmt->fetchAll();
-        } catch (\Exception $e) {
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        catch (\Exception $e) {
             // Log the error but don't break the whole app if music db is down
             \App\Helpers\Logger::error("SongRepo::getAll error: " . $e->getMessage());
             return [];
@@ -37,8 +38,9 @@ class SongRepo
             $db = Database::getInstance('music');
             $stmt = $db->prepare("SELECT * FROM songs WHERE id = ?");
             $stmt->execute([$id]);
-            return $stmt->fetch();
-        } catch (\Exception $e) {
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+        catch (\Exception $e) {
             \App\Helpers\Logger::error("SongRepo::findById error: " . $e->getMessage());
             return null;
         }
@@ -62,7 +64,8 @@ class SongRepo
                 $data['category'] ?? ''
             ]);
             return $db->lastInsertId();
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             \App\Helpers\Logger::error("SongRepo::add error: " . $e->getMessage());
             return false;
         }
@@ -80,7 +83,8 @@ class SongRepo
                 ORDER BY se.created_at DESC
             ");
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             \App\Helpers\Logger::error("SongRepo::listPendingEdits error: " . $e->getMessage());
             return [];
         }
@@ -92,7 +96,8 @@ class SongRepo
             $db = Database::getInstance('music');
             $stmt = $db->prepare("INSERT INTO song_edits (song_id, member_id, proposed_data) VALUES (?, ?, ?)");
             return $stmt->execute([$songId, $memberId, json_encode($data)]);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             \App\Helpers\Logger::error("SongRepo::proposeEdit error: " . $e->getMessage());
             return false;
         }
@@ -133,7 +138,8 @@ class SongRepo
             // 3. Update status
             $stmt = $db->prepare("UPDATE song_edits SET status = ? WHERE id = ?");
             return $stmt->execute([$status, $editId]);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             \App\Helpers\Logger::error("SongRepo::resolveEdit error: " . $e->getMessage());
             return false;
         }
@@ -145,7 +151,8 @@ class SongRepo
             $db = Database::getInstance('music');
             $stmt = $db->prepare("DELETE FROM songs WHERE id = ?");
             return $stmt->execute([$id]);
-        } catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             \App\Helpers\Logger::error("SongRepo::delete error: " . $e->getMessage());
             return false;
         }

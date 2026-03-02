@@ -42,9 +42,10 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
     }, []);
 
     const loadData = async () => {
+        const targetChurchId = user.church_id || user.churchId;
         const [rData, aData, iData] = await Promise.all([
             peopleService.getRoles(),
-            peopleService.getAreas(),
+            peopleService.getAreas(targetChurchId),
             peopleService.getInstruments()
         ]);
         setRoles(rData);
@@ -54,12 +55,13 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
         // If user already has areas, load groups for the first one (legacy logic/preview)
         const currentAreaId = formData.areaIds[0] || user.areas?.[0]?.id;
         if (currentAreaId) {
-            const gData = await peopleService.getGroups(currentAreaId);
+            const gData = await peopleService.getGroups(targetChurchId, currentAreaId);
             setGroups(gData);
         }
     };
 
     const toggleArea = async (id: number) => {
+        const targetChurchId = user.church_id || user.churchId;
         const nextAreas = formData.areaIds.includes(id)
             ? formData.areaIds.filter((a: number) => a !== id)
             : [...formData.areaIds, id];
@@ -68,7 +70,7 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
 
         // Update groups list if we added an area
         if (nextAreas.length > 0) {
-            const gData = await peopleService.getGroups(nextAreas[0]);
+            const gData = await peopleService.getGroups(targetChurchId, nextAreas[0]);
             setGroups(gData);
         }
     };

@@ -67,18 +67,20 @@ export const Playlists: FC = () => {
                     <h1 className="text-h1">{t('playlists.title')}</h1>
                     <p className="text-body text-muted">{t('playlists.description')}</p>
                 </div>
-                {reunionsCount === 0 ? (
-                    <Button
-                        label={t('playlists.createReunion')}
-                        icon="add"
-                        onClick={() => navigate('/reunions')}
-                    />
-                ) : (
-                    <Button
-                        label={t('playlists.newPlaylist')}
-                        icon="playlist_add"
-                        onClick={() => { }}
-                    />
+                {(isPastor || isLeader || isMaster) && (
+                    reunionsCount === 0 ? (
+                        <Button
+                            label={t('playlists.createReunion')}
+                            icon="add"
+                            onClick={() => navigate('/reunions')}
+                        />
+                    ) : (
+                        <Button
+                            label={t('playlists.newPlaylist')}
+                            icon="playlist_add"
+                            onClick={() => { }}
+                        />
+                    )
                 )}
             </header>
 

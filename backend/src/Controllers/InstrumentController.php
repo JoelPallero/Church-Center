@@ -12,7 +12,8 @@ class InstrumentController
         if ($method === 'GET') {
             // Everyone can read instruments usually
             $this->list();
-        } elseif ($method === 'POST' && $action === 'mine') {
+        }
+        elseif ($method === 'POST' && $action === 'mine') {
             $this->updateMine($memberId);
         }
     }
@@ -27,6 +28,14 @@ class InstrumentController
 
     private function updateMine($memberId)
     {
-        Response::json(['success' => true, 'message' => 'Your instruments updated']);
+        $data = json_decode(file_get_contents('php://input'), true);
+        $instrumentIds = $data['instruments'] ?? [];
+
+        $success = \App\Repositories\UserRepo::setUserInstruments($memberId, $instrumentIds);
+
+        Response::json([
+            'success' => $success,
+            'message' => $success ? 'Instrumentos actualizados' : 'Error al actualizar instrumentos'
+        ]);
     }
 }

@@ -30,6 +30,13 @@ export const AcceptInvite: FC = () => {
     const verifyToken = async () => {
         try {
             const response = await fetch(`/api/auth/verify-invite?token=${token}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error(`API Error (${response.status}):`, errorText);
+                setError(`Error de servidor (${response.status}). Por favor, contacte a soporte.`);
+                setIsLoading(false);
+                return;
+            }
             const data = await response.json();
             if (data.success) {
                 setInvitation(data.invitation);
@@ -174,7 +181,7 @@ export const AcceptInvite: FC = () => {
 
                 <footer style={{ marginTop: '32px', textAlign: 'center' }}>
                     <p className="text-overline" style={{ color: '#4B5563' }}>
-                        © 2024 MinistryHub<br />
+                        © {new Date().getFullYear()} MinistryHub<br />
                         Plataforma de Gestión Ministerial
                     </p>
                 </footer>

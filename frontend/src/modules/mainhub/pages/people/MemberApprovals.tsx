@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../../../../components/ui/Card';
 import { Button } from '../../../../components/ui/Button';
 import { peopleService } from '../../../../services/peopleService';
@@ -16,9 +16,9 @@ export const MemberApprovals: FC = () => {
     const [groups, setGroups] = useState<any[]>([]);
     const [areas, setAreas] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchParams] = useSearchParams();
+    const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : undefined;
     const [processingId, setProcessingId] = useState<number | null>(null);
-
-    // Form states for each user
     const [selections, setSelections] = useState<Record<number, { roleId: number; teamIds: number[]; areaIds: number[] }>>({});
 
     useEffect(() => {
@@ -33,10 +33,10 @@ export const MemberApprovals: FC = () => {
         setLoading(true);
         try {
             const [users, allRoles, allGroups, allAreas] = await Promise.all([
-                peopleService.getAll(),
+                peopleService.getAll(churchId),
                 peopleService.getRoles(),
-                peopleService.getGroups(),
-                peopleService.getAreas()
+                peopleService.getGroups(churchId),
+                peopleService.getAreas(churchId)
             ]);
 
             const pending = users.filter((u: any) => u.status === 'pending');

@@ -15,10 +15,12 @@ class PlaylistController
         if ($method === 'GET') {
             if (is_numeric($action)) {
                 $this->show($action);
-            } else {
+            }
+            else {
                 $this->list($memberId);
             }
-        } elseif ($method === 'POST') {
+        }
+        elseif ($method === 'POST') {
             $this->create($memberId);
         }
     }
@@ -35,7 +37,19 @@ class PlaylistController
             Response::error("Church ID required", 400);
         }
 
-        $playlists = PlaylistRepo::getByChurch($churchId);
+        $roles = \App\Repositories\PermissionRepo::getServiceRoles($memberId);
+        $roleNames = array_map(fn($r) => $r['name'], $roles);
+        $isSuper = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+
+        $isRestricted = !$isSuper && !in_array('pastor', $roleNames) && !in_array('leader', $roleNames) && !in_array('coordinator', $roleNames);
+
+        if ($isRestricted) {
+            $playlists = PlaylistRepo::getVisibleForMember($churchId, $memberId);
+        }
+        else {
+            $playlists = PlaylistRepo::getByChurch($churchId);
+        }
+
         Response::json(['success' => true, 'playlists' => $playlists]);
     }
 

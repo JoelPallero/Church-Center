@@ -14,7 +14,8 @@ $pathParam = $_GET['path'] ?? '';
 // --- Routing Logic ---
 if (!empty($pathParam)) {
     $uri = $pathParam;
-} else {
+}
+else {
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $uri = str_replace('/api/', '', $uri);
 }
@@ -31,9 +32,11 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($resource === 'admin') {
     if ($action === 'stats') {
         $resource = 'reports';
-    } elseif ($action === 'churches' || $action === 'create_church') {
+    }
+    elseif ($action === 'churches' || $action === 'create_church') {
         $resource = 'churches';
-    } elseif ($action === 'songs') {
+    }
+    elseif ($action === 'songs') {
         $resource = 'songs';
     }
 }
@@ -44,14 +47,23 @@ if ($resource === 'auth') {
     if ($action === 'login' && $method === 'POST') {
         $controller->login();
     }
-    \App\Helpers\Response::error("Not Found", 404);
+    elseif ($action === 'verify-invite') {
+        $controller->verifyInvitation();
+    }
+    elseif ($action === 'accept-invite' && $method === 'POST') {
+        $controller->acceptInvitation();
+    }
+    else {
+        \App\Helpers\Response::error("Action not found under auth", 404);
+    }
     exit;
 }
 
 // Protected area
 try {
     $memberId = \App\Middleware\AuthMiddleware::handle();
-} catch (\Exception $e) {
+}
+catch (\Exception $e) {
     \App\Helpers\Response::error($e->getMessage(), 401);
     exit;
 }

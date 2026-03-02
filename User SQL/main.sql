@@ -343,6 +343,14 @@ CREATE TABLE instruments (
   category VARCHAR(60) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS member_instruments (
+  member_id INT NOT NULL,
+  instrument_id INT NOT NULL,
+  PRIMARY KEY (member_id, instrument_id),
+  FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
+  FOREIGN KEY (instrument_id) REFERENCES instruments(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE activity_log (
   id INT AUTO_INCREMENT PRIMARY KEY,
   church_id INT NOT NULL,
@@ -380,9 +388,9 @@ CREATE TABLE IF NOT EXISTS invitation_templates (
    ========================================================= */
 
 INSERT INTO services (`key`, name, description, active) VALUES
-  ('church_center', 'Church Center', 'Administración general', 1),
-  ('ministry_hub',  'Ministry Hub',  'Áreas y equipos', 1),
-  ('sm_hub',        'SM Hub',        'Social/Media hub', 1)
+  ('mainhub', 'Church Center', 'Administración general', 1),
+  ('worship', 'Ministry Hub',  'Áreas y equipos', 1),
+  ('social',  'SM Hub',        'Social/Media hub', 1)
 ON DUPLICATE KEY UPDATE name=VALUES(name);
 
 -- Roles
@@ -392,19 +400,19 @@ ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 -- Church center roles
 INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
-SELECT s.id, 'pastor', 'Pastor', 'Admin de iglesia', 10, 1 FROM services s WHERE s.`key`='church_center'
+SELECT s.id, 'pastor', 'Pastor', 'Admin de iglesia', 10, 1 FROM services s WHERE s.`key`='mainhub'
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
-SELECT s.id, 'leader', 'Líder', 'Puede crear equipos', 20, 1 FROM services s WHERE s.`key`='church_center'
+SELECT s.id, 'leader', 'Líder', 'Puede crear equipos', 20, 1 FROM services s WHERE s.`key`='mainhub'
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
-SELECT s.id, 'coordinator', 'Coordinador', 'Coordina equipos', 30, 1 FROM services s WHERE s.`key`='church_center'
+SELECT s.id, 'coordinator', 'Coordinador', 'Coordina equipos', 30, 1 FROM services s WHERE s.`key`='mainhub'
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
-SELECT s.id, 'member', 'Miembro', 'Acceso básico', 40, 1 FROM services s WHERE s.`key`='church_center'
+SELECT s.id, 'member', 'Miembro', 'Acceso básico', 40, 1 FROM services s WHERE s.`key`='mainhub'
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 -- Permisos base
@@ -438,7 +446,7 @@ FROM roles r
 JOIN services s ON s.id = r.service_id
 JOIN permissions p
 WHERE r.name='pastor'
-  AND s.`key`='church_center'
+  AND s.`key`='mainhub'
   AND p.name IN (
     'church.read','church.update',
     'area.create','area.update',
@@ -455,7 +463,7 @@ FROM roles r
 JOIN services s ON s.id = r.service_id
 JOIN permissions p
 WHERE r.name='leader'
-  AND s.`key`='church_center'
+  AND s.`key`='mainhub'
   AND p.name IN (
     'church.read',
     'team.create','team.update','team.manage_members',
@@ -471,7 +479,7 @@ FROM roles r
 JOIN services s ON s.id = r.service_id
 JOIN permissions p
 WHERE r.name='coordinator'
-  AND s.`key`='church_center'
+  AND s.`key`='mainhub'
   AND p.name IN (
     'church.read',
     'team.update',
@@ -487,7 +495,7 @@ FROM roles r
 JOIN services s ON s.id = r.service_id
 JOIN permissions p
 WHERE r.name='member'
-  AND s.`key`='church_center'
+  AND s.`key`='mainhub'
   AND p.name IN (
     'church.read',
     'calendar.read',
@@ -495,52 +503,7 @@ WHERE r.name='member'
   )
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
-/* =========================================================
-   SUPERADMIN INICIAL (GLOBAL, SIN IGLESIA)
-   Email: admin@system.master
-   Password: Master2026!
-   ========================================================= */
-
--- 1) Crear miembro si no existe
-INSERT INTO member (church_id, name, surname, email, phone, status)
-SELECT NULL, 'System', 'Master', 'admin@system.master', NULL, 'active'
-WHERE NOT EXISTS (
-    SELECT 1 FROM member WHERE email = 'admin@system.master'
-);
-
--- 2) Obtener ID del miembro
-SET @superadmin_member_id = (
-    SELECT id FROM member WHERE email = 'admin@system.master' LIMIT 1
-);
-
--- 3) Crear cuenta si no existe
-INSERT INTO user_accounts (member_id, email, password_hash, auth_method, is_active, default_theme, default_language)
-SELECT @superadmin_member_id,
-       'admin@system.master',
-       '$2y$10$8Jz3G5XwCk5K8zXzFvLk7eQmQv0k1gXbG3y8Kp6tR5yNf0cP9aZ8u',
-       'password',
-       1,
-       'dark',
-       'es'
-WHERE NOT EXISTS (
-    SELECT 1 FROM user_accounts WHERE email = 'admin@system.master'
-);
-
--- 4) Obtener ID del rol superadmin
-SET @superadmin_role_id = (
-    SELECT id FROM roles 
-    WHERE name = 'superadmin' AND service_id IS NULL
-    LIMIT 1
-);
-
--- 5) Asignar rol global si no existe
-INSERT INTO user_global_roles (member_id, role_id)
-SELECT @superadmin_member_id, @superadmin_role_id
-WHERE NOT EXISTS (
-    SELECT 1 FROM user_global_roles 
-    WHERE member_id = @superadmin_member_id
-      AND role_id = @superadmin_role_id
-);
+-- LAS CREDENCIALES DE SUPERADMIN SE HAN MOVIDO A credentials.sql PARA SEGURIDAD
 
 /* =========================================================
    FIN

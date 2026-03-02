@@ -28,11 +28,12 @@ export const MasterDashboard: FC = () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
+            const stats = data.data || {};
             setStatsData({
-                churches: data.churches?.toString() || '0',
-                members: data.members?.toString() || '0',
-                songs: data.songs?.toString() || '0',
-                reunions: data.reunions?.toString() || '0'
+                churches: (stats.churches ?? 0).toString(),
+                members: (stats.members ?? 0).toString(),
+                songs: (stats.songs ?? 0).toString(),
+                reunions: (stats.reunions ?? 0).toString()
             });
         } catch (err) {
             console.error('Error fetching admin stats:', err);
