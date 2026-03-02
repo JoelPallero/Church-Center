@@ -10,7 +10,7 @@ export const AreaSetup: FC = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const churchId = searchParams.get('church_id');
-    const [areas, setAreas] = useState<string[]>(['']);
+    const [areas, setAreas] = useState<string[]>(['Ujieres', 'Alabanza']);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
 

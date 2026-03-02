@@ -43,11 +43,15 @@ export const ChurchList: FC = () => {
         c.slug.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleDelete = async (church: any) => {
-        const isRestoring = !church.is_active;
-        const confirmMsg = isRestoring
-            ? t('churches.confirmRestore', { name: church.name }) || `¿Deseas reactivar la iglesia ${church.name}?`
-            : t('churches.confirmDelete', { name: church.name }) || `¿Estás seguro de que deseas desactivar la iglesia ${church.name}?`;
+    const handleAction = async (church: any, action: 'deactivate' | 'restore' | 'hardDelete') => {
+        let confirmMsg = '';
+        if (action === 'deactivate') {
+            confirmMsg = t('churches.confirmDeactivate', { name: church.name });
+        } else if (action === 'hardDelete') {
+            confirmMsg = t('churches.confirmHardDelete', { name: church.name });
+        } else if (action === 'restore') {
+            confirmMsg = t('churches.confirmRestore', { name: church.name }) || `¿Deseas reactivar la iglesia ${church.name}?`;
+        }
 
         if (!window.confirm(confirmMsg)) {
             return;
@@ -55,9 +59,9 @@ export const ChurchList: FC = () => {
 
         try {
             const token = localStorage.getItem('auth_token');
-            const url = isRestoring ? '/api/churches/restore' : `/api/churches/${church.id}`;
-            const method = isRestoring ? 'POST' : 'DELETE';
-            const body = isRestoring ? JSON.stringify({ id: church.id }) : undefined;
+            const url = action === 'restore' ? '/api/churches/restore' : `/api/churches/${church.id}`;
+            const method = action === 'restore' ? 'POST' : 'DELETE';
+            const body = action === 'restore' ? JSON.stringify({ id: church.id }) : undefined;
 
             const response = await fetch(url, {
                 method,
@@ -70,17 +74,14 @@ export const ChurchList: FC = () => {
 
             const result = await response.json();
             if (result.success) {
-                const successMsg = isRestoring
-                    ? t('churches.restoreSuccess', { name: church.name }) || `Iglesia ${church.name} reactivada correctamente`
-                    : t('churches.deleteSuccess', { name: church.name }) || `Iglesia ${church.name} desactivada correctamente`;
-
-                addToast(successMsg, 'success');
+                addToast(result.message || t('common.success'), 'success');
                 fetchChurches();
             } else {
-                addToast(result.error || (isRestoring ? 'Error al reactivar' : 'Error al desactivar'), 'error');
+                addToast(result.error || t('common.error'), 'error');
             }
         } catch (err) {
             console.error('Church action error:', err);
+            addToast(t('common.error_unexpected'), 'error');
         }
     };
 
@@ -205,26 +206,41 @@ export const ChurchList: FC = () => {
                                         >
                                             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
                                         </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDelete(church);
-                                            }}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                color: church.is_active ? '#EF4444' : '#10B981',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                padding: '4px'
-                                            }}
-                                            title={church.is_active ? t('common.delete') : t('common.restore')}
-                                        >
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-                                                {church.is_active ? 'delete' : 'restore'}
-                                            </span>
-                                        </button>
+                                        {church.is_active ? (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleAction(church, 'deactivate');
+                                                }}
+                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#F59E0B', display: 'flex', alignItems: 'center', padding: '4px' }}
+                                                title={t('churches.deactivate')}
+                                            >
+                                                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>block</span>
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAction(church, 'restore');
+                                                    }}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#10B981', display: 'flex', alignItems: 'center', padding: '4px' }}
+                                                    title={t('churches.restore')}
+                                                >
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>settings_backup_restore</span>
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAction(church, 'hardDelete');
+                                                    }}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', display: 'flex', alignItems: 'center', padding: '4px' }}
+                                                    title={t('churches.hardDelete')}
+                                                >
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>delete_forever</span>
+                                                </button>
+                                            </>
+                                        )}
                                     </>
                                 )}
                                 <span className="material-symbols-outlined" style={{ color: '#4B5563' }}>chevron_right</span>

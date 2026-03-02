@@ -69,8 +69,8 @@ class UserRepo
     {
         $db = Database::getInstance();
         $stmt = $db->prepare("
-            INSERT INTO member (church_id, name, surname, email, phone, status)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO member (church_id, name, surname, email, phone, status, invite_token, token_expires_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $data['church_id'] ?? null,
@@ -78,7 +78,9 @@ class UserRepo
             $data['surname'] ?? '',
             $data['email'],
             $data['phone'] ?? null,
-            $data['status'] ?? 'pending'
+            $data['status'] ?? 'pending',
+            $data['invite_token'] ?? null,
+            $data['token_expires_at'] ?? null
         ]);
         return $db->lastInsertId();
     }
@@ -117,5 +119,111 @@ class UserRepo
         if (!$member)
             return false;
         return self::assignRole($memberId, $member['church_id'], $roleId, 'church_center');
+    }
+
+    public static function hardDelete($memberId)
+    {
+        $db = Database::getInstance();
+        try {
+            $db->beginTransaction();
+            $db->prepare("DELETE FROM user_service_roles WHERE member_id = ?")->execute([$memberId]);
+            $db->prepare("DELETE FROM user_accounts WHERE member_id = ?")->execute([$memberId]);
+            $db->prepare("DELETE FROM group_members WHERE member_id = ?")->execute([$memberId]);
+            $result = $db->prepare("DELETE FROM member WHERE id = ?")->execute([$memberId]);
+            $db->commit();
+            return $result;
+        } catch (\Exception $e) {
+            if ($db->inTransaction())
+                $db->rollBack();
+            throw $e;
+        }
+    }
+
+    public static function deleteInvitation($email)
+    {
+        $db = Database::getInstance();
+        return $db->prepare("DELETE FROM member WHERE email = ? AND status = 'pending'")->execute([$email]);
+    }
+
+    public static function updateProfile($memberId, $data)
+    {
+        $db = Database::getInstance();
+        $fields = [];
+        $params = [];
+
+        if (isset($data['name'])) {
+            $fields[] = "name = ?";
+            $params[] = $data['name'];
+        }
+        if (isset($data['surname'])) {
+            $fields[] = "surname = ?";
+            $params[] = $data['surname'];
+        }
+        if (isset($data['phone'])) {
+            $fields[] = "phone = ?";
+            $params[] = $data['phone'];
+        }
+        if (isset($data['sex'])) {
+            $fields[] = "sex = ?";
+            $params[] = $data['sex'];
+        }
+
+        if (empty($fields))
+            return false;
+
+        $params[] = $memberId;
+        $sql = "UPDATE member SET " . implode(", ", $fields) . " WHERE id = ?";
+        return $db->prepare($sql)->execute($params);
+    }
+
+    public static function findByInviteToken($token)
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("
+            SELECT m.*, c.name as church_name 
+            FROM member m
+            LEFT JOIN church c ON m.church_id = c.id
+            WHERE m.invite_token = ? AND m.token_expires_at > NOW() AND m.status = 'pending'
+        ");
+        $stmt->execute([$token]);
+        return $stmt->fetch();
+    }
+
+    public static function completeInvitation($memberId, $password)
+    {
+        $db = Database::getInstance();
+        try {
+            $db->beginTransaction();
+
+            // 1. Get member data
+            $member = self::getMemberData($memberId);
+            if (!$member)
+                throw new \Exception("Member not found");
+
+            // 2. Create user account
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $db->prepare("
+                INSERT INTO user_accounts (member_id, email, password_hash, auth_method, is_active)
+                VALUES (?, ?, ?, 'password', 1)
+                ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), is_active = 1
+            ");
+            $stmt->execute([$memberId, $member['email'], $passwordHash]);
+
+            // 3. Update member status and clear token
+            $stmt = $db->prepare("
+                UPDATE member 
+                SET status = 'active', invite_token = NULL, token_expires_at = NULL 
+                WHERE id = ?
+            ");
+            $stmt->execute([$memberId]);
+
+            $db->commit();
+            return true;
+        } catch (\Exception $e) {
+            if ($db->inTransaction())
+                $db->rollBack();
+            \App\Helpers\Logger::error("UserRepo::completeInvitation error: " . $e->getMessage());
+            return false;
+        }
     }
 }

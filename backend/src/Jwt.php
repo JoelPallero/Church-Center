@@ -8,10 +8,15 @@ class Jwt
     {
         $configPath = APP_ROOT . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'database.env';
         if (!file_exists($configPath)) {
+            error_log("JWT: database.env not found at $configPath. Using default_secret.");
             return 'default_secret';
         }
         $env = @parse_ini_file($configPath);
-        return $env['JWT_SECRET'] ?? 'default_secret';
+        $secret = $env['JWT_SECRET'] ?? 'default_secret';
+        if ($secret === 'default_secret') {
+            error_log("JWT: JWT_SECRET not found in env. Using default_secret.");
+        }
+        return $secret;
     }
 
     public static function encode($payload)

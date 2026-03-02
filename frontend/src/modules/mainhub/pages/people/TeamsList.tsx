@@ -15,10 +15,21 @@ interface TeamSettingsProps {
     churchId?: number;
 }
 
+interface TeamSettingsProps {
+    team: any;
+    onClose: () => void;
+    onSaved: () => void;
+    churchId?: number;
+}
+
 const TeamSettingsModal: FC<TeamSettingsProps> = ({ team, onClose, onSaved, churchId }) => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const [allMembers, setAllMembers] = useState<any[]>([]);
     const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
+    const [name, setName] = useState(team.name || '');
+    const [description, setDescription] = useState(team.description || '');
+    const [leaderId, setLeaderId] = useState<number | null>(team.leader_id || null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const { addToast } = useToast();
@@ -30,16 +41,11 @@ const TeamSettingsModal: FC<TeamSettingsProps> = ({ team, onClose, onSaved, chur
     const loadData = async () => {
         setLoading(true);
         try {
-            const [members] = await Promise.all([
-                peopleService.getAll(churchId)
+            const [members, teamMembers] = await Promise.all([
+                peopleService.getAll(churchId),
+                peopleService.getTeamMembers(team.id, churchId)
             ]);
             setAllMembers(members);
-
-            // Fetch current members of this specific team if possible, 
-            // but for mass assignment we usually just pick who belongs now.
-            // Let's assume we want to see who is currently in the team.
-            // We'll need a way to get team members.
-            const teamMembers = await peopleService.getTeamMembers(team.id, churchId);
             setSelectedMembers(teamMembers.map((m: any) => m.id));
         } catch (err) {
             console.error(err);
@@ -56,13 +62,22 @@ const TeamSettingsModal: FC<TeamSettingsProps> = ({ team, onClose, onSaved, chur
 
     const handleSave = async () => {
         setSaving(true);
-        const success = await peopleService.assignTeamBulk(team.id, selectedMembers);
-        setSaving(false);
-        if (success) {
-            addToast(t('teams.saveSuccess') || 'Equipo actualizado correctamente', 'success');
-            onSaved();
-        } else {
-            addToast(t('teams.saveError') || 'Error al guardar equipo', 'error');
+        try {
+            const [updateSuccess, bulkSuccess] = await Promise.all([
+                peopleService.updateGroup(team.id, { name, description, leaderId }),
+                peopleService.assignTeamBulk(team.id, selectedMembers)
+            ]);
+
+            if (updateSuccess && bulkSuccess) {
+                addToast(t('teams.updateSuccess') || 'Equipo actualizado correctamente', 'success');
+                onSaved();
+            } else {
+                addToast(t('teams.updateError') || 'Error al actualizar equipo', 'error');
+            }
+        } catch (err) {
+            addToast(t('common.error_unexpected'), 'error');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -71,21 +86,74 @@ const TeamSettingsModal: FC<TeamSettingsProps> = ({ team, onClose, onSaved, chur
             position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
             backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-            <Card style={{ maxWidth: '600px', width: '90%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', padding: '24px' }}>
-                <h2 className="text-h2" style={{ marginBottom: '8px' }}>{t('teams.configTitle', { name: team.name })}</h2>
-                <p className="text-body" style={{ color: 'gray', marginBottom: '20px' }}>{t('teams.configDesc')}</p>
+            <Card style={{ maxWidth: '700px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: '24px', position: 'relative' }}>
+                <header style={{ marginBottom: '20px' }}>
+                    <h2 className="text-h2">{t('teams.configTitle', { name: team.name })}</h2>
+                    <p className="text-body" style={{ color: 'gray' }}>{t('teams.teamInfo')}</p>
+                </header>
 
-                {loading ? (
-                    <div className="flex-center" style={{ flex: 1 }}><div className="spinner" /></div>
-                ) : (
-                    <div style={{ flex: 1, overflowY: 'auto', marginBottom: '24px', padding: '4px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px' }}>
+                    {/* Team Details Section */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                        <div>
+                            <label className="text-overline">{t('teams.nameLabel')}</label>
+                            <input
+                                type="text"
+                                className="styled-input"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                style={{ width: '100%', marginTop: '4px' }}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-overline">{t('teams.selectLeader')}</label>
+                            <select
+                                className="styled-input"
+                                value={leaderId || ''}
+                                onChange={e => setLeaderId(e.target.value ? parseInt(e.target.value) : null)}
+                                style={{ width: '100%', marginTop: '4px' }}
+                            >
+                                <option value="">{t('common.no')}</option>
+                                {allMembers.map(m => (
+                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <label className="text-overline">{t('teams.descLabel')}</label>
+                            <textarea
+                                className="styled-input"
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                style={{ width: '100%', marginTop: '4px', height: '60px', resize: 'none' }}
+                            />
+                        </div>
+                    </div>
+
+                    <hr style={{ border: 'none', borderTop: '1px solid var(--color-border-subtle)', marginBottom: '24px' }} />
+
+                    {/* Member Assignment Section */}
+                    <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 className="text-h3" style={{ fontSize: '18px' }}>{t('teams.memberManagement')}</h3>
+                        <Button
+                            variant="ghost"
+                            label={t('teams.inviteMembers')}
+                            icon="person_add"
+                            onClick={() => navigate('/mainhub/people/invite' + (churchId || team.church_id ? `?church_id=${churchId || team.church_id}` : ''))}
+                            style={{ fontSize: '13px' }}
+                        />
+                    </div>
+
+                    {loading ? (
+                        <div className="flex-center" style={{ height: '150px' }}><div className="spinner" /></div>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
                             {allMembers.map(m => (
                                 <div
                                     key={m.id}
                                     onClick={() => toggleMember(m.id)}
                                     style={{
-                                        display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', borderRadius: '12px',
+                                        display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '10px',
                                         border: '1px solid var(--color-border-subtle)', cursor: 'pointer',
                                         backgroundColor: selectedMembers.includes(m.id) ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
                                         borderColor: selectedMembers.includes(m.id) ? 'var(--color-brand-blue)' : 'var(--color-border-subtle)',
@@ -93,20 +161,20 @@ const TeamSettingsModal: FC<TeamSettingsProps> = ({ team, onClose, onSaved, chur
                                     }}
                                 >
                                     <div style={{
-                                        width: '12px', height: '12px', borderRadius: '50%',
+                                        width: '10px', height: '10px', borderRadius: '50%',
                                         border: '2px solid var(--color-brand-blue)',
                                         backgroundColor: selectedMembers.includes(m.id) ? 'var(--color-brand-blue)' : 'transparent'
                                     }} />
-                                    <span className="text-body" style={{ fontSize: '14px', fontWeight: selectedMembers.includes(m.id) ? 600 : 400 }}>{m.name}</span>
+                                    <span className="text-body" style={{ fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
                                 </div>
                             ))}
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--color-border-subtle)' }}>
                     <Button variant="ghost" label={t('common.cancel')} onClick={onClose} disabled={saving} />
-                    <Button variant="primary" label={saving ? t('teams.saving') : t('teams.saveAction')} onClick={handleSave} disabled={saving || loading} />
+                    <Button variant="primary" label={saving ? t('teams.saving') : t('common.saveChanges')} onClick={handleSave} disabled={saving || loading} />
                 </div>
             </Card>
         </div>
@@ -201,7 +269,8 @@ export const TeamsList: FC = () => {
 
     const handleAddTeam = async () => {
         if (!newTeamName.trim()) return;
-        const success = await peopleService.addGroup(newTeamName, newTeamLeader, null, churchId || undefined);
+        // MUST use finalChurchId to ensure context for pastors/admins as well as superadmins
+        const success = await peopleService.addGroup(newTeamName, newTeamLeader || null, null, finalChurchId || undefined);
         if (success) {
             addToast(t('teams.addSuccess') || 'Equipo creado correctamente', 'success');
             setShowAddModal(false);
@@ -215,7 +284,7 @@ export const TeamsList: FC = () => {
 
     const handleDeleteTeam = async (id: number) => {
         if (!window.confirm(t('teams.deleteConfirm'))) return;
-        const success = await peopleService.deleteGroup(id, churchId || undefined);
+        const success = await peopleService.deleteGroup(id, finalChurchId || undefined);
         if (success) {
             addToast(t('teams.deleteSuccess') || 'Equipo eliminado correctamente', 'success');
             loadGroups();
@@ -246,7 +315,7 @@ export const TeamsList: FC = () => {
                         variant="primary"
                         icon="person_add"
                         label={t('teams.inviteMember')}
-                        onClick={() => navigate('/mainhub/people/invite')}
+                        onClick={() => navigate(`/mainhub/people/invite?church_id=${finalChurchId}`)}
                     />
                 )}
             </header>
@@ -399,7 +468,7 @@ export const TeamsList: FC = () => {
             {configTeam && (
                 <TeamSettingsModal
                     team={configTeam}
-                    churchId={churchId || undefined}
+                    churchId={finalChurchId || undefined}
                     onClose={() => setConfigTeam(null)}
                     onSaved={() => {
                         setConfigTeam(null);

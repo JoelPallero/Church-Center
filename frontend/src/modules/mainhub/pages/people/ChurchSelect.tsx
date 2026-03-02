@@ -54,7 +54,8 @@ export const ChurchSelect: FC = () => {
         if (target === 'teams') path = `/mainhub/teams?church_id=${churchId}`;
         else if (target === 'areas') path = `/mainhub/setup-areas?church_id=${churchId}`;
         else if (target === 'songs') path = `/worship/songs?church_id=${churchId}`;
-        // Add more targets as needed
+        else if (target === 'reports') path = `/mainhub/reports?church_id=${churchId}`;
+        else if (target === 'ushers') path = `/mainhub/ushers?church_id=${churchId}`;
 
         navigate(path);
     };

@@ -12,8 +12,8 @@ export interface BootstrapData {
 }
 
 export const AuthService = {
-    async login(email: string, password: string): Promise<{ success: boolean; access_token: string; expires_in: number; error?: string }> {
-        const response = await api.post('/auth/login', { email, password });
+    async login(email: string, password: string, recaptchaToken?: string): Promise<{ success: boolean; access_token: string; expires_in: number; error?: string }> {
+        const response = await api.post('/auth/login', { email, password, recaptchaToken });
         if (response.data.success && response.data.access_token) {
             localStorage.setItem('auth_token', response.data.access_token);
         }

@@ -12,5 +12,11 @@
 ## Horario
 - [x] La hora debe ser la de Buenos Aires.
 - [x] El menu de perfil está por abajo del blur.
-- [] textos con nombre clave interno de código (e.g. auth.forgotPassword) en lugar de texto plano.
+- [x] textos con nombre clave interno de código (e.g. auth.forgotPassword) en lugar de texto plano.
 - [x] En el header figura branding contextual (Ministry Hub, SM Hub, Church Center) según la ruta y el rol.
+- [ ] El sistemas de notificaciones que se pueda editar el texto del mail y usar hasta 3 plantillas diferentes para los diferentes tipos de notificaciones.
+- [x] Añadir por defecto 2 áreas: Ujieres y Alabanza, cuando se crea una iglesia nueva.
+- [x] Para los ujieres: Implementado sistema de conteo y visitantes (Frontend + Backend).
+- [x] La página de reportes no funciona: Corregido error de redirección ybackend implementado.
+- [ ] 
+- [ ] 

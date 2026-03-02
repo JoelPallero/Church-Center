@@ -257,6 +257,16 @@ export const peopleService = {
             console.error('Failed to update member profile', error);
             return false;
         }
+    },
+
+    updateGroup: async (id: number, data: any): Promise<boolean> => {
+        try {
+            await api.put(`/teams/${id}`, data);
+            return true;
+        } catch (error) {
+            console.error('Failed to update group', error);
+            return false;
+        }
     }
 
 };

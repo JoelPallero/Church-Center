@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 40px 20px;
+            color: #374151;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .icon-circle {
+            width: 64px;
+            height: 64px;
+            background: #ebf2ff;
+            border-radius: 50%;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .church-icon {
+            color: #2563eb;
+            font-size: 32px;
+        }
+
+        .church-name {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .message {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #4b5563;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        .role-box {
+            background: #f5f8ff;
+            border-left: 4px solid #2563eb;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        .role-label {
+            color: #2563eb;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .role-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .button {
+            display: inline-block;
+            background: #2563eb;
+            color: white !important;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 700;
+            margin: 32px 0;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: #9ca3af;
+            font-style: italic;
+            margin-bottom: 40px;
+        }
+
+        .divider {
+            border-top: 1px solid #e5e7eb;
+            margin: 0 0 24px;
+        }
+
+        .copyright {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+
+        .links {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+
+        .links a {
+            color: #4b5563;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="icon-circle">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L4 7V12C4 17 8 21 12 22C16 21 20 17 20 12V7L12 2Z" fill="#2563eb" />
+                <path d="M12 6V11M12 11V16M12 11H9M12 11H15" stroke="white" stroke-width="2" stroke-linecap="round" />
+            </svg>
+        </div>
+        <div class="church-name">{{CHURCH_NAME}}</div>
+        <h1>Has sido invitado al equipo</h1>
+        <div class="greeting">Hola <strong>{{USER_NAME}}</strong>,</div>
+        <div class="message">
+            Nos complace informarte que has sido invitado a formar parte del equipo administrativo en la plataforma de
+            gestión de la iglesia.
+        </div>
+        <div class="role-box">
+            <div class="role-label">ROL ASIGNADO</div>
+            <div class="role-name">{{ROLE_NAME}}</div>
+        </div>
+        <div class="message">
+            Como {{ROLE_LOWER}}, tendrás acceso a las herramientas de gestión de eventos, grupos pequeños y reportes de
+            asistencia.
+            <br><br>
+            Haz clic en el botón de abajo para configurar tu cuenta y comenzar tu servicio con nosotros.
+        </div>
+        <a href="{{INVITE_URL}}" class="button">Aceptar Invitación &nbsp; ↗</a>
+        <div class="footer-text">El enlace expirará en 48 horas.</div>
+
+        <div class="divider"></div>
+        <div class="copyright">© 2026 Church Center. Todos los derechos reservados.</div>
+        <div class="links">
+            <a href="#">Soporte</a>
+            <a href="#">Privacidad</a>
+            <a href="#">Preferencias</a>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -18,7 +18,7 @@ export const InvitePerson: FC = () => {
     const [email, setEmail] = useState('');
     const [bulkEmails, setBulkEmails] = useState('');
     const [isBulk, setIsBulk] = useState(false);
-    const [roleId, setRoleId] = useState(4); // Default to member
+    const [roleId, setRoleId] = useState(5); // Default to member (ID 5)
     const [isLoading, setIsLoading] = useState(false);
     const [loadingChurches, setLoadingChurches] = useState(false);
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
@@ -89,7 +89,7 @@ export const InvitePerson: FC = () => {
                     setStatus({ type: 'success', message: t('people.invite_success') || 'Invitación enviada correctamente.' });
                     setName('');
                     setEmail('');
-                    setRoleId(4);
+                    setRoleId(5);
                 } else {
                     setStatus({ type: 'error', message: t('people.invite_error') || 'Error al enviar la invitación.' });
                 }
@@ -105,11 +105,11 @@ export const InvitePerson: FC = () => {
         <div>
             <header style={{ marginBottom: '24px' }}>
                 <h1 className="text-h1">{t('people.invite')}</h1>
-                <p className="text-body" style={{ color: '#6B7280' }}>{t('people.invite_description') || 'Envía una invitación por correo para unirse al equipo.'}</p>
+                <p className="text-body" style={{ color: 'var(--color-ui-text-soft)' }}>{t('people.invite_description') || 'Envía una invitación por correo para unirse al equipo.'}</p>
             </header>
 
             <Card style={{ padding: '24px', maxWidth: '500px' }}>
-                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', backgroundColor: 'var(--color-ui-bg)', padding: '4px', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', backgroundColor: 'var(--color-ui-surface)', padding: '4px', borderRadius: '12px' }}>
                     <button
                         onClick={() => setIsBulk(false)}
                         style={{
@@ -119,10 +119,10 @@ export const InvitePerson: FC = () => {
                             borderRadius: '8px',
                             cursor: 'pointer',
                             fontSize: '14px',
-                            fontWeight: !isBulk ? '600' : '400',
-                            backgroundColor: !isBulk ? 'white' : 'transparent',
+                            fontWeight: !isBulk ? '600' : '500',
+                            backgroundColor: !isBulk ? 'var(--color-card-bg)' : 'transparent',
                             boxShadow: !isBulk ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
-                            color: !isBulk ? 'var(--color-text-primary)' : '#6B7280',
+                            color: !isBulk ? 'var(--color-brand-blue)' : 'var(--color-ui-text-soft)',
                             transition: 'all 0.2s'
                         }}
                     >
@@ -137,10 +137,10 @@ export const InvitePerson: FC = () => {
                             borderRadius: '8px',
                             cursor: 'pointer',
                             fontSize: '14px',
-                            fontWeight: isBulk ? '600' : '400',
-                            backgroundColor: isBulk ? 'white' : 'transparent',
+                            fontWeight: isBulk ? '600' : '500',
+                            backgroundColor: isBulk ? 'var(--color-card-bg)' : 'transparent',
                             boxShadow: isBulk ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
-                            color: isBulk ? 'var(--color-text-primary)' : '#6B7280',
+                            color: isBulk ? 'var(--color-brand-blue)' : 'var(--color-ui-text-soft)',
                             transition: 'all 0.2s'
                         }}
                     >
@@ -149,9 +149,9 @@ export const InvitePerson: FC = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    {isMaster && (
+                    {isMaster && !urlChurchId && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label className="text-overline" style={{ color: '#6B7280' }}>
+                            <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>
                                 {t('common.church') || 'Iglesia'} {loadingChurches && <span style={{ fontSize: '10px', marginLeft: '4px', fontStyle: 'italic' }}>(Cargando...)</span>}
                             </label>
                             <select
@@ -185,7 +185,7 @@ export const InvitePerson: FC = () => {
                     {!isBulk ? (
                         <>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label className="text-overline" style={{ color: '#6B7280' }}>{t('auth.name')}</label>
+                                <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>{t('auth.name')}</label>
                                 <input
                                     type="text"
                                     placeholder={t('auth.namePlaceholder')}
@@ -197,7 +197,7 @@ export const InvitePerson: FC = () => {
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label className="text-overline" style={{ color: '#6B7280' }}>{t('auth.email')}</label>
+                                <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>{t('auth.email')}</label>
                                 <input
                                     type="email"
                                     placeholder={t('auth.emailPlaceholder')}
@@ -209,7 +209,7 @@ export const InvitePerson: FC = () => {
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label className="text-overline" style={{ color: '#6B7280' }}>{t('people.role')}</label>
+                                <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>{t('people.role')}</label>
                                 <select
                                     value={roleId}
                                     onChange={(e) => setRoleId(parseInt(e.target.value))}
@@ -217,15 +217,15 @@ export const InvitePerson: FC = () => {
                                 >
                                     <option value={2}>{t('people.roles.pastor')}</option>
                                     <option value={3}>{t('people.roles.leader')}</option>
-                                    <option value={4}>{t('people.roles.member')}</option>
-                                    <option value={5}>{t('people.roles.coordinator')}</option>
+                                    <option value={5}>{t('people.roles.member')}</option>
+                                    <option value={4}>{t('people.roles.coordinator')}</option>
                                     <option value={6}>{t('people.roles.multimedia') || 'Multimedia'}</option>
                                 </select>
                             </div>
                         </>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <label className="text-overline" style={{ color: '#6B7280' }}>{t('auth.emails') || 'Correos electrónicos'}</label>
+                            <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>{t('auth.emails') || 'Correos electrónicos'}</label>
                             <textarea
                                 placeholder={t('auth.emailsPlaceholder') || "Ingresa los correos separados por coma o uno por línea..."}
                                 value={bulkEmails}
@@ -235,7 +235,7 @@ export const InvitePerson: FC = () => {
                                 className="w-full"
                                 style={{ resize: 'vertical' }}
                             />
-                            <p className="text-overline" style={{ color: '#9CA3AF', marginTop: '4px' }}>
+                            <p className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginTop: '4px', opacity: 0.8 }}>
                                 {t('people.bulk_invite_notice') || 'Las invitaciones masivas se enviarán con el rol de "Miembro" por defecto.'}
                             </p>
                         </div>

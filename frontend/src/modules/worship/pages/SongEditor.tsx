@@ -42,8 +42,8 @@ export const SongEditor: FC = () => {
     const finalChurchId = churchIdFromUrl || user?.churchId;
 
     useEffect(() => {
-        // Redirigir si no hay contexto de iglesia en absoluto
-        if (!finalChurchId && (isPastor || isMaster)) {
+        // Redirect if no church context and NOT a Master user (who can create global songs)
+        if (!finalChurchId && !isMaster && isPastor) {
             navigate('/mainhub/select-church/songs');
             return;
         }

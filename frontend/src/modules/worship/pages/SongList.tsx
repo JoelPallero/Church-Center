@@ -38,9 +38,8 @@ export const SongList: FC = () => {
 
     useEffect(() => {
         // Redirect if no church context at all and user is Pastor (multitenant context)
-        // Master users bypass selection and see global songs
-        // If user has a church in their profile, use it as fallback before redirecting
-        if (!finalChurchId && isPastor && !isMaster) {
+        // Master users and Superadmins bypass selection and see global songs
+        if (!finalChurchId && !isMaster && isPastor) {
             navigate('/mainhub/select-church/songs');
             return;
         }
@@ -57,7 +56,8 @@ export const SongList: FC = () => {
     const loadSongs = async () => {
         try {
             setLoading(true);
-            const data = await songService.getAll(finalChurchId || undefined);
+            // Master users always see the global library regardless of church context
+            const data = await songService.getAll(isMaster ? undefined : (finalChurchId || undefined));
             setSongs(data);
         } finally {
             setLoading(false);

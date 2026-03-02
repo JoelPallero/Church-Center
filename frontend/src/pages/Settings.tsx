@@ -13,9 +13,11 @@ export const Settings: FC = () => {
     const { theme, setTheme } = useTheme();
     const navigate = useNavigate();
     const { addToast } = useToast();
+    const { hasRole } = useAuth();
     const [isSaving, setIsSaving] = useState(false);
 
     const isMaster = user?.role?.name === 'master';
+    const canCustomizeInvitations = isMaster || hasRole('pastor') || hasRole('leader') || hasRole('coordinator');
 
     const handleLanguageChange = async (lang: string) => {
         setIsSaving(true);
@@ -180,6 +182,19 @@ export const Settings: FC = () => {
                         onClick={() => navigate('/privacy')}
                     />
                 </section>
+
+                {/* Church Administration Section */}
+                {canCustomizeInvitations && (
+                    <section>
+                        <h3 className="text-overline" style={{ color: 'var(--color-brand-blue)', marginBottom: '12px', letterSpacing: '1px' }}>Configuración de Iglesia</h3>
+                        <SettingRow
+                            icon="mail_outline"
+                            title="Personalización de Invitaciones"
+                            subtitle="Configura los textos y plantillas de los correos"
+                            onClick={() => navigate('/settings/invitations')}
+                        />
+                    </section>
+                )}
 
                 {/* Admin Section */}
                 {isMaster && (

@@ -46,26 +46,51 @@ export const ActivityFeed: FC = () => {
         };
 
         let eventSource: EventSource | null = null;
+        let retryCount = 0;
 
         const startStream = (lastId: number) => {
             const token = localStorage.getItem('auth_token');
             if (!token) return;
 
+            // Close existing if any
+            if (eventSource) eventSource.close();
+
             const churchId = searchParams.get('church_id') || user?.churchId;
             const url = `/api/activities/stream?token=${encodeURIComponent(token)}&lastId=${lastId}${churchId ? `&church_id=${churchId}` : ''}`;
             eventSource = new EventSource(url);
 
+            eventSource.onopen = () => {
+                retryCount = 0; // Reset on success
+            };
+
             eventSource.onmessage = (event) => {
-                const newActivity = JSON.parse(event.data);
-                setActivities(prev => {
-                    if (prev.find(a => a.id === newActivity.id)) return prev;
-                    return [newActivity, ...prev].slice(0, 30);
-                });
+                try {
+                    const newActivity = JSON.parse(event.data);
+                    // Update lastId for subsequent reconnections (if the component re-renders and re-calls startStream)
+                    // Note: ActivityFeed currently doesn't persist lastId in a way that handles re-renders well, 
+                    // but the backend handles the stream loop.
+                    setActivities(prev => {
+                        if (prev.find(a => a.id === newActivity.id)) return prev;
+                        return [newActivity, ...prev].slice(0, 30);
+                    });
+                } catch (e) {
+                    // Ignore ping/malformed
+                }
             };
 
             eventSource.onerror = (err) => {
-                console.error('SSE Error:', err);
+                console.error('SSE Error, reconnecting...', err);
                 eventSource?.close();
+
+                // Exponential backoff: 3s, 6s, 12s... up to 30s
+                const delay = Math.min(3000 * Math.pow(2, retryCount), 30000);
+                retryCount++;
+
+                setTimeout(() => {
+                    // Use closure to get current activities if needed, 
+                    // or just restart from the latest we have in state
+                    startStream(activities.length > 0 ? activities[0].id : 0);
+                }, delay);
             };
         };
 

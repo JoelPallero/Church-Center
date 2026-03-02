@@ -29,12 +29,12 @@ export const AcceptInvite: FC = () => {
 
     const verifyToken = async () => {
         try {
-            const response = await fetch(`/api/accept_invite.php?token=${token}`);
+            const response = await fetch(`/api/auth/verify-invite?token=${token}`);
             const data = await response.json();
             if (data.success) {
                 setInvitation(data.invitation);
             } else {
-                setError(data.message || 'La invitación no es válida.');
+                setError(data.error || 'La invitación no es válida.');
             }
         } catch (err) {
             setError('Error al verificar la invitación.');
@@ -58,7 +58,7 @@ export const AcceptInvite: FC = () => {
         setError(null);
 
         try {
-            const response = await fetch('/api/accept_invite.php', {
+            const response = await fetch('/api/auth/accept-invite', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, password })
@@ -66,11 +66,13 @@ export const AcceptInvite: FC = () => {
             const data = await response.json();
             if (data.success) {
                 // Auto-login: Store token and user
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('auth_token', data.token);
 
                 setSuccess(true);
-                setTimeout(() => navigate('/join-teams'), 1500);
+                // The App will reload bootstrap on the next page since we changed localStorage
+                setTimeout(() => {
+                    window.location.href = '/join-teams';
+                }, 1500);
             } else {
                 setError(data.error || 'No se pudo completar el registro.');
             }
@@ -96,9 +98,8 @@ export const AcceptInvite: FC = () => {
                     <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)', fontSize: '48px', marginBottom: '16px' }}>check_circle</span>
                     <h1 className="text-h1">¡Registro Completado!</h1>
                     <p className="text-body" style={{ color: '#9CA3AF', marginTop: '16px' }}>
-                        Tu cuenta ha sido activada con éxito. Serás redirigido al inicio de sesión en unos segundos...
+                        Tu cuenta ha sido activada con éxito. Serás redirigido en unos segundos...
                     </p>
-                    <Button label="Ir al Login ahora" onClick={() => navigate('/login')} style={{ marginTop: '24px', width: '100%' }} />
                 </Card>
             </div>
         );
@@ -115,56 +116,61 @@ export const AcceptInvite: FC = () => {
                         <span className="material-symbols-outlined" style={{ color: 'white' }}>church</span>
                     </div>
                     <h1 className="text-h1">{invitation?.church || 'Bienvenido'}</h1>
-                    <p className="text-body" style={{ color: '#9CA3AF', marginTop: '8px' }}>
-                        Hola <strong>{invitation?.name}</strong>, configurá tu acceso para comenzar.
-                    </p>
+                    {invitation && (
+                        <p className="text-body" style={{ color: '#9CA3AF', marginTop: '8px' }}>
+                            Hola <strong>{invitation.name}</strong>, configurá tu acceso para comenzar.
+                        </p>
+                    )}
                 </header>
 
-                {error && (
-                    <div style={{
-                        padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        color: '#EF4444', marginBottom: '24px', fontSize: '14px', textAlign: 'center'
-                    }}>
-                        {error}
+                {error ? (
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{
+                            padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            color: '#EF4444', marginBottom: '24px', fontSize: '14px'
+                        }}>
+                            {error}
+                        </div>
+                        <Button label="Volver al Inicio" onClick={() => navigate('/login')} variant="ghost" style={{ width: '100%' }} />
                     </div>
+                ) : (
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '8px', color: '#6B7280' }}>NUEVA CONTRASEÑA</label>
+                            <input
+                                type="password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                style={{
+                                    width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border-subtle)',
+                                    backgroundColor: 'var(--color-ui-surface)', color: 'var(--color-ui-text)', outline: 'none'
+                                }}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '8px', color: '#6B7280' }}>CONFIRMAR CONTRASEÑA</label>
+                            <input
+                                type="password"
+                                required
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                style={{
+                                    width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border-subtle)',
+                                    backgroundColor: 'var(--color-ui-surface)', color: 'var(--color-ui-text)', outline: 'none'
+                                }}
+                            />
+                        </div>
+
+                        <Button
+                            type="submit"
+                            variant="primary"
+                            label={isSubmitting ? "Completando..." : "Activar Cuenta"}
+                            disabled={isSubmitting}
+                            style={{ marginTop: '12px', padding: '14px' }}
+                        />
+                    </form>
                 )}
-
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div>
-                        <label className="text-overline" style={{ display: 'block', marginBottom: '8px', color: '#6B7280' }}>NUEVA CONTRASEÑA</label>
-                        <input
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            style={{
-                                width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border-subtle)',
-                                backgroundColor: 'var(--color-ui-surface)', color: 'var(--color-ui-text)', outline: 'none'
-                            }}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-overline" style={{ display: 'block', marginBottom: '8px', color: '#6B7280' }}>CONFIRMAR CONTRASEÑA</label>
-                        <input
-                            type="password"
-                            required
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            style={{
-                                width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--color-border-subtle)',
-                                backgroundColor: 'var(--color-ui-surface)', color: 'var(--color-ui-text)', outline: 'none'
-                            }}
-                        />
-                    </div>
-
-                    <Button
-                        type="submit"
-                        variant="primary"
-                        label={isSubmitting ? "Completando..." : "Activar Cuenta"}
-                        disabled={isSubmitting}
-                        style={{ marginTop: '12px', padding: '14px' }}
-                    />
-                </form>
 
                 <footer style={{ marginTop: '32px', textAlign: 'center' }}>
                     <p className="text-overline" style={{ color: '#4B5563' }}>

@@ -28,10 +28,10 @@ export const BottomNav: FC = () => {
     } else if (isPastor) {
         // Pastor: Reportes, Dashboard, Eventos, Areas, Equipos
         navItems = [
+            { path: '/mainhub/ushers', icon: 'how_to_reg', label: t('nav.ushers') },
             { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports') },
             { path: '/', icon: 'dashboard', label: t('nav.dashboard') },
             { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), isCentral: true },
-            { path: '/mainhub/areas', icon: 'location_city', label: t('nav.areas') },
             { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams') }
         ];
     } else if (isLeader) {

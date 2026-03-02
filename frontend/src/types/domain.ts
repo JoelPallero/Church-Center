@@ -58,6 +58,7 @@ export interface Song {
     tempo?: number;
     timeSignature: string; // "4/4", "6/8"
     content: string; // ChordPro format: "Amazing [D]Grace how [G]sweet..."
+    churchName?: string;
 
     // Calculated/Cached fields for quick access
     lyricsPreview?: string;

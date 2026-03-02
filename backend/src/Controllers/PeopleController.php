@@ -27,6 +27,34 @@ class PeopleController
                 $this->approve($memberId);
                 return;
             }
+        } elseif ($method === 'PUT') {
+            $pathParts = explode('/', $action);
+            $targetId = is_numeric($pathParts[0]) ? (int) $pathParts[0] : null;
+            $subAction = $pathParts[1] ?? '';
+
+            if ($targetId) {
+                if ($subAction === 'role') {
+                    PermissionMiddleware::require($memberId, 'users.approve');
+                    $this->updateRole($targetId);
+                } elseif ($subAction === 'status') {
+                    PermissionMiddleware::require($memberId, 'users.approve');
+                    $this->updateStatus($targetId);
+                } elseif ($subAction === 'profile') {
+                    $this->updateProfile($memberId, $targetId);
+                }
+                return;
+            }
+        } elseif ($method === 'DELETE') {
+            if ($action === 'invite') {
+                PermissionMiddleware::require($memberId, 'users.invite');
+                $this->deleteInvitation();
+                return;
+            }
+            if (is_numeric($action)) {
+                PermissionMiddleware::require($memberId, 'users.delete');
+                $this->deleteMember((int) $action);
+                return;
+            }
         }
 
         PermissionMiddleware::require($memberId, 'church.read');
@@ -68,17 +96,26 @@ class PeopleController
             }
 
             $name = explode('@', $email)[0];
+            $token = bin2hex(random_bytes(32));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
             $newId = \App\Repositories\UserRepo::createMember([
                 'name' => ucfirst($name),
                 'email' => $email,
                 'church_id' => $churchId,
-                'status' => 'pending'
+                'status' => 'pending',
+                'invite_token' => $token,
+                'token_expires_at' => $expiresAt
             ]);
 
             if ($newId) {
-                \App\Repositories\UserRepo::assignRole($newId, $churchId, 4, 'church_center'); // 4 = Member
+                \App\Repositories\UserRepo::assignRole($newId, $churchId, 5, 'church_center'); // 5 = Member
                 $success++;
                 \App\Repositories\ActivityRepo::log($churchId, $memberId, 'invited', 'member', $newId, ['name' => $name]);
+
+                // Send email
+                $church = \App\Repositories\ChurchRepo::findById($churchId);
+                \App\Helpers\MailHelper::sendInvitation($email, ucfirst($name), 'Miembro', $church['name'] ?? 'Tu Iglesia', $churchId, $token);
             } else {
                 $failed++;
             }
@@ -114,25 +151,44 @@ class PeopleController
                 Response::error("Member already exists with this email", 400);
             }
 
+            $token = bin2hex(random_bytes(32));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+48 hours'));
+
             $newMemberId = \App\Repositories\UserRepo::createMember([
                 'name' => $name,
                 'email' => $email,
                 'church_id' => $churchId,
-                'status' => 'pending'
+                'status' => 'pending',
+                'invite_token' => $token,
+                'token_expires_at' => $expiresAt
             ]);
 
             if ($newMemberId) {
+                $roleName = 'Miembro';
                 if ($roleId) {
                     \App\Repositories\UserRepo::assignRole($newMemberId, $churchId, $roleId, 'church_center');
+
+                    // Fetch role display name for email
+                    $stmt = $db->prepare("SELECT display_name FROM roles WHERE id = ?");
+                    $stmt->execute([(int) $roleId]);
+                    $roleRes = $stmt->fetch();
+                    if ($roleRes)
+                        $roleName = $roleRes['display_name'];
                 }
+
                 \App\Repositories\ActivityRepo::log($churchId, $memberId, 'invited', 'member', $newMemberId, ['name' => $name]);
+
+                // Send email
+                $church = \App\Repositories\ChurchRepo::findById($churchId);
+                \App\Helpers\MailHelper::sendInvitation($email, $name, $roleName, $church['name'] ?? 'Tu Iglesia', $churchId, $token);
+
                 Response::json(['success' => true, 'message' => 'Member invited successfully', 'id' => $newMemberId]);
             } else {
                 Response::error("Failed to create member record", 500);
             }
         } catch (\Exception $e) {
             \App\Helpers\Logger::error("PeopleController::invite error: " . $e->getMessage());
-            Response::error("Failed to invite member: " . $e->getMessage(), 500);
+            Response::error("Error al invitar al integrante. Intente nuevamente.", 500);
         }
     }
 
@@ -163,5 +219,60 @@ class PeopleController
         \App\Repositories\ActivityRepo::log($member['church_id'], $memberId, 'approved', 'member', $targetMemberId, ['name' => $member['name']]);
 
         Response::json(['success' => true, 'message' => 'Member approved successfully']);
+    }
+
+    private function updateRole($targetId)
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $roleId = $data['roleId'] ?? $data['role_id'] ?? null;
+        if (!$roleId)
+            Response::error("Role ID required", 400);
+
+        $success = \App\Repositories\UserRepo::updateMemberRole($targetId, $roleId);
+        Response::json(['success' => $success]);
+    }
+
+    private function updateStatus($targetId)
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $statusId = $data['statusId'] ?? $data['status_id'] ?? null;
+        if (!$statusId)
+            Response::error("Status ID required", 400);
+
+        $statusMap = [1 => 'active', 2 => 'inactive', 3 => 'pending'];
+        $statusStr = $statusMap[$statusId] ?? 'inactive';
+
+        $success = \App\Repositories\UserRepo::updateStatus($targetId, $statusStr);
+        Response::json(['success' => $success]);
+    }
+
+    private function updateProfile($memberId, $targetId)
+    {
+        // Security: only self or admin
+        $isSuper = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+        if (!$isSuper && $memberId != $targetId) {
+            Response::error("Unauthorized", 403);
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $success = \App\Repositories\UserRepo::updateProfile($targetId, $data);
+        Response::json(['success' => $success]);
+    }
+
+    private function deleteInvitation()
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $email = $data['email'] ?? null;
+        if (!$email)
+            Response::error("Email required", 400);
+
+        $success = \App\Repositories\UserRepo::deleteInvitation($email);
+        Response::json(['success' => $success]);
+    }
+
+    private function deleteMember($targetId)
+    {
+        $success = \App\Repositories\UserRepo::hardDelete($targetId);
+        Response::json(['success' => $success]);
     }
 }

@@ -95,6 +95,13 @@ option {
   color: var(--color-ui-text);
 }
 
+.text-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-ui-text);
+}
+
 .text-body {
   font-size: 14px;
   font-weight: 400;
@@ -157,6 +164,70 @@ option {
   background-color: var(--color-brand-blue);
   color: white;
   box-shadow: var(--shadow-primary);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+  background-color: #3559bd;
+}
+
+.btn-secondary {
+  background-color: var(--color-ui-surface);
+  color: var(--color-ui-text);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(128, 128, 128, 0.1);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
+.btn-danger {
+  background-color: var(--color-danger-red);
+  color: white;
+}
+
+.btn-danger:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-ui-text);
+}
+
+.btn-ghost:hover {
+  background-color: rgba(128, 128, 128, 0.08);
+}
+
+.btn-ghost:active {
+  transform: scale(0.96);
+}
+
+.btn-neutral {
+  background-color: var(--color-ui-bg);
+  color: var(--color-ui-text);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s, background-color 0.2s;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.btn-icon:active {
+  transform: scale(0.92);
 }
 
 /* Animations */
@@ -226,6 +297,11 @@ option {
 
 .dropdown-item:hover {
   background-color: rgba(128, 128, 128, 0.08);
+}
+
+/* Hide reCAPTCHA badge */
+.grecaptcha-badge {
+  visibility: hidden;
 }
 
 .dropdown-divider {

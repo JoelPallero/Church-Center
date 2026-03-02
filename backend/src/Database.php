@@ -9,18 +9,23 @@ use App\Helpers\Logger;
 class Database
 {
     private static $instances = [];
+    private static $cachedEnv = null;
     private $conn;
 
     private function __construct($configKey = 'main')
     {
-        $configPath = APP_ROOT . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'database.env';
+        if (self::$cachedEnv === null) {
+            $configPath = APP_ROOT . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'database.env';
 
-        if (!file_exists($configPath)) {
-            Logger::error("Database Configuration file not found at: " . $configPath);
-            throw new \Exception("Database configuration missing.");
+            if (!file_exists($configPath)) {
+                Logger::error("Database Configuration file not found at: " . $configPath);
+                throw new \Exception("Database configuration missing.");
+            }
+
+            self::$cachedEnv = parse_ini_file($configPath);
         }
 
-        $env = parse_ini_file($configPath);
+        $env = self::$cachedEnv;
 
         $host = '';
         $user = '';

@@ -86,10 +86,10 @@ export const PeopleList: FC = () => {
 
         if (isInvitation) {
             if (!target.email) return;
-            if (!window.confirm(t('people.confirmDeleteInvitation', { name: target.name }) || `¿Estás seguro de que deseas eliminar la invitación de ${target.name}?`)) return;
+            if (!window.confirm(t('people.moderation.confirmDeleteInvitation', { name: target.name }) || `¿Estás seguro de que deseas eliminar la invitación de ${target.name}?`)) return;
             const success = await peopleService.deleteInvitation(target.email);
             if (success) {
-                addToast(t('people.invitationDeleted') || 'Invitación eliminada.', 'success');
+                addToast(t('people.moderation.invitationDeleted') || 'Invitación eliminada.', 'success');
                 loadUsers();
             } else {
                 addToast(t('common.failed') || 'Error al eliminar la invitación.', 'error');
@@ -322,7 +322,7 @@ export const PeopleList: FC = () => {
                                         )}
                                     </div>
                                     <div>
-                                        <h3 className="text-card-title" style={{ color: 'white' }}>{item.name}</h3>
+                                        <h3 className="text-card-title">{item.name}</h3>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
                                             <p className="text-body" style={{ color: '#94A3B8', fontSize: '13px' }}>
                                                 {item.role?.displayName || t('people.roles.member')}
@@ -349,8 +349,17 @@ export const PeopleList: FC = () => {
                                                     <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#475569' }}></span>
                                                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                                         {item.areas.map((a: any) => (
-                                                            <span key={a.id} style={{ fontSize: '9px', fontWeight: 600, backgroundColor: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: '4px', color: '#94A3B8', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                                                {a.name.toUpperCase()}
+                                                            <span key={a.id} style={{
+                                                                fontSize: '9px',
+                                                                fontWeight: 700,
+                                                                backgroundColor: 'var(--color-ui-surface)',
+                                                                padding: '2px 8px',
+                                                                borderRadius: '6px',
+                                                                color: 'var(--color-ui-text-soft)',
+                                                                border: '1px solid var(--color-border-subtle)',
+                                                                textTransform: 'uppercase'
+                                                            }}>
+                                                                {a.name}
                                                             </span>
                                                         ))}
                                                     </div>

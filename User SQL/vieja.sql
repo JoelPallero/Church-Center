@@ -29,7 +29,37 @@ DROP TABLE IF EXISTS user_accounts;
 DROP TABLE IF EXISTS member;
 DROP TABLE IF EXISTS church;
 
-SET FOREIGN_KEY_CHECKS = 1;
+/* =========================================================
+   17) CONTEO DE PERSONAS (UJIERES)
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS meeting_attendance (
+  meeting_id INT NOT NULL PRIMARY KEY,
+  adults INT NOT NULL DEFAULT 0,
+  children INT NOT NULL DEFAULT 0,
+  total INT AS (adults + children) STORED,
+  updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS meeting_visitors (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  meeting_id INT NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NULL,
+  phone VARCHAR(40) NULL,
+  email VARCHAR(190) NULL,
+  is_first_time TINYINT(1) DEFAULT 1,
+  notes TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE INDEX IF NOT EXISTS idx_visitor_meeting ON meeting_visitors(meeting_id);
+
+
+
+
 
 /* =========================================================
    1) IGLESIAS
@@ -56,6 +86,8 @@ CREATE TABLE member (
   email VARCHAR(190) NOT NULL UNIQUE,
   phone VARCHAR(60) NULL,
   status ENUM('active','pending','inactive') NOT NULL DEFAULT 'active',
+  invite_token VARCHAR(100) NULL UNIQUE,
+  token_expires_at DATETIME NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE SET NULL
@@ -327,7 +359,24 @@ CREATE TABLE activity_log (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* =========================================================
-   15) SEEDS (SERVICIOS, ROLES, PERMISOS, ROLE_PERMISSIONS)
+   15) PLANTILLAS DE INVITACIÓN
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS invitation_templates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    church_id INT NOT NULL,
+    template_index INT NOT NULL, -- 0, 1, 2
+    is_active TINYINT(1) DEFAULT 0,
+    subject VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_church_template (church_id, template_index),
+    FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+/* =========================================================
+   16) SEEDS (SERVICIOS, ROLES, PERMISOS, ROLE_PERMISSIONS)
    ========================================================= */
 
 INSERT INTO services (`key`, name, description, active) VALUES

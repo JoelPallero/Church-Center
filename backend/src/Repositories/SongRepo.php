@@ -7,11 +7,22 @@ use PDO;
 
 class SongRepo
 {
-    public static function getAll()
+    public static function getAll($churchId = null)
     {
         try {
             $db = Database::getInstance('music');
-            $stmt = $db->query("SELECT * FROM songs WHERE is_active = 1 ORDER BY title ASC");
+            $sql = "SELECT * FROM songs WHERE is_active = 1";
+            $params = [];
+
+            if ($churchId !== null) {
+                // Include specific church songs AND universal songs (id 0)
+                $sql .= " AND (church_id = ? OR church_id = 0)";
+                $params[] = $churchId;
+            }
+
+            $sql .= " ORDER BY title ASC";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll();
         } catch (\Exception $e) {
             // Log the error but don't break the whole app if music db is down
@@ -124,6 +135,18 @@ class SongRepo
             return $stmt->execute([$status, $editId]);
         } catch (\Exception $e) {
             \App\Helpers\Logger::error("SongRepo::resolveEdit error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public static function delete($id)
+    {
+        try {
+            $db = Database::getInstance('music');
+            $stmt = $db->prepare("DELETE FROM songs WHERE id = ?");
+            return $stmt->execute([$id]);
+        } catch (\Exception $e) {
+            \App\Helpers\Logger::error("SongRepo::delete error: " . $e->getMessage());
             return false;
         }
     }

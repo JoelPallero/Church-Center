@@ -12,7 +12,7 @@ interface SongCardProps {
 }
 
 export const SongCard: FC<SongCardProps> = ({ song, singerIdFilter }) => {
-    const { hasPermission } = useAuth();
+    const { hasPermission, isMaster } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const churchId = searchParams.get('church_id');
@@ -47,7 +47,23 @@ export const SongCard: FC<SongCardProps> = ({ song, singerIdFilter }) => {
                         </span>
                     )}
                 </div>
-                <p className="text-overline text-muted" style={{ marginTop: '4px' }}>{song.artist}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <p className="text-overline text-muted">{song.artist}</p>
+                    {isMaster && song.churchName && (
+                        <div style={{
+                            fontSize: '10px',
+                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                            color: 'var(--color-brand-blue)',
+                            padding: '1px 6px',
+                            borderRadius: '10px',
+                            fontWeight: 600,
+                            letterSpacing: '0.02em',
+                            textTransform: 'uppercase'
+                        }}>
+                            {song.churchName}
+                        </div>
+                    )}
+                </div>
                 {song.memberKeys && song.memberKeys.length > 0 && (
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
                         {song.memberKeys.map((mk, idx) => (

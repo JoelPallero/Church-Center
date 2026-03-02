@@ -28,12 +28,31 @@ export const Login: FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            await login(email, password);
+            // Skip reCAPTCHA for now due to 401/403 errors
+            const recaptchaToken = '';
+            /*
+            const recaptchaToken = await new Promise<string>((resolve) => {
+                if (!(window as any).grecaptcha) {
+                    console.error('reCAPTCHA not loaded');
+                    resolve('');
+                    return;
+                }
+                (window as any).grecaptcha.ready(() => {
+                    (window as any).grecaptcha.execute('6Lf3pnwsAAAAANJfrY5MQDh8BogqHziLeosV9Rnw', { action: 'login' })
+                        .then((token: string) => resolve(token))
+                        .catch((err: any) => {
+                            console.error('reCAPTCHA execution failed', err);
+                            resolve('');
+                        });
+                });
+            });
+            */
+
+            await login(email, password, recaptchaToken);
         } catch (err: any) {
             console.error('Login error details:', err);
             const detail = err.response?.data?.error || err.response?.data?.message || err.message;
-            const status = err.response?.status ? ` (${err.response.status})` : '';
-            setError(`${detail}${status}`);
+            setError(detail);
         } finally {
             setIsLoading(false);
         }
@@ -143,7 +162,8 @@ export const Login: FC = () => {
                 <Button
                     onClick={() => {
                         document.cookie = "msm_google_mode=login; path=/; max-age=600";
-                        window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${import.meta.env.VITE_GOOGLE_CLIENT_ID}&redirect_uri=https://musicservicemanager.net/auth/google/callback.php&response_type=code&scope=email%20profile`;
+                        const redirectUri = encodeURIComponent(`${window.location.origin}/api/auth/google/callback`);
+                        window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${import.meta.env.VITE_GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=email%20profile`;
                     }}
                     variant="ghost"
                     style={{
@@ -161,6 +181,13 @@ export const Login: FC = () => {
                     <span className="text-body" style={{ fontWeight: 500 }}>Continuar con Google</span>
                 </Button>
             </Card>
+
+            <div style={{ marginTop: '24px', textAlign: 'center', maxWidth: '300px' }}>
+                <p style={{ fontSize: '11px', color: '#9CA3AF', lineHeight: '1.4' }}>
+                    Protegido por reCAPTCHA. <br />
+                    <a href="https://google.com/intl/es/policies/privacy" target="_blank" rel="noreferrer" style={{ color: 'var(--color-brand-blue)', textDecoration: 'none' }}>Privacidad</a> y <a href="https://google.com/intl/es/policies/terms" target="_blank" rel="noreferrer" style={{ color: 'var(--color-brand-blue)', textDecoration: 'none' }}>Términos</a> de Google.
+                </p>
+            </div>
         </div>
     );
 };

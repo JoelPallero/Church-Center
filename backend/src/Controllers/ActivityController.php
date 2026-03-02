@@ -46,7 +46,39 @@ class ActivityController
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
         header('Connection: keep-alive');
-        echo "data: " . json_encode(['id' => 0, 'action' => 'ping']) . "\n\n";
+        header('X-Accel-Buffering: no'); // Disable proxy buffering for Nginx
+        ob_end_clean(); // Disable output buffering
+
+        $lastId = (int) ($_GET['lastId'] ?? 0);
+        $churchId = $_GET['church_id'] ?? null;
+
+        // Loop to keep connection alive
+        $startTime = time();
+        $maxDuration = 25; // Close after 25s to avoid script timeout on common hostings
+
+        while (time() - $startTime < $maxDuration) {
+            $activities = \App\Repositories\ActivityRepo::getNewerThan($lastId, $churchId);
+
+            if (!empty($activities)) {
+                foreach ($activities as $activity) {
+                    echo "data: " . json_encode($activity) . "\n\n";
+                    $lastId = $activity['id'];
+                }
+                ob_flush();
+                flush();
+            } else {
+                // Send ping to keep connection alive
+                echo ": ping\n\n";
+                ob_flush();
+                flush();
+            }
+
+            // Check if connection is still active
+            if (connection_aborted())
+                break;
+
+            sleep(2); // Wait 2s before polling again
+        }
         exit;
     }
 }

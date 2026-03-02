@@ -51,8 +51,8 @@ class ActivityRepo
                 $params[] = $churchId;
             }
 
-            $sql .= " ORDER BY al.created_at DESC LIMIT ?";
-            $params[] = (int) $limit;
+            $limitInt = (int) $limit;
+            $sql .= " ORDER BY al.created_at DESC LIMIT $limitInt";
 
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
@@ -76,6 +76,45 @@ class ActivityRepo
         }
     }
 
+    /**
+     * Get activities newer than a specific ID
+     */
+    public static function getNewerThan($lastId, $churchId = null)
+    {
+        try {
+            $db = Database::getInstance();
+            $sql = "
+                SELECT al.*, m.name as member_name, m.surname as member_surname
+                FROM activity_log al
+                JOIN member m ON al.member_id = m.id
+                WHERE al.id > ?
+            ";
+            $params = [(int) $lastId];
+
+            if ($churchId) {
+                $sql .= " AND al.church_id = ?";
+                $params[] = $churchId;
+            }
+
+            $sql .= " ORDER BY al.id ASC";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($activities as &$activity) {
+                $activity['user_name'] = $activity['member_name'] . ($activity['member_surname'] ? ' ' . $activity['member_surname'] : '');
+                $activity['details'] = json_decode($activity['details'], true);
+                $activity['message'] = self::formatMessage($activity);
+            }
+
+            return $activities;
+        } catch (\Exception $e) {
+            \App\Helpers\Logger::error("ActivityRepo::getNewerThan error: " . $e->getMessage());
+            return [];
+        }
+    }
+
     private static function formatMessage($activity)
     {
         $actor = $activity['user_name'];
@@ -86,11 +125,11 @@ class ActivityRepo
             case 'created':
                 return "$actor creó " . self::translateEntity($activity['entity_type']) . ": $name";
             case 'invited':
-                return "$actor invitó a un nuevo miembro: $name";
+                return "$actor invitó a un nuevo integrante: $name";
             case 'approved':
-                return "$actor aprobó a $name";
+                return "$actor autorizó a $name";
             case 'assigned':
-                return "$actor asignó a " . ($details['target_name'] ?? 'alguien') . " en " . ($details['meeting_title'] ?? 'una reunión');
+                return "$actor asignó a " . ($details['target_name'] ?? 'un integrante') . " en " . ($details['meeting_title'] ?? 'una reunión');
             case 'updated':
                 return "$actor actualizó " . self::translateEntity($activity['entity_type']) . ": $name";
             default:
@@ -105,8 +144,11 @@ class ActivityRepo
             'team' => 'el equipo',
             'member' => 'el miembro',
             'meeting' => 'la reunión',
-            'playlist' => 'la lista',
-            'instrument' => 'los instrumentos'
+            'playlist' => 'el listado',
+            'instrument' => 'los instrumentos',
+            'song' => 'la canción',
+            'invitation' => 'la invitación',
+            'template' => 'la plantilla'
         ];
         return $map[$type] ?? $type;
     }

@@ -37,8 +37,19 @@ class ReportController
 
     private function dashboard($memberId)
     {
-        // Global dashboard stats
+        $member = \App\Repositories\UserRepo::getMemberData($memberId);
+        $churchId = $_GET['church_id'] ?? ($member['church_id'] ?? null);
+
+        if ($churchId) {
+            $stats = \App\Repositories\ReportRepo::getChurchStats($churchId);
+            Response::json([
+                'success' => true,
+                'data' => $stats
+            ]);
+        }
+
+        // Fallback to global dashboard stats if no church context
         $stats = \App\Repositories\ReportRepo::getGlobalStats();
-        Response::json(array_merge(['success' => true], $stats));
+        Response::json(array_merge(['success' => true], ['data' => $stats]));
     }
 }

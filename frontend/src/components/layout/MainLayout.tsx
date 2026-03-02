@@ -147,6 +147,7 @@ export const MainLayout: FC = () => {
                                     { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'area.create' },
                                     { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'reunions.view' },
                                     { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'teams.view' },
+                                    { path: '/mainhub/ushers', icon: 'how_to_reg', label: t('nav.ushers'), permission: 'church.read' },
                                     { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'users.view' },
                                     { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports'), permission: 'reports.view' },
                                     { path: '/worship/playlists', icon: 'reorder', label: t('nav.playlists'), permission: 'songs.view' },

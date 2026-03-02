@@ -84,7 +84,35 @@ class ChurchRepo
         return $stmt->execute([$name, $slug, $id]);
     }
 
-    public static function delete($id)
+    public static function deactivate($id)
+    {
+        $db = Database::getInstance();
+        try {
+            $db->beginTransaction();
+
+            // 1. Deactivate church
+            $stmt = $db->prepare("UPDATE church SET is_active = 0 WHERE id = ?");
+            $stmt->execute([$id]);
+
+            // 2. Deactivate members
+            $stmt = $db->prepare("UPDATE member SET status = 'inactive' WHERE church_id = ?");
+            $stmt->execute([$id]);
+
+            // 3. Deactivate user accounts (linked to members of this church)
+            $stmt = $db->prepare("UPDATE user_accounts SET is_active = 0 WHERE member_id IN (SELECT id FROM member WHERE church_id = ?)");
+            $stmt->execute([$id]);
+
+            $db->commit();
+            return true;
+        } catch (\Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public static function hardDelete($id)
     {
         $db = Database::getInstance();
 
@@ -115,8 +143,8 @@ class ChurchRepo
             $stmt = $db->prepare("DELETE FROM member WHERE church_id = ?");
             $stmt->execute([$id]);
 
-            // 7. Deactivate the church
-            $stmt = $db->prepare("UPDATE church SET is_active = 0 WHERE id = ?");
+            // 7. Delete the church record permanently
+            $stmt = $db->prepare("DELETE FROM church WHERE id = ?");
             $result = $stmt->execute([$id]);
 
             $db->commit();
@@ -128,10 +156,32 @@ class ChurchRepo
             throw $e;
         }
     }
+
     public static function restore($id)
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare("UPDATE church SET is_active = 1 WHERE id = ?");
-        return $stmt->execute([$id]);
+        try {
+            $db->beginTransaction();
+
+            // 1. Activate church
+            $stmt = $db->prepare("UPDATE church SET is_active = 1 WHERE id = ?");
+            $stmt->execute([$id]);
+
+            // 2. Activate members
+            $stmt = $db->prepare("UPDATE member SET status = 'active' WHERE church_id = ?");
+            $stmt->execute([$id]);
+
+            // 3. Activate user accounts
+            $stmt = $db->prepare("UPDATE user_accounts SET is_active = 1 WHERE member_id IN (SELECT id FROM member WHERE church_id = ?)");
+            $stmt->execute([$id]);
+
+            $db->commit();
+            return true;
+        } catch (\Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            throw $e;
+        }
     }
 }

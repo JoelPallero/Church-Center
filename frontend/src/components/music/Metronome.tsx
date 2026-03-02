@@ -7,13 +7,13 @@ interface MetronomeProps {
 }
 
 const PlayIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
         <path d="M8 5v14l11-7z" />
     </svg>
 );
 
 const PauseIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
         <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
     </svg>
 );
@@ -113,44 +113,36 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
                 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div
+                <button
                     onClick={toggleMetronome}
+                    className="btn-icon"
                     style={{
                         width: '28px',
                         height: '28px',
-                        borderRadius: '50%',
                         backgroundColor: 'var(--color-brand-blue)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        border: 'none',
+                        color: 'white',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                     }}
                 >
                     {playing ? (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
                     ) : (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z" /></svg>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                     )}
-                </div>
+                </button>
                 <button
                     onClick={(e) => { e.stopPropagation(); setSubdivision(!subdivision); }}
+                    className="btn-icon"
                     style={{
                         width: '28px',
                         height: '28px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: 'none',
                         backgroundColor: subdivision ? 'var(--color-brand-blue)' : 'var(--color-ui-surface)',
-                        cursor: 'pointer',
+                        color: subdivision ? 'white' : 'var(--color-ui-text)',
                         boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                     }}
                     title="Corcheas"
                 >
-                    <MusicNoteIcon color={subdivision ? 'white' : 'var(--color-ui-text)'} />
+                    <MusicNoteIcon color="currentColor" />
                 </button>
             </div>
         );
@@ -169,20 +161,14 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <button
                         onClick={toggleMetronome}
+                        className="btn-icon"
                         style={{
                             width: '44px',
                             height: '44px',
-                            borderRadius: '50%',
-                            backgroundColor: playing ? 'var(--color-error)' : 'var(--color-brand-blue)',
+                            backgroundColor: playing ? 'var(--color-danger-red)' : 'var(--color-brand-blue)',
                             color: 'white',
-                            border: 'none',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
                             boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                            transition: 'all 0.2s',
-                            flexShrink: 0
+                            transition: 'all 0.2s'
                         }}
                         title={playing ? 'Pausar' : 'Reproducir'}
                     >
@@ -191,24 +177,19 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
 
                     <button
                         onClick={() => setSubdivision(!subdivision)}
+                        className="btn-icon"
                         style={{
                             width: '44px',
                             height: '44px',
-                            borderRadius: '50%',
                             backgroundColor: subdivision ? 'var(--color-brand-blue)' : 'var(--color-ui-surface)',
                             color: subdivision ? 'white' : 'var(--color-ui-text)',
                             border: '1px solid var(--color-border-subtle)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                            transition: 'all 0.2s',
-                            flexShrink: 0
+                            transition: 'all 0.2s'
                         }}
                         title="Corcheas"
                     >
-                        <MusicNoteIcon color={subdivision ? 'white' : 'var(--color-ui-text)'} />
+                        <MusicNoteIcon color="currentColor" />
                     </button>
                 </div>
             </div>
@@ -257,22 +238,18 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
 
             <button
                 onClick={() => setSubdivision(!subdivision)}
+                className="btn-icon"
                 style={{
                     width: '40px',
                     height: '40px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: 'none',
                     backgroundColor: subdivision ? 'var(--color-brand-blue)' : 'var(--color-ui-surface)',
-                    cursor: 'pointer',
+                    color: subdivision ? 'white' : 'var(--color-ui-text)',
                     boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
                     transition: 'all 0.2s'
                 }}
                 title="Corcheas"
             >
-                <MusicNoteIcon color={subdivision ? 'white' : 'var(--color-ui-text)'} />
+                <MusicNoteIcon color="currentColor" />
             </button>
         </div>
     );

@@ -13,6 +13,7 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 import { Profile } from './pages/Profile';
 import { Settings } from './pages/Settings';
+import { InvitationSettings } from './pages/InvitationSettings';
 import { PrivacySupport } from './pages/PrivacySupport';
 import { LiveDebug } from './pages/LiveDebug';
 import { GoogleCallback } from './pages/GoogleCallback';
@@ -45,6 +46,8 @@ import { AreaList } from './modules/mainhub/pages/people/AreaList';
 import { AreaSetup } from './modules/mainhub/pages/people/AreaSetup';
 import { TeamSetup } from './modules/mainhub/pages/people/TeamSetup';
 import { ChurchSelect } from './modules/mainhub/pages/people/ChurchSelect';
+import { UshersDashboard } from './modules/mainhub/pages/ushers/UshersDashboard';
+import { AttendanceEntry } from './modules/mainhub/pages/ushers/AttendanceEntry';
 import { PermissionsManager } from './pages/admin/PermissionsManager';
 
 // Social Module
@@ -70,6 +73,7 @@ const App: FC = () => {
                   <Route index element={<MainDashboard />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="settings" element={<Settings />} />
+                  <Route path="settings/invitations" element={<InvitationSettings />} />
                   <Route path="privacy" element={<PrivacySupport />} />
                   <Route path="debug" element={<LiveDebug />} />
 
@@ -101,6 +105,8 @@ const App: FC = () => {
                     <Route path="reports" element={<Reports />} />
                     <Route path="master" element={<MasterDashboard />} />
                     <Route path="pastor" element={<PastorDashboard />} />
+                    <Route path="ushers" element={<UshersDashboard />} />
+                    <Route path="ushers/attendance/:meetingId" element={<AttendanceEntry />} />
                     <Route path="churches" element={<ChurchList />} />
                     <Route path="churches/new" element={<ChurchEditor />} />
                     <Route path="churches/edit/:id" element={<ChurchEditor />} />

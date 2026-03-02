@@ -13,7 +13,7 @@ interface AuthContextType {
     isMaster: boolean;
     isLoading: boolean;
     isAuthenticated: boolean;
-    login: (email: string, password: string) => Promise<void>;
+    login: (email: string, password: string, recaptchaToken?: string) => Promise<void>;
     logout: () => void;
     register: (name: string, email: string) => Promise<any>;
     impersonateRole: (roleName: string | null) => void;
@@ -100,10 +100,10 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         loadBootstrap();
     }, [loadBootstrap]);
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string, recaptchaToken?: string) => {
         setIsLoading(true);
         try {
-            const response = await AuthService.login(email, password);
+            const response = await AuthService.login(email, password, recaptchaToken);
             if (response.success && response.access_token) {
                 localStorage.setItem('auth_token', response.access_token);
                 await loadBootstrap();

@@ -20,6 +20,7 @@ export const songService = {
                 timeSignature: s.time_signature || '4/4',
                 content: s.content,
                 category: s.category,
+                churchName: s.church_name,
                 bpmType: s.bpm_type || 'fast',
                 memberKeys: s.member_keys || []
             })) : [];

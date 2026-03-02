@@ -37,7 +37,8 @@
         "female": "Femenino",
         "ministryHub": "Portal Alabanza",
         "smHub": "Portal Redes",
-        "churchCenter": "Perfil de Iglesia"
+        "churchCenter": "Perfil de Iglesia",
+        "selectChurch": "Selecciona una iglesia"
     },
     "worship": {
         "welcome": "Bienvenido al centro de alabanza."
@@ -56,11 +57,20 @@
         "areas": "Áreas",
         "churches": "Iglesias",
         "settings": "Panel de Control",
-        "privacy": "Privacidad y Soporte"
+        "privacy": "Privacidad y Soporte",
+        "ushers": "Ujieres"
     },
     "people": {
         "title": "Personas",
         "description": "Lista de integrantes de tu equipo.",
+        "invite_success": "Invitación enviada correctamente.",
+        "invite_error": "Error al enviar la invitación.",
+        "invite_error_no_church": "Por favor, selecciona una iglesia.",
+        "invite_description": "Envía una invitación por correo para unirse al equipo.",
+        "invite_error_no_emails": "Por favor, ingresa al menos un correo válido.",
+        "invite_bulk_success": "Se enviaron {{count}} invitaciones correctamente.",
+        "invite_bulk_error": "No se pudo enviar ninguna invitación.",
+        "bulk_invite_notice": "Las invitaciones masivas se enviarán con el rol de \"Miembro\" por defecto.",
         "search": "Buscar personas...",
         "searchPlaceholder": "Buscar miembros...",
         "role": "Rol",
@@ -327,7 +337,7 @@
         "requestJoin": "Solicitar Unirse",
         "requesting": "Solicitando...",
         "noDescription": "Sin descripción",
-        "waitingNotice": "Mientras esperas, puedes personalizar tu perfil y tema.",
+        "waitingNotice": "Mientras esperas, puedes personalizar tu perfil and tema.",
         "pendingRequestsCount": "Tienes {{count}} nuevas solicitudes de ingreso",
         "pendingRequestsTitle": "Aprobación de nuevos integrantes"
     },
@@ -504,7 +514,18 @@
         "noResults": "No se encontraron iglesias.",
         "filters": {
             "upcoming": "Próximamente: Filtros avanzados por región o estado."
-        }
+        },
+        "confirmDeactivate": "¿Estás seguro de que deseas desactivar la iglesia {{name}}? Esta acción desactivará a todos los usuarios y miembros asociados por cascada.",
+        "confirmHardDelete": "⚠️ ¡ATENCIÓN! Estás a punto de eliminar permanentemente la iglesia {{name}} y TODOS sus datos (usuarios, calendarios, reuniones, canciones, etc). Esta acción NO se puede deshacer. ¿Estás COMPLETAMENTE seguro?",
+        "deactivateSuccess": "Iglesia desactivada correctamente.",
+        "hardDeleteSuccess": "Iglesia eliminada permanentemente con todos sus datos.",
+        "status": {
+            "active": "Activa",
+            "inactive": "Desactivada"
+        },
+        "restore": "Reactivar",
+        "deactivate": "Desactivar",
+        "hardDelete": "Eliminar Permanentemente"
     },
     "teams": {
         "configTitle": "Configurar Equipo: {{name}}",
@@ -527,6 +548,42 @@
         "leaderLabel": "Líder: {{name}}",
         "noDescription": "Sin descripción",
         "viewMembers": "Ver Miembros",
-        "deleteError": "Error al eliminar equipo."
+        "deleteError": "Error al eliminar equipo.",
+        "noTeamsInChurch": "No hay equipos configurados para esta iglesia.",
+        "createFirst": "Crear el primer equipo",
+        "addSuccess": "Equipo creado con éxito",
+        "deleteSuccess": "Equipo eliminado con éxito",
+        "nameLabel": "Nombre del equipo",
+        "descLabel": "Descripción",
+        "inviteMembers": "Invitar personas nuevas",
+        "updateSuccess": "Equipo actualizado correctamente.",
+        "updateError": "Error al actualizar el equipo.",
+        "teamInfo": "Información del Equipo",
+        "memberManagement": "Gestión de Miembros"
+    },
+    "ushers": {
+        "title": "Ujieres",
+        "description": "Servicio de conteo y consolidación.",
+        "attendance": "Conteo de Personas",
+        "visitors": "Personas Nuevas",
+        "saveCount": "Guardar Conteo",
+        "addVisitor": "Agregar Nueva Persona",
+        "adults": "Adultos",
+        "children": "Niños",
+        "total": "Total",
+        "reports": "Reportes de Asistencia",
+        "consolidated": "Consolidado",
+        "noVisitors": "No hay personas nuevas registradas en esta reunión.",
+        "weeklyReport": "Reporte Semanal",
+        "monthlyReport": "Reporte Mensual",
+        "yearlyReport": "Reporte Anual",
+        "visitorForm": {
+            "firstName": "Nombre",
+            "lastName": "Apellido",
+            "phone": "Teléfono",
+            "email": "Email",
+            "notes": "Notas / Observaciones",
+            "isFirstTime": "Es primera vez"
+        }
     }
 }

@@ -29,7 +29,7 @@ set_exception_handler(function ($e) {
         "File: " . $e->getFile() . ":" . $e->getLine() . "\n" .
         "Stack trace:\n" . $e->getTraceAsString();
     \App\Helpers\Logger::error($msg);
-    \App\Helpers\Response::error("Internal Server Error: " . $e->getMessage(), 500);
+    \App\Helpers\Response::error("Ocurrió un error interno en el servidor. Por favor, intente más tarde.", 500);
 });
 
 // Initialize CORS

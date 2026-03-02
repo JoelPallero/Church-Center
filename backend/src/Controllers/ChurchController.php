@@ -120,8 +120,20 @@ class ChurchController
             Response::error("No tienes permisos para borrar iglesias", 403);
         }
 
-        $success = ChurchRepo::delete($id);
-        Response::json(['success' => $success, 'message' => $success ? 'Iglesia borrada y datos limpiados correctamente' : 'Error al borrar']);
+        $church = ChurchRepo::findById($id);
+        if (!$church) {
+            Response::error("Iglesia no encontrada", 404);
+        }
+
+        if ($church['is_active']) {
+            // Stage 1: Deactivate
+            $success = ChurchRepo::deactivate($id);
+            Response::json(['success' => $success, 'message' => $success ? 'Iglesia desactivada correctamente' : 'Error al desactivar']);
+        } else {
+            // Stage 2: Hard Delete
+            $success = ChurchRepo::hardDelete($id);
+            Response::json(['success' => $success, 'message' => $success ? 'Iglesia y todos sus datos han sido eliminados permanentemente' : 'Error al eliminar']);
+        }
     }
 
     private function restore()

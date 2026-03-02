@@ -29,6 +29,7 @@ export const SongDetail: FC = () => {
     const [viewMode, setViewMode] = useState<ChordViewMode>('american');
     const [selectedSingerId, setSelectedSingerId] = useState<number | null>(null);
     const [fontSize, setFontSize] = useState(16);
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     useEffect(() => {
         if (id) loadSong(id);
@@ -46,8 +47,6 @@ export const SongDetail: FC = () => {
             const originalIdx = musicUtils.getSemitoneIndex(song.originalKey);
             const targetIdx = musicUtils.getSemitoneIndex(assignment.preferredKey);
             let diff = targetIdx - originalIdx;
-            // Ensure we take the shortest path or consistent direction? 
-            // Standardizing to a range like -6 to +6 is usually better for musicians
             while (diff > 6) diff -= 12;
             while (diff <= -6) diff += 12;
 
@@ -61,13 +60,11 @@ export const SongDetail: FC = () => {
             const data = await songService.getById(songId);
             setSong(data);
 
-            // If we have an initial singer ID from URL, apply it
             if (data && initialSingerId) {
                 const singerIdNum = parseInt(initialSingerId);
                 const assignment = data.memberKeys?.find(mk => mk.memberId === singerIdNum);
                 if (assignment) {
                     setSelectedSingerId(singerIdNum);
-
                     const originalIdx = musicUtils.getSemitoneIndex(data.originalKey);
                     const targetIdx = musicUtils.getSemitoneIndex(assignment.preferredKey);
                     let diff = targetIdx - originalIdx;
@@ -88,62 +85,130 @@ export const SongDetail: FC = () => {
     const currentKey = musicUtils.transposeNote(song.originalKey, transpose);
 
     return (
-        <div style={{ paddingBottom: '100px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Header / Navigation */}
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ paddingBottom: '100px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* Minimal Header / Navigation */}
+            <div style={{ display: 'flex', alignItems: 'center', padding: '8px 4px' }}>
                 <Button
                     variant="ghost"
-                    onClick={() => navigate('/songs')}
-                    style={{ padding: '8px', marginRight: '8px' }}
+                    onClick={() => navigate('/worship/songs' + (song.churchId ? `?church_id=${song.churchId}` : ''))}
+                    style={{ padding: '8px', marginRight: '4px' }}
                 >
                     <span className="material-symbols-outlined">arrow_back</span>
                 </Button>
-                <div>
-                    <h1 className="text-h1" style={{ margin: 0 }}>{song.title}</h1>
-                    <p className="text-body" style={{ color: 'gray', margin: 0 }}>{song.artist}</p>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <h1 className="text-h2" style={{ margin: 0, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{song.title}</h1>
+                    <p className="text-overline" style={{ margin: 0, color: 'gray' }}>{song.artist}</p>
                 </div>
                 <Button
-                    variant="primary"
-                    onClick={() => navigate(`/songs/${id}/edit`)}
-                    style={{ marginLeft: 'auto', padding: '8px 20px', borderRadius: '12px' }}
+                    variant="ghost"
+                    onClick={() => navigate(`/worship/songs/${id}/edit`)}
+                    style={{ padding: '8px' }}
                 >
-                    <span className="material-symbols-outlined" style={{ fontSize: '18px', marginRight: '8px' }}>edit</span>
-                    {t('common.edit') || 'Editar'}
+                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
                 </Button>
             </div>
 
-            {/* Controls Bar */}
-            <Card style={{ position: 'sticky', top: '70px', zIndex: 40, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {/* Row 1: Key Transposer & Singer Selector */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {/* Compact Controls Bar (Non-sticky) */}
+            <Card style={{
+                padding: '12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                borderRadius: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    {/* Key and Notation Type (Always Visible) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span className="text-overline" style={{ color: 'gray' }}>{t('songs.key')}</span>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                                <span className="text-h1" style={{ color: 'var(--color-brand-blue)' }}>{currentKey}</span>
-                                {transpose !== 0 && (
-                                    <span className="text-overline" style={{ color: 'gray' }}>
-                                        ({song.originalKey} {transpose > 0 ? '+' : ''}{transpose})
-                                    </span>
-                                )}
-                            </div>
+                            <span className="text-overline" style={{ fontSize: '9px' }}>{t('songs.originalKey') || 'Tono Original'}</span>
+                            <span className="text-h2" style={{ color: 'var(--color-ui-text-soft)', lineHeight: 1 }}>{song.originalKey}</span>
                         </div>
 
-                        {song.memberKeys && song.memberKeys.length > 0 && (
-                            <div style={{ borderLeft: '1px solid var(--color-border-subtle)', paddingLeft: '16px', display: 'flex', flexDirection: 'column' }}>
-                                <span className="text-overline" style={{ color: 'gray' }}>{t('songs.singer')}</span>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                            <Button
+                                variant="secondary"
+                                onClick={() => setTranspose(p => p - 1)}
+                                style={{ width: '32px', height: '32px', padding: 0 }}
+                                label="-"
+                            />
+                            <Button
+                                variant={transpose === 0 ? "secondary" : "primary"}
+                                onClick={() => setTranspose(0)}
+                                style={{ padding: '0 12px', fontSize: '16px', height: '32px', fontWeight: 'bold', minWidth: '44px' }}
+                                label={currentKey}
+                            />
+                            <Button
+                                variant="secondary"
+                                onClick={() => setTranspose(p => p + 1)}
+                                style={{ width: '32px', height: '32px', padding: 0 }}
+                                label="+"
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <Button
+                            variant={showAdvanced ? 'primary' : 'secondary'}
+                            onClick={() => setShowAdvanced(!showAdvanced)}
+                            style={{ width: '40px', height: '40px', padding: 0 }}
+                            icon={showAdvanced ? 'expand_less' : 'tune'}
+                        />
+                    </div>
+                </div>
+
+                {/* Advanced Collapsible Section */}
+                {showAdvanced && (
+                    <div style={{
+                        borderTop: '1px solid var(--color-border-subtle)',
+                        paddingTop: '8px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                        animation: 'fadeIn 0.2s ease-out'
+                    }}>
+                        {/* Row: Notation Toggles and Singer */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                            <div style={{ display: 'flex', backgroundColor: 'var(--color-ui-surface)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
+                                {[
+                                    { id: 'american', label: 'Am' },
+                                    { id: 'spanish', label: 'La' },
+                                    { id: 'roman', label: 'Vm' },
+                                    { id: 'lyrics', label: 'Letra' }
+                                ].map((mode) => (
+                                    <button
+                                        key={mode.id}
+                                        onClick={() => setViewMode(mode.id as any)}
+                                        style={{
+                                            padding: '6px 12px',
+                                            fontSize: '11px',
+                                            fontWeight: 600,
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            backgroundColor: viewMode === mode.id ? 'var(--color-brand-blue)' : 'transparent',
+                                            color: viewMode === mode.id ? 'white' : 'var(--color-ui-text-soft)',
+                                            transition: 'all 0.2s',
+                                            minWidth: '40px'
+                                        }}
+                                    >
+                                        {mode.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {song.memberKeys && song.memberKeys.length > 0 && (
                                 <select
                                     className="text-body"
                                     value={selectedSingerId || ''}
                                     onChange={e => handleSingerChange(e.target.value ? parseInt(e.target.value) : null)}
                                     style={{
-                                        background: 'none',
-                                        border: 'none',
+                                        background: 'var(--color-ui-surface)',
+                                        border: '1px solid var(--color-border-subtle)',
+                                        borderRadius: '8px',
                                         color: 'var(--color-ui-text)',
-                                        outline: 'none',
-                                        fontSize: '14px',
-                                        fontWeight: 500,
-                                        padding: '4px 0'
+                                        padding: '4px 8px',
+                                        fontSize: '12px'
                                     }}
                                 >
                                     <option value="">{t('songs.original')}</option>
@@ -151,97 +216,34 @@ export const SongDetail: FC = () => {
                                         <option key={mk.memberId} value={mk.memberId}>{mk.memberName}</option>
                                     ))}
                                 </select>
+                            )}
+                        </div>
+
+                        {/* Row: Metronome and Font Size */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            {song.tempo && (
+                                <Metronome bpm={song.tempo} variant="card" />
+                            )}
+
+                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'gray' }}>format_size</span>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setFontSize(s => Math.max(10, s - 2))}
+                                    style={{ width: '28px', height: '28px', padding: 0 }}
+                                    label="-"
+                                />
+                                <span style={{ fontSize: '12px', minWidth: '20px', textAlign: 'center' }}>{fontSize}</span>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setFontSize(s => Math.min(30, s + 2))}
+                                    style={{ width: '28px', height: '28px', padding: 0 }}
+                                    label="+"
+                                />
                             </div>
-                        )}
-                    </div>
-
-                    {!selectedSingerId && (
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <Button
-                                variant="secondary"
-                                onClick={() => setTranspose(p => p - 1)}
-                                style={{ width: '40px', height: '40px', padding: 0 }}
-                            >
-                                -
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                onClick={() => setTranspose(0)}
-                                style={{ padding: '0 12px' }}
-                            >
-                                {t('common.reset')}
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                onClick={() => setTranspose(p => p + 1)}
-                                style={{ width: '40px', height: '40px', padding: 0 }}
-                            >
-                                +
-                            </Button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Row 2: Metronome and View Toggles */}
-                <div style={{ borderTop: '1px solid var(--color-border-subtle)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {song.tempo && (
-                        <Metronome bpm={song.tempo} variant="inline" />
-                    )}
-
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', overflowX: 'auto', paddingBottom: '4px' }}>
-                        <Button
-                            variant={viewMode === 'american' ? 'primary' : 'ghost'}
-                            onClick={() => setViewMode('american')}
-                            style={{ fontSize: '12px', padding: '8px 12px', minWidth: 'auto' }}
-                            label="Am"
-                        >
-                            Am
-                        </Button>
-                        <Button
-                            variant={viewMode === 'spanish' ? 'primary' : 'ghost'}
-                            onClick={() => setViewMode('spanish')}
-                            style={{ fontSize: '12px', padding: '8px 12px', minWidth: 'auto' }}
-                            label="Lam"
-                        >
-                            Lam
-                        </Button>
-                        <Button
-                            variant={viewMode === 'roman' ? 'primary' : 'ghost'}
-                            onClick={() => setViewMode('roman')}
-                            style={{ fontSize: '12px', padding: '8px 12px', minWidth: 'auto' }}
-                            label="Vm"
-                        >
-                            Vm
-                        </Button>
-                        <Button
-                            variant={viewMode === 'lyrics' ? 'primary' : 'ghost'}
-                            onClick={() => setViewMode('lyrics')}
-                            style={{ fontSize: '12px', padding: '8px 12px', minWidth: 'auto' }}
-                            label="Letra"
-                        >
-                            Letra
-                        </Button>
-
-                        <div style={{ borderLeft: '1px solid var(--color-border-subtle)', marginLeft: '8px', paddingLeft: '8px', display: 'flex', gap: '4px' }}>
-                            <Button
-                                variant="ghost"
-                                onClick={() => setFontSize(s => Math.max(12, s - 2))}
-                                style={{ padding: '4px', minWidth: '32px' }}
-                            >
-                                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>text_fields</span>
-                                <span style={{ fontSize: '10px' }}>-</span>
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={() => setFontSize(s => Math.min(32, s + 2))}
-                                style={{ padding: '4px', minWidth: '32px' }}
-                            >
-                                <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>text_fields</span>
-                                <span style={{ fontSize: '10px' }}>+</span>
-                            </Button>
                         </div>
                     </div>
-                </div>
+                )}
             </Card>
 
             {/* Row 3: Song Content */}

@@ -30,13 +30,48 @@ class SongController
                 PermissionMiddleware::require($memberId, 'song.create');
                 $this->create($memberId);
             }
+        } elseif ($method === 'DELETE') {
+            if (is_numeric($action)) {
+                PermissionMiddleware::require($memberId, 'song.delete');
+                $this->delete((int) $action);
+            }
         }
+    }
+
+    private function delete($id)
+    {
+        $success = \App\Repositories\SongRepo::delete($id);
+        Response::json(['success' => $success, 'message' => $success ? 'Song deleted' : 'Failed to delete song']);
     }
 
     private function list($memberId)
     {
-        $songs = \App\Repositories\SongRepo::getAll();
-        Response::json(['success' => true, 'songs' => $songs]);
+        $churchId = $_GET['church_id'] ?? null;
+        $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+
+        // If not super admin and no church_id specified, we find the user's current church
+        if (!$isSuperAdmin && $churchId === null) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? null;
+        }
+
+        // Get songs. If $churchId is null (possible for SuperAdmin), we get EVERYTHING.
+        $songs = \App\Repositories\SongRepo::getAll($churchId);
+
+        // Enrich with church names
+        $churches = \App\Repositories\ChurchRepo::getAll();
+        $churchMap = [];
+        foreach ($churches as $c) {
+            $churchMap[$c['id']] = $c['name'];
+        }
+
+        $enrichedSongs = array_map(function ($song) use ($churchMap) {
+            $cId = (int) ($song['church_id'] ?? 0);
+            $song['church_name'] = ($cId !== 0) ? ($churchMap[$cId] ?? 'Unknown') : null;
+            return $song;
+        }, $songs);
+
+        Response::json(['success' => true, 'songs' => $enrichedSongs]);
     }
 
     private function show($id)
