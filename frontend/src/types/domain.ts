@@ -65,6 +65,8 @@ export interface Song {
 
     // Metadata
     youtubeUrl?: string;
+    spotifyUrl?: string;
+    status?: 'rehearsing' | 'ready' | 'archived';
     bpmType?: 'fast' | 'slow';
     tags?: string[];
     category?: 'worship' | 'praise' | 'hymn' | 'special';

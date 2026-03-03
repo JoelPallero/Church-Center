@@ -29,7 +29,6 @@ export const SongDetail: FC = () => {
     const [viewMode, setViewMode] = useState<ChordViewMode>('american');
     const [selectedSingerId, setSelectedSingerId] = useState<number | null>(null);
     const [fontSize, setFontSize] = useState(16);
-    const [showAdvanced, setShowAdvanced] = useState(false);
 
     useEffect(() => {
         if (id) loadSong(id);
@@ -85,7 +84,7 @@ export const SongDetail: FC = () => {
     const currentKey = musicUtils.transposeNote(song.originalKey, transpose);
 
     return (
-        <div style={{ paddingBottom: '100px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ padding: '24px', paddingBottom: '100px', display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', minWidth: 0 }}>
             {/* Minimal Header / Navigation */}
             <div style={{ display: 'flex', alignItems: 'center', padding: '8px 4px' }}>
                 <Button
@@ -108,172 +107,165 @@ export const SongDetail: FC = () => {
                 </Button>
             </div>
 
-            {/* Compact Controls Bar (Non-sticky) */}
-            <Card style={{
-                padding: '12px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                borderRadius: '16px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                    {/* Key and Notation Type (Always Visible) */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span className="text-overline" style={{ fontSize: '9px' }}>{t('songs.originalKey') || 'Tono Original'}</span>
-                            <span className="text-h2" style={{ color: 'var(--color-ui-text-soft)', lineHeight: 1 }}>{song.originalKey}</span>
+            {/* Desktop 3-Column Layout */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr)',
+                gap: '24px',
+                alignItems: 'start'
+            }} className="song-detail-grid">
+                <style>{`
+                    @media (min-width: 1200px) {
+                    .song-detail-grid {
+                        grid-template-columns: repeat(3, 1fr);
+                    }
+                }
+                `}</style>
+
+                {/* Column 1: Controls & Info */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <Card style={{ padding: '20px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span className="text-overline" style={{ fontSize: '10px', color: 'var(--color-ui-text-soft)' }}>TONALIDAD</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                                    <span className="text-h1" style={{ fontSize: '32px', color: 'var(--color-brand-blue)', lineHeight: 1 }}>{currentKey}</span>
+                                    {transpose !== 0 && <span className="text-overline" style={{ opacity: 0.5 }}>({song.originalKey})</span>}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                                <Button variant="secondary" onClick={() => setTranspose(p => p - 1)} style={{ flex: 1, height: '36px' }} label="-" />
+                                <Button variant="secondary" onClick={() => setTranspose(0)} style={{ flex: 1.5, height: '36px', fontWeight: 'bold' }} label="Reset" />
+                                <Button variant="secondary" onClick={() => setTranspose(p => p + 1)} style={{ flex: 1, height: '36px' }} label="+" />
+                            </div>
+
+                            <div className="dropdown-divider" style={{ margin: '4px 0' }} />
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div>
+                                    <span className="text-overline" style={{ fontSize: '9px' }}>TEMPO</span>
+                                    <p style={{ fontWeight: 700, margin: 0 }}>{song.tempo} BPM</p>
+                                </div>
+                                <div>
+                                    <span className="text-overline" style={{ fontSize: '9px' }}>COMPÁS</span>
+                                    <p style={{ fontWeight: 700, margin: 0 }}>{song.timeSignature || '4/4'}</p>
+                                </div>
+                            </div>
+
+                            {song.tempo && <Metronome bpm={song.tempo} variant="card" />}
                         </div>
+                    </Card>
 
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                            <Button
-                                variant="secondary"
-                                onClick={() => setTranspose(p => p - 1)}
-                                style={{ width: '32px', height: '32px', padding: 0 }}
-                                label="-"
-                            />
-                            <Button
-                                variant={transpose === 0 ? "secondary" : "primary"}
-                                onClick={() => setTranspose(0)}
-                                style={{ padding: '0 12px', fontSize: '16px', height: '32px', fontWeight: 'bold', minWidth: '44px' }}
-                                label={currentKey}
-                            />
-                            <Button
-                                variant="secondary"
-                                onClick={() => setTranspose(p => p + 1)}
-                                style={{ width: '32px', height: '32px', padding: 0 }}
-                                label="+"
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <Button
-                            variant={showAdvanced ? 'primary' : 'secondary'}
-                            onClick={() => setShowAdvanced(!showAdvanced)}
-                            style={{ width: '40px', height: '40px', padding: 0 }}
-                            icon={showAdvanced ? 'expand_less' : 'tune'}
-                        />
-                    </div>
-                </div>
-
-                {/* Advanced Collapsible Section */}
-                {showAdvanced && (
-                    <div style={{
-                        borderTop: '1px solid var(--color-border-subtle)',
-                        paddingTop: '8px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '12px',
-                        animation: 'fadeIn 0.2s ease-out'
-                    }}>
-                        {/* Row: Notation Toggles and Singer */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                            <div style={{ display: 'flex', backgroundColor: 'var(--color-ui-surface)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
-                                {[
-                                    { id: 'american', label: 'Am' },
-                                    { id: 'spanish', label: 'La' },
-                                    { id: 'roman', label: 'Vm' },
-                                    { id: 'lyrics', label: 'Letra' }
-                                ].map((mode) => (
-                                    <button
-                                        key={mode.id}
-                                        onClick={() => setViewMode(mode.id as any)}
-                                        style={{
-                                            padding: '6px 12px',
-                                            fontSize: '11px',
-                                            fontWeight: 600,
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            cursor: 'pointer',
-                                            backgroundColor: viewMode === mode.id ? 'var(--color-brand-blue)' : 'transparent',
-                                            color: viewMode === mode.id ? 'white' : 'var(--color-ui-text-soft)',
-                                            transition: 'all 0.2s',
-                                            minWidth: '40px'
-                                        }}
-                                    >
-                                        {mode.label}
-                                    </button>
-                                ))}
+                    <Card style={{ padding: '20px' }}>
+                        <h4 className="text-overline" style={{ marginBottom: '12px' }}>CONFIGURACIÓN</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div>
+                                <label className="text-overline" style={{ fontSize: '9px', display: 'block', marginBottom: '4px' }}>NOTACIÓN</label>
+                                <div style={{ display: 'flex', backgroundColor: 'var(--color-ui-surface)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
+                                    {['american', 'spanish', 'roman', 'lyrics'].map((mode) => (
+                                        <button
+                                            key={mode}
+                                            onClick={() => setViewMode(mode as any)}
+                                            style={{
+                                                flex: 1,
+                                                padding: '6px 0',
+                                                fontSize: '10px',
+                                                fontWeight: 700,
+                                                border: 'none',
+                                                borderRadius: '7px',
+                                                cursor: 'pointer',
+                                                backgroundColor: viewMode === mode ? 'var(--color-brand-blue)' : 'transparent',
+                                                color: viewMode === mode ? 'white' : 'var(--color-ui-text-soft)',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {mode === 'american' ? 'AM' : mode === 'spanish' ? 'LA' : mode === 'roman' ? 'VM' : 'TXT'}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             {song.memberKeys && song.memberKeys.length > 0 && (
-                                <select
-                                    className="text-body"
-                                    value={selectedSingerId || ''}
-                                    onChange={e => handleSingerChange(e.target.value ? parseInt(e.target.value) : null)}
-                                    style={{
-                                        background: 'var(--color-ui-surface)',
-                                        border: '1px solid var(--color-border-subtle)',
-                                        borderRadius: '8px',
-                                        color: 'var(--color-ui-text)',
-                                        padding: '4px 8px',
-                                        fontSize: '12px'
-                                    }}
-                                >
-                                    <option value="">{t('songs.original')}</option>
-                                    {song.memberKeys.map(mk => (
-                                        <option key={mk.memberId} value={mk.memberId}>{mk.memberName}</option>
-                                    ))}
-                                </select>
-                            )}
-                        </div>
-
-                        {/* Row: Metronome and Font Size */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            {song.tempo && (
-                                <Metronome bpm={song.tempo} variant="card" />
+                                <div>
+                                    <label className="text-overline" style={{ fontSize: '9px', display: 'block', marginBottom: '4px' }}>CANTANTE</label>
+                                    <select
+                                        className="text-body"
+                                        value={selectedSingerId || ''}
+                                        onChange={e => handleSingerChange(e.target.value ? parseInt(e.target.value) : null)}
+                                        style={{
+                                            width: '100%',
+                                            background: 'var(--color-ui-surface)',
+                                            border: '1px solid var(--color-border-subtle)',
+                                            borderRadius: '8px',
+                                            color: 'var(--color-ui-text)',
+                                            padding: '8px',
+                                            fontSize: '12px'
+                                        }}
+                                    >
+                                        <option value="">Original</option>
+                                        {song.memberKeys.map(mk => (
+                                            <option key={mk.memberId} value={mk.memberId}>{mk.memberName}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             )}
 
-                            <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'gray' }}>format_size</span>
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => setFontSize(s => Math.max(10, s - 2))}
-                                    style={{ width: '28px', height: '28px', padding: 0 }}
-                                    label="-"
-                                />
-                                <span style={{ fontSize: '12px', minWidth: '20px', textAlign: 'center' }}>{fontSize}</span>
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => setFontSize(s => Math.min(30, s + 2))}
-                                    style={{ width: '28px', height: '28px', padding: 0 }}
-                                    label="+"
-                                />
+                            <div>
+                                <label className="text-overline" style={{ fontSize: '9px', display: 'block', marginBottom: '4px' }}>TAMAÑO LETRA</label>
+                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                    <Button variant="ghost" onClick={() => setFontSize(s => Math.max(10, s - 2))} style={{ flex: 1, height: '32px' }} label="-" />
+                                    <span style={{ flex: 1, textAlign: 'center', fontWeight: 700, fontSize: '12px' }}>{fontSize}</span>
+                                    <Button variant="ghost" onClick={() => setFontSize(s => Math.min(30, s + 2))} style={{ flex: 1, height: '32px' }} label="+" />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </Card>
-
-            {/* Row 3: Song Content */}
-            <div style={{
-                backgroundColor: 'var(--color-card-bg)',
-                borderRadius: '24px',
-                padding: '16px',
-                minHeight: '400px',
-                border: '1px solid var(--color-border-subtle)'
-            }}>
-                {/* Metadata */}
-                <div style={{ display: 'flex', gap: '24px', marginBottom: '32px', color: 'gray', fontSize: '13px', borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: '16px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span className="text-overline">TEMPO</span>
-                        <strong style={{ color: 'var(--color-ui-text)' }}>{song.tempo} BPM</strong>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span className="text-overline">COMPÁS</span>
-                        <strong style={{ color: 'var(--color-ui-text)' }}>4/4</strong>
-                    </div>
+                    </Card>
                 </div>
 
-                {/* The Actual Sheet */}
-                <ChordSheetRenderer
-                    content={song.content}
-                    transpose={transpose}
-                    viewMode={viewMode}
-                    songKey={song.originalKey}
-                    fontSize={fontSize}
-                />
+                {/* Column 2: The Sheet */}
+                <Card style={{ padding: '32px', minHeight: '600px', borderRadius: '24px' }}>
+                    <ChordSheetRenderer
+                        content={song.content}
+                        transpose={transpose}
+                        viewMode={viewMode}
+                        songKey={song.originalKey}
+                        fontSize={fontSize}
+                    />
+                </Card>
+
+                {/* Column 3: Multimedia & Resources */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {song.youtubeUrl && (
+                        <Card style={{ padding: '12px', overflow: 'hidden' }}>
+                            <h4 className="text-overline" style={{ marginBottom: '12px', marginLeft: '8px' }}>VIDEO REFERENCIA</h4>
+                            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: '12px', overflow: 'hidden', backgroundColor: '#000' }}>
+                                <iframe
+                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                                    src={`https://www.youtube.com/embed/${song.youtubeUrl.split('v=')[1]?.split('&')[0] || song.youtubeUrl.split('/').pop()}`}
+                                    title="YouTube video player"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                />
+                            </div>
+                        </Card>
+                    )}
+
+                    <Card style={{ padding: '20px' }}>
+                        <h4 className="text-overline" style={{ marginBottom: '16px' }}>VERSIONES</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderRadius: '12px', backgroundColor: 'var(--color-ui-surface)' }}>
+                                <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)' }}>description</span>
+                                <div style={{ flex: 1 }}>
+                                    <p style={{ fontSize: '13px', fontWeight: 600, margin: 0 }}>Acordes Originales</p>
+                                    <p style={{ fontSize: '11px', color: 'var(--color-ui-text-soft)', margin: 0 }}>PDF • 120 KB</p>
+                                </div>
+                                <Button variant="ghost" icon="download" style={{ minWidth: 'auto', padding: '6px' }} />
+                            </div>
+                            {/* Hidden file upload logic here if needed, but UI wise we just show versions */}
+                        </div>
+                    </Card>
+                </div>
             </div>
         </div>
     );

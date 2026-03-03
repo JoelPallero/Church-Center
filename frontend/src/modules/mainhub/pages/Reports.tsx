@@ -7,6 +7,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { reportService } from '../../../services/reportService';
 import { Card } from '../../../components/ui/Card';
+import { Button } from '../../../components/ui/Button';
 
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
@@ -28,10 +29,9 @@ export const Reports: FC = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            // Redirect if no church context at all and user is Pastor (multitenant context)
-            // Master users bypass selection if they want, but Pastor needs at least one ID
+            // We no longer mandatory redirect, we just fetch if we can.
             if (!finalChurchId && (isMaster || isPastor)) {
-                navigate('/mainhub/select-church/reports');
+                setLoading(false);
                 return;
             }
 
@@ -56,10 +56,24 @@ export const Reports: FC = () => {
 
     if (!data) {
         return (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'gray' }}>analytics</span>
-                <p className="text-h3">{t('reports.noData')}</p>
-                <p className="text-body-secondary">{t('reports.noDataDesc')}</p>
+            <div style={{ textAlign: 'center', padding: '60px', opacity: 0.8, backgroundColor: 'var(--color-ui-surface)', borderRadius: '24px', border: '1px dashed var(--color-border-subtle)', margin: '24px' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--color-brand-blue)', marginBottom: '16px' }}>
+                    {!finalChurchId ? 'account_balance' : 'analytics'}
+                </span>
+                <p className="text-h3" style={{ marginBottom: '8px' }}>
+                    {!finalChurchId ? 'No hay iglesia seleccionada' : t('reports.noData')}
+                </p>
+                <p className="text-body-secondary" style={{ marginBottom: '24px' }}>
+                    {!finalChurchId ? 'Selecciona una iglesia para ver sus estadísticas y reportes operativos.' : t('reports.noDataDesc')}
+                </p>
+                {!finalChurchId && (isMaster || isPastor) && (
+                    <Button
+                        label="Seleccionar Iglesia"
+                        variant="primary"
+                        onClick={() => navigate('/mainhub/select-church/reports')}
+                        style={{ margin: '0 auto' }}
+                    />
+                )}
             </div>
         );
     }

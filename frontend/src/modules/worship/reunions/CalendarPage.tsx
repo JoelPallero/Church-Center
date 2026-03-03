@@ -32,7 +32,7 @@ export const CalendarPage: FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedInstanceId, setSelectedInstanceId] = useState<number | null>(null);
-    const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+    const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
@@ -40,12 +40,13 @@ export const CalendarPage: FC = () => {
     const finalChurchId = churchId || user?.churchId;
 
     useEffect(() => {
-        // Redirect if no church context at all and user is Master or Pastor (multitenant context)
-        if (!finalChurchId && (isMaster || isPastor)) {
-            navigate('/mainhub/select-church/calendar');
-            return;
+        // We no longer mandatory redirect, we just fetch if we can.
+        // The UI will handle the empty/selection state.
+        if (finalChurchId) {
+            fetchInstances();
+        } else {
+            setIsLoading(false);
         }
-        fetchInstances();
     }, [finalChurchId, isMaster, isPastor, navigate, currentDate]);
 
     const fetchInstances = async () => {
@@ -229,9 +230,24 @@ export const CalendarPage: FC = () => {
                     ))}
 
                     {instances.length === 0 && (
-                        <div style={{ textAlign: 'center', padding: '60px', opacity: 0.6 }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '48px' }}>calendar_today</span>
-                            <p className="text-body">{t('reunions.noMeetings')}</p>
+                        <div style={{ textAlign: 'center', padding: '60px', opacity: 0.8, backgroundColor: 'var(--color-ui-surface)', borderRadius: '24px', border: '1px dashed var(--color-border-subtle)' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--color-brand-blue)', marginBottom: '16px' }}>
+                                {!finalChurchId ? 'account_balance' : 'calendar_today'}
+                            </span>
+                            <p className="text-h3" style={{ marginBottom: '8px' }}>
+                                {!finalChurchId ? 'No hay iglesia seleccionada' : t('reunions.noMeetings')}
+                            </p>
+                            <p className="text-body" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '24px' }}>
+                                {!finalChurchId ? 'Selecciona una iglesia para ver su calendario de actividades.' : 'No hay eventos programados para este mes.'}
+                            </p>
+                            {!finalChurchId && (isMaster || isPastor) && (
+                                <Button
+                                    label="Seleccionar Iglesia"
+                                    variant="primary"
+                                    onClick={() => navigate('/mainhub/select-church/calendar')}
+                                    style={{ margin: '0 auto' }}
+                                />
+                            )}
                         </div>
                     )}
                 </div>

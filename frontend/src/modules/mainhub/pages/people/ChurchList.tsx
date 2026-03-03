@@ -17,6 +17,8 @@ export const ChurchList: FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showFilters, setShowFilters] = useState(false);
 
+    const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+
     useEffect(() => {
         fetchChurches();
     }, []);
@@ -90,12 +92,28 @@ export const ChurchList: FC = () => {
             <header style={{ marginBottom: '24px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h1 className="text-h1">{t('churches.title')}</h1>
-                    <Button
-                        variant="primary"
-                        icon="add"
-                        label={t('churches.new')}
-                        onClick={() => navigate('/mainhub/churches/new')}
-                    />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', backgroundColor: 'var(--color-ui-surface)', borderRadius: '10px', padding: '4px', gap: '4px' }}>
+                            <Button
+                                variant={viewMode === 'list' ? 'primary' : 'ghost'}
+                                icon="format_list_bulleted"
+                                onClick={() => setViewMode('list')}
+                                style={{ padding: '6px', minWidth: 'auto' }}
+                            />
+                            <Button
+                                variant={viewMode === 'grid' ? 'primary' : 'ghost'}
+                                icon="grid_view"
+                                onClick={() => setViewMode('grid')}
+                                style={{ padding: '6px', minWidth: 'auto' }}
+                            />
+                        </div>
+                        <Button
+                            variant="primary"
+                            icon="add"
+                            label={t('churches.new')}
+                            onClick={() => navigate('/mainhub/churches/new')}
+                        />
+                    </div>
                 </div>
 
                 <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
@@ -130,30 +148,56 @@ export const ChurchList: FC = () => {
                 </div>
 
                 {showFilters && (
-                    <Card style={{ padding: '16px' }}>
+                    <Card style={{ padding: '16px', marginTop: '12px' }}>
                         <p className="text-overline" style={{ color: 'gray' }}>{t('churches.filters.upcoming')}</p>
                     </Card>
                 )}
             </header>
 
-            <div style={{ display: 'grid', gap: '12px' }}>
+            <div style={viewMode === 'grid' ? {
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                gap: '20px'
+            } : {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+            }}>
                 {isLoading ? (
-                    <div className="flex-center" style={{ height: '200px' }}>
+                    <div className="flex-center" style={{ height: '200px', gridColumn: '1 / -1' }}>
                         <div className="spinner" />
                     </div>
                 ) : filteredChurches.length === 0 ? (
-                    <p className="text-body" style={{ textAlign: 'center', color: 'gray', marginTop: '40px' }}>{t('churches.noResults')}</p>
+                    <p className="text-body" style={{ textAlign: 'center', color: 'gray', marginTop: '40px', gridColumn: '1 / -1' }}>{t('churches.noResults')}</p>
                 ) : (
                     filteredChurches.map(church => (
-                        <Card key={church.id} style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '8px 16px',
-                            opacity: church.is_active ? 1 : 0.6,
-                            filter: church.is_active ? 'none' : 'grayscale(0.5)'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Card
+                            key={church.id}
+                            style={{
+                                display: 'flex',
+                                flexDirection: viewMode === 'grid' ? 'column' : 'row',
+                                justifyContent: 'space-between',
+                                alignItems: viewMode === 'grid' ? 'flex-start' : 'center',
+                                padding: '20px',
+                                opacity: church.is_active ? 1 : 0.6,
+                                filter: church.is_active ? 'none' : 'grayscale(0.5)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                minHeight: viewMode === 'grid' ? '180px' : 'auto',
+                                position: 'relative'
+                            }}
+                            className="sidebar-item"
+                            onClick={() => navigate(`/mainhub/churches/edit/${church.id}`)}
+                        >
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: viewMode === 'grid' ? 'column' : 'row',
+                                alignItems: viewMode === 'grid' ? 'flex-start' : 'center',
+                                gap: viewMode === 'grid' ? '16px' : '20px',
+                                flex: 1,
+                                minWidth: 0,
+                                width: '100%'
+                            }}>
                                 <div style={{
                                     width: '48px',
                                     height: '48px',
@@ -162,16 +206,26 @@ export const ChurchList: FC = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    color: 'var(--color-brand-blue)'
+                                    color: 'var(--color-brand-blue)',
+                                    border: '1px solid rgba(59, 130, 246, 0.1)',
+                                    flexShrink: 0
                                 }}>
                                     <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>church</span>
                                 </div>
-                                <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <h3 className="text-card-title">{church.name}</h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, width: '100%' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                        <h3 className="text-card-title" style={{
+                                            fontSize: '16px',
+                                            fontWeight: 700,
+                                            margin: 0,
+                                            wordBreak: 'break-word',
+                                            lineHeight: 1.2
+                                        }}>
+                                            {church.name}
+                                        </h3>
                                         {!church.is_active && (
                                             <span style={{
-                                                fontSize: '10px',
+                                                fontSize: '9px',
                                                 padding: '2px 6px',
                                                 borderRadius: '4px',
                                                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -183,72 +237,52 @@ export const ChurchList: FC = () => {
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-overline" style={{ color: 'gray', marginTop: '0px' }}>/{church.slug}</p>
+                                    <p className="text-overline" style={{ color: 'var(--color-brand-blue)', fontWeight: 600, fontSize: '11px', marginTop: '4px' }}>/{church.slug}</p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+
+                            <div style={{
+                                display: 'flex',
+                                gap: '8px',
+                                alignItems: 'center',
+                                marginTop: viewMode === 'grid' ? '16px' : 0,
+                                justifyContent: viewMode === 'grid' ? 'flex-end' : 'flex-start',
+                                width: viewMode === 'grid' ? '100%' : 'auto'
+                            }} onClick={e => e.stopPropagation()}>
                                 {isMaster && (
-                                    <>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigate(`/mainhub/churches/edit/${church.id}`);
-                                            }}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                cursor: 'pointer',
-                                                color: '#6B7280',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                padding: '4px'
-                                            }}
-                                        >
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
-                                        </button>
+                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                        <Button
+                                            variant="ghost"
+                                            icon="edit"
+                                            onClick={() => navigate(`/mainhub/churches/edit/${church.id}`)}
+                                            style={{ padding: '8px', minWidth: 'auto', color: 'var(--color-ui-text-soft)' }}
+                                        />
                                         {church.is_active ? (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleAction(church, 'deactivate');
-                                                }}
-                                                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#F59E0B', display: 'flex', alignItems: 'center', padding: '4px' }}
+                                            <Button
+                                                variant="ghost"
+                                                icon="block"
+                                                onClick={() => handleAction(church, 'deactivate')}
+                                                style={{ padding: '8px', minWidth: 'auto', color: '#F59E0B' }}
                                                 title={t('churches.deactivate')}
-                                            >
-                                                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>block</span>
-                                            </button>
+                                            />
                                         ) : (
-                                            <>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleAction(church, 'restore');
-                                                    }}
-                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#10B981', display: 'flex', alignItems: 'center', padding: '4px' }}
-                                                    title={t('churches.restore')}
-                                                >
-                                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>settings_backup_restore</span>
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleAction(church, 'hardDelete');
-                                                    }}
-                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', display: 'flex', alignItems: 'center', padding: '4px' }}
-                                                    title={t('churches.hardDelete')}
-                                                >
-                                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>delete_forever</span>
-                                                </button>
-                                            </>
+                                            <Button
+                                                variant="ghost"
+                                                icon="settings_backup_restore"
+                                                onClick={() => handleAction(church, 'restore')}
+                                                style={{ padding: '8px', minWidth: 'auto', color: '#10B981' }}
+                                                title={t('churches.restore')}
+                                            />
                                         )}
-                                    </>
+                                    </div>
                                 )}
-                                <span className="material-symbols-outlined" style={{ color: '#4B5563' }}>chevron_right</span>
+                                {viewMode === 'list' && <span className="material-symbols-outlined" style={{ color: 'var(--color-ui-text-soft)', fontSize: '20px' }}>chevron_right</span>}
                             </div>
                         </Card>
                     ))
                 )}
             </div>
+
         </div>
     );
 };

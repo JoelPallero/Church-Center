@@ -9,6 +9,7 @@ import { useAuth } from '../../../../hooks/useAuth';
 import { useToast } from '../../../../context/ToastContext';
 import type { User, UserRoleName } from '../../../../context/AuthContext';
 import { EditMemberModal } from '../../../../components/people/EditMemberModal';
+import { PeopleTable } from '../../../../components/people/PeopleTable';
 
 export const PeopleList: FC = () => {
     const { t } = useTranslation();
@@ -275,7 +276,7 @@ export const PeopleList: FC = () => {
                 }
             </header >
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {loading ? (
                     <div className="flex-center" style={{ height: '200px' }}>
                         <div className="spinner" />
@@ -426,6 +427,27 @@ export const PeopleList: FC = () => {
                     ))
                 )}
             </div>
+
+            <div className="desktop-only">
+                {loading ? (
+                    <div className="flex-center" style={{ height: '200px' }}>
+                        <div className="spinner" />
+                    </div>
+                ) : filteredUsers.length === 0 ? (
+                    <p className="text-body" style={{ textAlign: 'center', color: 'gray', marginTop: '40px' }}>{t('people.noResults')}</p>
+                ) : (
+                    <PeopleTable
+                        users={filteredUsers}
+                        onEdit={setEditingUser}
+                        onDelete={handleDelete}
+                        onResend={handleResend}
+                        activeMenu={activeMenu}
+                        setActiveMenu={setActiveMenu}
+                        getStatusText={getStatusText}
+                    />
+                )}
+            </div>
+
         </div >
     );
 };

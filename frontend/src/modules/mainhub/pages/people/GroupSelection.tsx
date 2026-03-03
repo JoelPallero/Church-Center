@@ -67,41 +67,85 @@ export const GroupSelection: FC = () => {
 
     return (
         <div className="flex-center" style={{ minHeight: '80vh', padding: '24px' }}>
-            <Card style={{ maxWidth: '600px', width: '100%', padding: '32px' }}>
-                <h1 className="text-h1" style={{ marginBottom: '8px' }}>Unirse a Equipos</h1>
-                <p className="text-body" style={{ color: 'gray', marginBottom: '24px' }}>
-                    Selecciona los ministerios o áreas en las que vas a participar.
-                </p>
+            <Card style={{ maxWidth: '800px', width: '100%', padding: '40px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                    <h1 className="text-h1" style={{ marginBottom: '12px' }}>Unirse a Equipos</h1>
+                    <p className="text-body-secondary" style={{ maxWidth: '420px', margin: '0 auto' }}>
+                        Selecciona los ministerios o áreas en las que vas a participar para personalizar tu experiencia.
+                    </p>
+                </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '32px' }}>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: '12px',
+                    marginBottom: '40px'
+                }}>
                     {groups.map(g => (
                         <div
                             key={g.id}
                             onClick={() => toggleGroup(g.id)}
                             style={{
-                                padding: '16px',
-                                borderRadius: '12px',
+                                padding: '24px',
+                                borderRadius: '20px',
                                 border: '2px solid ' + (selectedGroups.includes(g.id) ? 'var(--color-brand-blue)' : 'var(--color-border-subtle)'),
-                                backgroundColor: selectedGroups.includes(g.id) ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-ui-bg)',
+                                backgroundColor: selectedGroups.includes(g.id) ? 'rgba(59, 130, 246, 0.05)' : 'var(--color-ui-bg)',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s ease',
+                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '4px'
+                                alignItems: 'center',
+                                textAlign: 'center',
+                                gap: '8px',
+                                position: 'relative'
                             }}
+                            className="sidebar-item"
                         >
-                            <span className="text-card-title">{g.name}</span>
-                            {g.description && <span style={{ fontSize: '11px', color: 'gray' }}>{g.description}</span>}
+                            <div style={{
+                                width: '48px',
+                                height: '48px',
+                                borderRadius: '14px',
+                                backgroundColor: selectedGroups.includes(g.id) ? 'var(--color-brand-blue)' : 'rgba(255,255,255,0.05)',
+                                color: selectedGroups.includes(g.id) ? 'white' : 'var(--color-brand-blue)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginBottom: '4px',
+                                transition: 'all 0.2s'
+                            }}>
+                                <span className="material-symbols-outlined">group</span>
+                            </div>
+                            <span className="text-card-title" style={{ fontWeight: 700 }}>{g.name}</span>
+                            {g.description && <span style={{ fontSize: '11px', color: 'var(--color-ui-text-soft)', lineHeight: '1.4' }}>{g.description}</span>}
+
+                            {selectedGroups.includes(g.id) && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '12px',
+                                    right: '12px',
+                                    width: '20px',
+                                    height: '20px',
+                                    borderRadius: '50%',
+                                    backgroundColor: 'var(--color-brand-blue)',
+                                    color: 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '14px', fontWeight: 'bold' }}>check</span>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                    <Button variant="ghost" label="Omitir por ahora" onClick={() => navigate('/')} />
-                    <Button variant="primary" label="Continuar" onClick={handleContinue} />
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+                    <Button variant="ghost" label="Omitir por ahora" onClick={() => navigate('/')} style={{ height: '48px', padding: '0 24px' }} />
+                    <Button variant="primary" label="Comenzar ahora" onClick={handleContinue} style={{ height: '48px', padding: '0 40px' }} />
                 </div>
             </Card>
         </div>
+
     );
 };
 

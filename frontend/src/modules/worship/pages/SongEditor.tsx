@@ -29,6 +29,8 @@ export const SongEditor: FC = () => {
         content: '',
         category: 'worship',
         bpmType: 'fast',
+        youtubeUrl: '',
+        spotifyUrl: '',
         memberKeys: []
     });
 
@@ -69,6 +71,8 @@ export const SongEditor: FC = () => {
                 content: song.content,
                 category: song.category || 'worship',
                 bpmType: song.bpmType || 'fast',
+                youtubeUrl: song.youtubeUrl || '',
+                spotifyUrl: (song as any).spotifyUrl || '',
                 memberKeys: song.memberKeys || []
             });
         }
@@ -156,192 +160,240 @@ export const SongEditor: FC = () => {
     };
 
     return (
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '16px' }}>
+        <div style={{ width: '100%', padding: '24px', minWidth: 0 }}>
             <style>{`
                 .editor-grid {
                     display: grid;
                     grid-template-columns: 1fr;
                     gap: 24px;
+                    align-items: start;
                 }
-                @media (min-width: 768px) {
+                @media (min-width: 1200px) {
+                    .editor-grid {
+                        grid-template-columns: repeat(3, 1fr);
+                    }
+                }
+                @media (min-width: 768px) and (max-width: 1199px) {
                     .editor-grid {
                         grid-template-columns: 1fr 1fr;
                     }
                 }
             `}</style>
-            <header style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1 className="text-h1">{isEditing ? t('songs.edit') : t('songs.add')}</h1>
-                <div style={{ display: 'flex', gap: '8px' }}>
+            <header style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <Button variant="ghost" icon="arrow_back" label={t('common.back') || 'Volver'} onClick={() => navigate(-1)} style={{ marginBottom: '8px', padding: 0 }} />
+                    <h1 className="text-h1">{isEditing ? t('songs.edit') : t('songs.add')}</h1>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
                     <Button variant="secondary" label={t('common.cancel')} onClick={() => navigate(-1)} />
                     <Button variant="primary" label={loading ? t('common.save') + '...' : t('common.save')} onClick={handleSave} disabled={loading} />
                 </div>
             </header>
 
             <div className="editor-grid">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <Card style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div>
-                            <label className="text-overline" style={{ color: 'gray', marginBottom: '4px', display: 'block' }}>{t('songs.titleLabel')}</label>
-                            <input
-                                className="text-body"
-                                value={form.title}
-                                onChange={e => setForm({ ...form, title: e.target.value })}
-                                style={inputStyle}
-                                placeholder={t('songs.titlePlaceholder')}
-                            />
-                        </div>
-                        <div>
-                            <label className="text-overline" style={{ color: 'gray', marginBottom: '4px', display: 'block' }}>{t('songs.artistLabel')}</label>
-                            <input
-                                className="text-body"
-                                value={form.artist}
-                                onChange={e => setForm({ ...form, artist: e.target.value })}
-                                style={inputStyle}
-                                placeholder={t('songs.artistPlaceholder')}
-                            />
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                {/* Column 1: Config & Resource Info */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <Card style={{ padding: '24px' }}>
+                        <h3 className="text-card-title" style={{ marginBottom: '16px' }}>{t('songs.basicInfo') || 'Información Básica'}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             <div>
-                                <label className="text-overline" style={{ color: 'gray', marginBottom: '4px', display: 'block' }}>{t('songs.key')}</label>
-                                <select
-                                    className="text-body"
-                                    value={form.originalKey}
-                                    onChange={e => setForm({ ...form, originalKey: e.target.value })}
-                                    style={inputStyle}
-                                >
-                                    {MUSICAL_KEYS.map(k => (
-                                        <option key={k} value={k}>{k}</option>
-                                    ))}
-                                </select>
+                                <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>{t('songs.title') || 'Título'}</label>
+                                <input className="text-body" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} style={inputStyle} placeholder={t('songs.titlePlaceholder') || 'Nombre de la canción'} />
                             </div>
                             <div>
-                                <label className="text-overline" style={{ color: 'gray', marginBottom: '4px', display: 'block' }}>{t('songs.typeLabel')}</label>
-                                <select
-                                    className="text-body"
-                                    value={form.bpmType || 'fast'}
-                                    onChange={e => setForm({ ...form, bpmType: e.target.value as 'fast' | 'slow' })}
-                                    style={inputStyle}
-                                >
-                                    <option value="fast">{t('songs.fast')}</option>
-                                    <option value="slow">{t('songs.slow')}</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                            <div>
-                                <label className="text-overline" style={{ color: 'gray', marginBottom: '4px', display: 'block' }}>{t('songs.tempo')} (BPM)</label>
-                                <input
-                                    type="number"
-                                    className="text-body"
-                                    value={form.tempo}
-                                    onChange={e => setForm({ ...form, tempo: parseInt(e.target.value) })}
-                                    style={inputStyle}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-overline" style={{ color: 'gray', marginBottom: '4px', display: 'block' }}>{t('songs.time')}</label>
-                                <select
-                                    className="text-body"
-                                    value={form.timeSignature}
-                                    onChange={e => setForm({ ...form, timeSignature: e.target.value })}
-                                    style={inputStyle}
-                                >
-                                    {['4/4', '3/4', '6/8', '2/4', '2/2', '5/4', '12/8'].map(ts => (
-                                        <option key={ts} value={ts}>{ts}</option>
-                                    ))}
-                                </select>
+                                <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>{t('songs.artist') || 'Artista'}</label>
+                                <input className="text-body" value={form.artist} onChange={e => setForm({ ...form, artist: e.target.value })} style={inputStyle} placeholder={t('songs.artistPlaceholder') || 'Nombre del artista/grupo'} />
                             </div>
                         </div>
                     </Card>
 
-                    <Card style={{ padding: '20px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <label className="text-overline" style={{ color: 'gray' }}>{t('songs.singerAssignments')}</label>
-                            <Button variant="ghost" label={t('songs.addAssignment')} onClick={addMemberKey} style={{ padding: '4px 8px', fontSize: '11px' }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>add</span>
-                                {t('common.add')}
-                            </Button>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {form.memberKeys && form.memberKeys.map((mk, idx) => (
-                                <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center', backgroundColor: 'var(--color-ui-bg)', padding: '8px', borderRadius: '8px' }}>
-                                    <select
-                                        className="text-body"
-                                        value={mk.memberId}
-                                        onChange={e => updateMemberKey(idx, 'memberId', e.target.value)}
-                                        style={{ ...inputStyle, flex: 2, padding: '6px 8px' }}
-                                    >
-                                        {singers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                    </select>
-                                    <select
-                                        className="text-body"
-                                        value={mk.preferredKey}
-                                        onChange={e => updateMemberKey(idx, 'preferredKey', e.target.value)}
-                                        style={{ ...inputStyle, flex: 1, padding: '6px 8px' }}
-                                    >
+                    <Card style={{ padding: '24px' }}>
+                        <h3 className="text-card-title" style={{ marginBottom: '16px' }}>{t('songs.technical') || 'Detalles Técnicos'}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div>
+                                    <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>{t('songs.key') || 'Tonalidad'}</label>
+                                    <select className="text-body" value={form.originalKey} onChange={e => setForm({ ...form, originalKey: e.target.value })} style={inputStyle}>
                                         {MUSICAL_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
                                     </select>
-                                    <button
-                                        onClick={() => removeMemberKey(idx)}
-                                        style={{ background: 'none', border: 'none', color: '#ff4444', cursor: 'pointer', padding: '4px' }}
-                                    >
-                                        <span className="material-symbols-outlined">delete</span>
+                                </div>
+                                <div>
+                                    <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>{t('songs.bpmType') || 'Tipo BPM'}</label>
+                                    <select className="text-body" value={form.bpmType || 'fast'} onChange={e => setForm({ ...form, bpmType: e.target.value as 'fast' | 'slow' })} style={inputStyle}>
+                                        <option value="fast">{t('songs.fast') || 'Rápida'}</option>
+                                        <option value="slow">{t('songs.slow') || 'Lenta'}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div>
+                                    <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>BPM</label>
+                                    <input type="number" className="text-body" value={form.tempo} onChange={e => setForm({ ...form, tempo: parseInt(e.target.value) })} style={inputStyle} />
+                                </div>
+                                <div>
+                                    <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>{t('songs.time') || 'Compás'}</label>
+                                    <select className="text-body" value={form.timeSignature} onChange={e => setForm({ ...form, timeSignature: e.target.value })} style={inputStyle}>
+                                        {['4/4', '3/4', '6/8', '2/4', '2/2', '5/4', '12/8'].map(ts => <option key={ts} value={ts}>{ts}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card style={{ padding: '24px' }}>
+                        <h3 className="text-card-title" style={{ marginBottom: '16px' }}>{t('songs.multimedia') || 'Multimedia'}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div>
+                                <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>YouTube Link</label>
+                                <div style={{ position: 'relative' }}>
+                                    <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#FF0000', fontSize: '18px' }}>smart_display</span>
+                                    <input className="text-body" value={form.youtubeUrl} onChange={e => setForm({ ...form, youtubeUrl: e.target.value })} style={{ ...inputStyle, paddingLeft: '40px' }} placeholder="https://youtube.com/..." />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>Spotify Link</label>
+                                <div style={{ position: 'relative' }}>
+                                    <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#1DB954', fontSize: '18px' }}>album</span>
+                                    <input className="text-body" value={(form as any).spotifyUrl} onChange={e => setForm({ ...form, ['spotifyUrl' as any]: e.target.value })} style={{ ...inputStyle, paddingLeft: '40px' }} placeholder="https://spotify.com/..." />
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Column 2: Singer Assignments & Editor */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <Card style={{ padding: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 className="text-card-title" style={{ fontSize: '14px' }}>{t('songs.singerAssignments') || 'Líder de Alabanza'}</h3>
+                            <Button variant="ghost" icon="add" onClick={addMemberKey} style={{ padding: '4px', minWidth: 'auto' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {form.memberKeys && form.memberKeys.map((mk, idx) => (
+                                <div key={idx} style={{ display: 'flex', gap: '6px', alignItems: 'center', backgroundColor: 'var(--color-ui-surface)', padding: '8px', borderRadius: '10px' }}>
+                                    <select className="text-body" value={mk.memberId} onChange={e => updateMemberKey(idx, 'memberId', e.target.value)} style={{ ...inputStyle, flex: 2, padding: '4px 8px', fontSize: '12px' }}>
+                                        {singers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    </select>
+                                    <select className="text-body" value={mk.preferredKey} onChange={e => updateMemberKey(idx, 'preferredKey', e.target.value)} style={{ ...inputStyle, flex: 1, padding: '4px 4px', fontSize: '12px' }}>
+                                        {MUSICAL_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
+                                    </select>
+                                    <button onClick={() => removeMemberKey(idx)} style={{ background: 'none', border: 'none', color: 'var(--color-danger-red)', cursor: 'pointer', padding: '2px' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
                                     </button>
                                 </div>
                             ))}
                             {(!form.memberKeys || form.memberKeys.length === 0) && (
-                                <p style={{ fontSize: '12px', color: 'gray', textAlign: 'center', margin: '8px 0' }}>{t('songs.noSingersAssigned')}</p>
+                                <p className="text-body-secondary" style={{ textAlign: 'center', fontSize: '12px' }}>{t('songs.noSingersAssigned')}</p>
                             )}
                         </div>
                     </Card>
 
-                    <Card style={{ padding: '20px' }}>
-                        <label className="text-overline" style={{ color: 'gray', marginBottom: '8px', display: 'block' }}>{t('songs.contentLabel')}</label>
+                    <Card style={{ padding: '24px', minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                            <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', margin: 0 }}>{t('songs.contentLabel')}</label>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                {[
+                                    { n: 'Intro', c: '#6B7280' },
+                                    { n: 'Estrofa', c: '#3B82F6' },
+                                    { n: 'Coro', c: '#10B981' },
+                                    { n: 'Puente', c: '#F59E0B' },
+                                    { n: 'Outro', c: '#EF4444' }
+                                ].map(s => (
+                                    <button
+                                        key={s.n}
+                                        onClick={() => {
+                                            const textarea = document.getElementById('song-content-area') as HTMLTextAreaElement;
+                                            if (!textarea) return;
+                                            const start = textarea.selectionStart;
+                                            const end = textarea.selectionEnd;
+                                            const text = form.content;
+
+                                            // Check if we are at start or need a prefix newline
+                                            const needsPrefix = start > 0 && text[start - 1] !== '\n';
+                                            const tag = `${needsPrefix ? '\n' : ''}[${s.n}]\n`;
+
+                                            const before = text.substring(0, start);
+                                            const after = text.substring(end);
+                                            setForm({ ...form, content: before + tag + after });
+
+                                            setTimeout(() => {
+                                                textarea.focus();
+                                                const cursorFixed = start + tag.length;
+                                                textarea.setSelectionRange(cursorFixed, cursorFixed);
+                                            }, 10);
+                                        }}
+                                        type="button"
+                                        style={{
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            padding: '4px 10px',
+                                            fontSize: '10px',
+                                            fontWeight: 400,
+                                            backgroundColor: s.c,
+                                            color: 'white',
+                                            cursor: 'pointer',
+                                            textTransform: 'uppercase'
+                                        }}
+                                    >
+                                        {s.n}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                         <textarea
+                            id="song-content-area"
                             className="text-body"
                             value={form.content}
                             onChange={e => setForm({ ...form, content: e.target.value })}
                             style={{
                                 ...inputStyle,
-                                minHeight: '300px',
+                                flex: 1,
+                                minHeight: '500px',
                                 fontFamily: 'monospace',
-                                resize: 'vertical'
+                                resize: 'none',
+                                lineHeight: '1.6',
+                                padding: '20px'
                             }}
                             placeholder={t('songs.contentPlaceholder')}
                         />
                     </Card>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <Card style={{ padding: '20px', minHeight: '500px', backgroundColor: 'var(--color-ui-surface)' }}>
-                        <label className="text-overline" style={{ color: 'gray', marginBottom: '16px', display: 'block' }}>{t('common.preview')}</label>
-                        <div style={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', lineHeight: '2', color: 'var(--color-ui-text)' }}>
+                {/* Column 3: Preview */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <Card style={{ padding: '24px' }}>
+                        <h3 className="text-card-title" style={{ marginBottom: '16px' }}>{t('common.preview')}</h3>
+                        <div style={{
+                            fontFamily: 'monospace',
+                            whiteSpace: 'pre-wrap',
+                            lineHeight: '1.8',
+                            color: 'var(--color-ui-text)',
+                            fontSize: '11px',
+                            maxHeight: '800px',
+                            overflowY: 'auto',
+                            backgroundColor: 'var(--color-ui-bg)',
+                            padding: '16px',
+                            borderRadius: '12px',
+                            border: '1px solid var(--color-border-subtle)'
+                        }}>
                             {form.content ? form.content.split('\n').map((line, i) => (
                                 <p key={i} style={{ margin: 0 }}>
                                     {line.split(/(\[[^\]]+\])/).map((part, j) => (
                                         part.startsWith('[') ? (
                                             <span key={j} style={{ position: 'relative', display: 'inline-flex', width: 0, overflow: 'visible' }}>
-                                                <strong style={{
-                                                    position: 'absolute',
-                                                    bottom: '100%',
-                                                    left: 0,
-                                                    color: 'var(--color-primary)',
-                                                    whiteSpace: 'nowrap',
-                                                    transform: 'translateY(10%)'
-                                                }}>
+                                                <strong style={{ position: 'absolute', bottom: '100%', left: 0, color: 'var(--color-brand-blue)', whiteSpace: 'nowrap', transform: 'translateY(10%)' }}>
                                                     {part.slice(1, -1)}
                                                 </strong>
                                             </span>
                                         ) : part
                                     ))}
                                 </p>
-                            )) : <span style={{ color: '#ccc' }}>{t('songs.previewPlaceholder')}</span>}
+                            )) : <span style={{ color: 'var(--color-ui-text-soft)' }}>{t('songs.previewPlaceholder')}</span>}
                         </div>
                     </Card>
                 </div>
             </div>
+
         </div>
     );
 };

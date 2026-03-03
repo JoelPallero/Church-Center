@@ -99,6 +99,20 @@ export const AreaList: FC = () => {
         }
     };
 
+    const getAreaIcon = (name: string) => {
+        const n = name.toLowerCase();
+        if (n.includes('alabanza') || n.includes('musica') || n.includes('música')) return 'music_note';
+        if (n.includes('sonido') || n.includes('audio') || n.includes('tecnica')) return 'surround_sound';
+        if (n.includes('ujier') || n.includes('acogida') || n.includes('orden')) return 'hail';
+        if (n.includes('multimedia') || n.includes('video') || n.includes('proyeccion')) return 'videocam';
+        if (n.includes('niño') || n.includes('escuela') || n.includes('infantil')) return 'child_care';
+        if (n.includes('joven') || n.includes('adolescente')) return 'groups_3';
+        if (n.includes('intercesion') || n.includes('oracion')) return 'volunteer_activism';
+        if (n.includes('limpieza') || n.includes('mantenimiento')) return 'cleaning_services';
+        if (n.includes('pastoral') || n.includes('conseje')) return 'church';
+        return 'layers';
+    };
+
     return (
         <div>
             <header style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -157,36 +171,80 @@ export const AreaList: FC = () => {
                 </Card>
             )}
 
-            <div style={{ display: 'grid', gap: '12px' }}>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '16px'
+            }}>
                 {isLoading ? (
-                    <div className="flex-center" style={{ height: '100px' }}><div className="spinner" /></div>
+                    <div className="flex-center" style={{ height: '100px', gridColumn: '1 / -1' }}><div className="spinner" /></div>
                 ) : areas.length === 0 ? (
-                    <p style={{ textAlign: 'center', color: 'gray', padding: '40px' }}>No hay áreas registradas.</p>
+                    <p style={{ textAlign: 'center', color: 'gray', padding: '40px', gridColumn: '1 / -1' }}>No hay áreas registradas.</p>
                 ) : (
                     areas.map(area => (
-                        <Card key={area.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px' }}>
-                            <div>
-                                <h3 className="text-card-title">{area.name}</h3>
-                                {area.church_name && <p className="text-overline" style={{ color: 'gray' }}>{area.church_name}</p>}
+                        <Card key={area.id} style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '16px 20px',
+                            transition: 'all 0.2s',
+                            cursor: 'default',
+                            position: 'relative'
+                        }} className="sidebar-item">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '10px',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--color-brand-blue)',
+                                }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>{getAreaIcon(area.name)}</span>
+                                </div>
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <h3 className="text-card-title" style={{ fontSize: '16px', fontWeight: 600 }}>{area.name}</h3>
+                                        {/* Teams Count Badge */}
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            padding: '2px 8px',
+                                            borderRadius: '12px',
+                                            backgroundColor: 'var(--color-ui-surface)',
+                                            color: 'var(--color-ui-text-soft)',
+                                            fontSize: '11px',
+                                            fontWeight: 700
+                                        }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>groups</span>
+                                            <span>{area.teams_count || 0}</span>
+                                        </div>
+                                    </div>
+                                    {area.church_name && <p className="text-overline" style={{ color: 'var(--color-brand-blue)', fontWeight: 600, fontSize: '11px', marginTop: '2px' }}>{area.church_name}</p>}
+                                </div>
                             </div>
                             <div style={{ display: 'flex', gap: '8px' }}>
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    icon="edit"
                                     onClick={() => { setEditingArea(area); setNewName(area.name); }}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}
-                                >
-                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
-                                </button>
-                                <button
+                                    style={{ padding: '8px', minWidth: 'auto', color: 'var(--color-ui-text-soft)' }}
+                                />
+                                <Button
+                                    variant="ghost"
+                                    icon="delete"
                                     onClick={() => handleDelete(area.id)}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444' }}
-                                >
-                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>delete</span>
-                                </button>
+                                    style={{ padding: '8px', minWidth: 'auto', color: 'var(--color-danger-red)' }}
+                                />
                             </div>
                         </Card>
                     ))
                 )}
             </div>
+
         </div>
     );
 };

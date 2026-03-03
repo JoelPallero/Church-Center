@@ -10,52 +10,60 @@ export const BottomNav: FC = () => {
     const { isSuperAdmin, isMaster, hasPermission } = useAuth();
     const effectiveIsSuperAdmin = isSuperAdmin || isMaster;
 
-    const isPastor = hasPermission('church.update');
-    const isLeader = hasPermission('team.create') || hasPermission('area.create');
-    const isMember = hasPermission('church.read') && !isPastor && !isLeader;
-    const isGuest = !hasPermission('church.read') && !effectiveIsSuperAdmin;
+    interface NavItem {
+        path: string;
+        icon: string;
+        label: string;
+        permission?: string | null;
+        isCentral?: boolean;
+        isDisabled?: boolean;
+    }
 
-    let navItems: any[] = [];
+    // Unified Nav Items logic based on permissions
+    const allPossibleItems: NavItem[] = [
+        { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
+        { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'churches.view' },
+        { path: '/mainhub/pastor', icon: 'auto_graph', label: t('nav.pastor') || 'Pastor', permission: 'church.update' },
+        { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports'), permission: 'reports.view' },
+        { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'reunions.view' },
+        { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'area.create' },
+        { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'teams.view' },
+        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'users.view' },
+        { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'songs.view' }
+    ];
+
+    // Filter items based on user permissions
+    const filteredNavItems = allPossibleItems.filter(item =>
+        !item.permission || (item.permission === 'church.update' ? hasPermission('church.update') : hasPermission(item.permission))
+    );
+
+    // Limit to 5 items for mobile bottom nav, prioritizing key hubs
+    let navItems: NavItem[] = filteredNavItems;
 
     if (effectiveIsSuperAdmin) {
-        // Superadmin: Dashboard, Reportes, Iglesias, Panel de control
-        navItems = [
-            { path: '/dashboard', icon: 'dashboard', label: t('nav.dashboard') },
-            { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports') },
-            { path: '/mainhub/churches', icon: 'church', label: t('nav.churches') },
-            { path: '/settings', icon: 'settings_input_component', label: t('nav.settings') }
-        ];
-    } else if (isPastor) {
-        // Pastor: Reportes, Dashboard, Eventos, Areas, Equipos
-        navItems = [
-            { path: '/mainhub/ushers', icon: 'how_to_reg', label: t('nav.ushers') },
-            { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports') },
-            { path: '/dashboard', icon: 'dashboard', label: t('nav.dashboard') },
-            { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), isCentral: true },
-            { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams') }
-        ];
-    } else if (isLeader) {
-        // Líder/coordinador: Inicio, Equipo, Listados, Canciones, Calendario
-        navItems = [
-            { path: '/dashboard', icon: 'home', label: t('nav.home') },
-            { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams') },
-            { path: '/worship/playlists', icon: 'reorder', label: t('nav.playlists'), isCentral: true },
-            { path: '/worship/songs', icon: 'music_note', label: t('nav.songs') },
-            { path: '/worship/calendar', icon: 'event', label: t('nav.calendar') }
-        ];
-    } else if (isMember) {
-        // Miembros: Dashboard, Biblioteca, Calendario (Off)
-        navItems = [
-            { path: '/dashboard', icon: 'dashboard', label: t('nav.dashboard') },
-            { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), isCentral: true },
-            { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), isDisabled: true }
-        ];
-    } else if (isGuest) {
-        // Invitados: Inicio, Mi Perfil
-        navItems = [
-            { path: '/dashboard', icon: 'home', label: t('nav.home') },
-            { path: '/profile', icon: 'person', label: t('nav.me') }
-        ];
+        navItems = filteredNavItems.filter(i => ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/settings'].includes(i.path));
+        // Add settings manually as it might not be in the list
+        if (!navItems.find(i => i.path === '/settings')) {
+            navItems.push({ path: '/settings', icon: 'settings', label: t('nav.settings'), permission: null });
+        }
+    } else {
+        // For others, take the first 5 or relevant ones
+        const prioritized = ['/dashboard', '/mainhub/reports', '/worship/calendar', '/mainhub/teams', '/worship/songs'];
+        navItems = filteredNavItems.filter(i => prioritized.includes(i.path));
+
+        // If still too few, backfill from filteredNavItems
+        if (navItems.length < 5) {
+            const others = filteredNavItems.filter(i => !prioritized.includes(i.path));
+            navItems = [...navItems, ...others].slice(0, 5);
+        }
+
+        // Final fallback: Ensure at least Home and Profile
+        if (navItems.length === 0) {
+            navItems = [
+                { path: '/dashboard', icon: 'home', label: t('nav.home') },
+                { path: '/profile', icon: 'person', label: t('nav.me') }
+            ];
+        }
     }
 
     return (

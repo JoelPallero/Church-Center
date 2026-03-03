@@ -29,4 +29,6 @@
     - **Social Media Hub**: Redes sociales, reels, historias y transmisiones.
     - **Pastoral Hub**: Panel de control total, reportes en tiempo real, estadísticas, calendarios y gestión de equipos para el Pastor.
 - [ ] usar httpOnly cookies
-- [ ] 
+- [ ] en mobile, no aparecen todas las opciones en el menu del header.
+- [ ] El ancho de mobile, cambió. Hay que corregirlo.
+

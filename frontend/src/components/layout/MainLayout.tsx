@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { NotificationCenter } from '../ui/NotificationCenter';
 import { ToastContainer } from '../ui/Toast';
 import { DevRoleSwitcher } from '../dev/DevRoleSwitcher';
+import { DesktopSidebar } from './DesktopSidebar';
 
 export const MainLayout: FC = () => {
     const { t } = useTranslation();
@@ -53,10 +54,14 @@ export const MainLayout: FC = () => {
             minHeight: '100vh',
             backgroundColor: 'var(--color-ui-bg)',
             color: 'var(--color-ui-text)',
-            position: 'relative'
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column'
         }}>
-            {/* Header */}
-            <header style={{
+            <DesktopSidebar />
+
+            {/* Mobile Header */}
+            <header className="mobile-only" style={{
                 position: 'sticky',
                 top: 0,
                 zIndex: isAnyMenuOpen ? 2002 : 50,
@@ -93,7 +98,7 @@ export const MainLayout: FC = () => {
                             </span>
                         </div>
                     </div>
-                    <div className="flex-center" style={{ gap: '8px' }}>
+                    <div className="flex-center" style={{ gap: '12px' }}>
                         <NotificationCenter
                             isOpen={notificationsOpen}
                             onOpenChange={(open) => {
@@ -101,135 +106,221 @@ export const MainLayout: FC = () => {
                                 setNotificationsOpen(open);
                             }}
                         />
-                        <div style={{ position: 'relative', zIndex: notificationsOpen ? 0 : 70 }}>
-                            <span
-                                className="material-symbols-outlined"
-                                style={{ color: 'var(--color-ui-text)', cursor: 'pointer' }}
-                                onClick={() => {
-                                    setNotificationsOpen(false);
-                                    setUserMenuOpen(!userMenuOpen);
-                                }}
-                            >
-                                more_vert
-                            </span>
+                        <div
+                            style={{
+                                position: 'relative',
+                                zIndex: notificationsOpen ? 0 : 70,
+                                cursor: 'pointer'
+                            }}
+                            onClick={() => {
+                                setNotificationsOpen(false);
+                                setUserMenuOpen(!userMenuOpen);
+                            }}
+                        >
+                            <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '50%',
+                                backgroundColor: userMenuOpen ? 'rgba(59, 130, 246, 0.1)' : 'var(--color-ui-surface)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--color-ui-text-soft)',
+                                border: '1px solid var(--color-border-subtle)',
+                                transition: 'all 0.2s'
+                            }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {isAnyMenuOpen && (
-                <>
-                    <div
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            zIndex: 2000,
-                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                            backdropFilter: 'blur(4px)',
-                            WebkitBackdropFilter: 'blur(4px)',
-                            animation: 'fadeIn 0.2s ease-out'
-                        }}
-                        onClick={() => {
-                            setUserMenuOpen(false);
-                            setNotificationsOpen(false);
-                        }}
-                    />
-                    {userMenuOpen && (
-                        <div className="dropdown-menu" style={{
-                            position: 'fixed',
-                            zIndex: 2100,
-                            top: '80px',
-                            right: 'max(24px, calc((100% - 800px) / 2 + 24px))',
-                            width: '260px'
+            {/* Mobile-Only Dropdown & Overlay */}
+            <div className="mobile-only">
+                {isAnyMenuOpen && (
+                    <>
+                        <div
+                            style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                zIndex: 2000,
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                backdropFilter: 'blur(4px)',
+                                WebkitBackdropFilter: 'blur(4px)'
+                            }}
+                            onClick={() => {
+                                setUserMenuOpen(false);
+                                setNotificationsOpen(false);
+                            }}
+                        />
+                        {userMenuOpen && (
+                            <div className="dropdown-menu" style={{
+                                position: 'fixed',
+                                zIndex: 2101,
+                                top: '70px',
+                                right: '16px',
+                                width: '240px'
+                            }}>
+                                <div style={{ padding: '16px', borderBottom: '1px solid var(--color-border-subtle)' }}>
+                                    <p style={{ fontWeight: 700, fontSize: '14px', marginBottom: '2px' }}>{user?.name}</p>
+                                    <p style={{ fontSize: '11px', color: 'var(--color-ui-text-soft)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                        {user?.role?.displayName || user?.role?.name || 'Miembro'}
+                                    </p>
+                                </div>
+                                <div onClick={() => { navigate('/profile'); setUserMenuOpen(false); }} className="dropdown-item">
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person</span>
+                                    <span>Mi perfil</span>
+                                </div>
+                                <div onClick={() => { navigate('/worship/instruments'); setUserMenuOpen(false); }} className="dropdown-item">
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>piano</span>
+                                    <span>Mis Instrumentos</span>
+                                </div>
+                                <div onClick={() => { navigate('/settings'); setUserMenuOpen(false); }} className="dropdown-item">
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>settings</span>
+                                    <span>Configuraciones</span>
+                                </div>
+                                <div className="dropdown-divider" />
+                                <div onClick={() => { handleLogout(); setUserMenuOpen(false); }} className="dropdown-item" style={{ color: 'var(--color-danger-red)', fontWeight: 600 }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>logout</span>
+                                    <span>Cerrar Sesión</span>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+
+            <div style={{
+                flex: 1,
+                marginLeft: 'var(--main-margin-left, 0)',
+                display: 'flex',
+                flexDirection: 'column',
+                minWidth: 0,
+                backgroundColor: 'var(--color-ui-bg)'
+            }}>
+                <main style={{
+                    flex: 1,
+                    padding: 'var(--main-padding, 24px)',
+                    paddingBottom: '120px',
+                    filter: (isAnyMenuOpen && !window.matchMedia('(min-width: 1200px)').matches) ? 'blur(2px)' : 'none',
+                    transition: 'filter 0.2s'
+                }}>
+                    {/* Desktop Top Bar */}
+                    <div className="desktop-only" style={{ marginBottom: '24px' }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 0',
+                            paddingBottom: '16px',
+                            borderBottom: '1px solid var(--color-border-subtle)',
+                            marginBottom: '12px'
                         }}>
-                            {(() => {
-                                const canManageChurch = hasPermission('church.update');
-                                const isLeader = hasPermission('team.create') || hasPermission('area.create');
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-ui-text-soft)', fontSize: '12px', marginBottom: '4px' }}>
+                                    <span style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Inico</span>
+                                    {location.pathname.split('/').filter(Boolean).map((part, i, arr) => (
+                                        <span key={part} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>chevron_right</span>
+                                            <span style={{
+                                                textTransform: 'capitalize',
+                                                fontWeight: i === arr.length - 1 ? 600 : 400,
+                                                color: i === arr.length - 1 ? 'var(--color-brand-blue)' : 'inherit'
+                                            }}>
+                                                {part.replace(/-/g, ' ')}
+                                            </span>
+                                        </span>
+                                    ))}
+                                </div>
+                                <h1 className="text-h2" style={{ margin: 0 }}>{getHubTitle()}</h1>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <NotificationCenter
+                                    isOpen={notificationsOpen}
+                                    onOpenChange={setNotificationsOpen}
+                                />
 
-                                let footerPaths: string[] = [];
-                                if (isSuperAdmin || isMaster) {
-                                    footerPaths = ['/dashboard', '/reports', '/mainhub/churches', '/settings'];
-                                } else if (canManageChurch) {
-                                    footerPaths = ['/dashboard', '/dashboard_view', '/reunions', '/mainhub/churches', '/teams'];
-                                } else if (isLeader) {
-                                    footerPaths = ['/dashboard', '/teams', '/playlists', '/songs', '/reunions'];
-                                } else {
-                                    // Member
-                                    footerPaths = ['/dashboard', '/worship/songs', '/worship/calendar'];
-                                }
-
-                                const navItemsMetadata = [
-                                    { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
-                                    { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'songs.view' },
-                                    { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'churches.view' },
-                                    { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'area.create' },
-                                    { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'reunions.view' },
-                                    { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'teams.view' },
-                                    { path: '/mainhub/ushers', icon: 'how_to_reg', label: t('nav.ushers'), permission: 'church.update' },
-                                    { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'users.view' },
-                                    { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports'), permission: 'reports.view' },
-                                    { path: '/worship/playlists', icon: 'reorder', label: t('nav.playlists'), permission: 'songs.view' },
-                                    { path: '/settings', icon: 'settings', label: t('nav.settings') || 'Panel de Control', permission: null }
-                                ];
-
-                                const uniqueItems = navItemsMetadata.filter(item => {
-                                    const hasPerm = !item.permission || hasPermission(item.permission);
-                                    const inFooter = footerPaths.includes(item.path);
-                                    return hasPerm && !inFooter;
-                                });
-
-                                return (
-                                    <>
-                                        <div onClick={() => { navigate('/profile'); setUserMenuOpen(false); }} className="dropdown-item">
+                                <div style={{ position: 'relative' }}>
+                                    <div
+                                        onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            cursor: 'pointer',
+                                            padding: '6px 12px',
+                                            borderRadius: '20px',
+                                            backgroundColor: userMenuOpen ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: '50%',
+                                            backgroundColor: 'var(--color-ui-surface)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'var(--color-ui-text-soft)',
+                                            border: '1px solid var(--color-border-subtle)'
+                                        }}>
                                             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person</span>
-                                            <span>{user?.name}</span>
                                         </div>
+                                        <span style={{ fontWeight: 600, fontSize: '14px' }}>{user?.name}</span>
+                                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                                            {userMenuOpen ? 'expand_less' : 'expand_more'}
+                                        </span>
+                                    </div>
 
-                                        {uniqueItems.map(item => (
-                                            <div key={item.path} onClick={() => { navigate(item.path); setUserMenuOpen(false); }} className="dropdown-item">
-                                                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{item.icon}</span>
-                                                <span>{item.label}</span>
+                                    {userMenuOpen && (
+                                        <div className="dropdown-menu" style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            right: 0,
+                                            marginTop: '8px',
+                                            width: '220px',
+                                            zIndex: 3000,
+                                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+                                        }}>
+                                            <div onClick={() => { navigate('/profile'); setUserMenuOpen(false); }} className="dropdown-item">
+                                                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person</span>
+                                                <span>Mi perfil</span>
                                             </div>
-                                        ))}
-
-                                        <div className="dropdown-divider" />
-
-                                        <div onClick={() => { navigate('/privacy'); setUserMenuOpen(false); }} className="dropdown-item">
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>help</span>
-                                            <span>{t('nav.privacy') || 'Privacidad y Soporte'}</span>
+                                            <div onClick={() => { navigate('/worship/instruments'); setUserMenuOpen(false); }} className="dropdown-item">
+                                                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>piano</span>
+                                                <span>Mis Instrumentos</span>
+                                            </div>
+                                            <div onClick={() => { navigate('/settings'); setUserMenuOpen(false); }} className="dropdown-item">
+                                                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>settings</span>
+                                                <span>Configuraciones</span>
+                                            </div>
+                                            <div className="dropdown-divider" />
+                                            <div
+                                                onClick={() => { handleLogout(); setUserMenuOpen(false); }}
+                                                className="dropdown-item"
+                                                style={{ color: 'var(--color-danger-red)' }}
+                                            >
+                                                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>logout</span>
+                                                <span style={{ fontWeight: 600 }}>Cerrar Sesión</span>
+                                            </div>
                                         </div>
-                                    </>
-                                );
-                            })()}
-                            <div className="dropdown-divider" />
-                            <div
-                                onClick={() => { handleLogout(); setUserMenuOpen(false); }}
-                                className="dropdown-item"
-                                style={{ color: '#FF4B4B' }}
-                            >
-                                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>logout</span>
-                                <span style={{ fontWeight: 'bold' }}>{t('profile.logout') || 'Cerrar Sesión'}</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    )}
-                </>
-            )}
+                    </div>
+                    <Outlet />
+                </main>
+            </div>
 
-            <main style={{
-                padding: '16px',
-                paddingBottom: '120px',
-                maxWidth: '800px',
-                margin: '0 auto',
-                filter: isAnyMenuOpen ? 'blur(2px)' : 'none',
-                transition: 'filter 0.2s'
-            }}>
-                <Outlet />
-            </main>
-
-            <BottomNav />
+            <div className="mobile-only">
+                <BottomNav />
+            </div>
             <ToastContainer />
             <DevRoleSwitcher />
         </div>

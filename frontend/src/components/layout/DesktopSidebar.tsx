@@ -1,0 +1,122 @@
+import { type FC } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../hooks/useAuth';
+
+export const DesktopSidebar: FC = () => {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { hasPermission } = useAuth();
+
+    const menuItems = [
+        { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
+        { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'churches.view' },
+        { path: '/mainhub/reports', icon: 'auto_graph', label: 'Estadísticas', permission: 'church.update' },
+        { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'reunions.view' },
+        { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'area.create' },
+        { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'teams.view' },
+        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'users.view' },
+        { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'songs.view' },
+    ];
+
+    const bottomItems = [
+        { path: '/settings', icon: 'settings', label: t('nav.settings') || 'Panel de Control' }
+    ];
+
+    const visibleItems = menuItems.filter(item => !item.permission || (item.permission === 'church.update' ? hasPermission('church.update') : hasPermission(item.permission)));
+
+    return (
+        <aside style={{
+            width: 'var(--sidebar-width)',
+            height: '100vh',
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            backgroundColor: 'var(--color-sidebar-bg)',
+            borderRight: '1px solid var(--color-border-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            paddingBottom: '20px',
+            zIndex: 1000
+        }} className="desktop-only">
+            <div>
+                <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => navigate('/')}>
+                    <img src="/favicon.png" alt="Logo" style={{ width: '32px', height: '32px' }} />
+                    <span style={{ fontWeight: 800, fontSize: '18px', color: 'var(--color-brand-blue)' }}>Church Center</span>
+                </div>
+
+                <nav style={{ padding: '12px', overflowY: 'auto' }}>
+                    {visibleItems.map(item => {
+                        const isActive = location.pathname === item.path || (item.path !== '/dashboard' && location.pathname.startsWith(item.path));
+                        return (
+                            <div
+                                key={item.path}
+                                onClick={() => navigate(item.path)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '10px 16px',
+                                    borderRadius: '12px',
+                                    cursor: 'pointer',
+                                    marginBottom: '4px',
+                                    backgroundColor: isActive ? 'rgba(63, 108, 222, 0.1)' : 'transparent',
+                                    color: isActive ? 'var(--color-brand-blue)' : 'var(--color-ui-text-soft)',
+                                    transition: 'all 0.2s'
+                                }}
+                                className="sidebar-item"
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: '22px', fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>{item.icon}</span>
+                                <span style={{ fontWeight: isActive ? 600 : 500, fontSize: '14px' }}>{item.label}</span>
+                            </div>
+                        );
+                    })}
+                </nav>
+            </div>
+
+            <div style={{ padding: '12px', borderTop: '1px solid var(--color-border-subtle)', marginTop: 'auto' }}>
+                {bottomItems.map(item => (
+                    <div
+                        key={item.path}
+                        onClick={() => navigate(item.path)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '10px 16px',
+                            borderRadius: '12px',
+                            cursor: 'pointer',
+                            marginBottom: '4px',
+                            color: 'var(--color-ui-text-soft)',
+                            transition: 'all 0.2s'
+                        }}
+                        className="sidebar-item"
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>{item.icon}</span>
+                        <span style={{ fontWeight: 500, fontSize: '14px' }}>{item.label}</span>
+                    </div>
+                ))}
+                <div
+                    onClick={() => { useAuth().logout(); navigate('/login'); }}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '10px 16px',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        color: 'var(--color-danger-red)',
+                        transition: 'all 0.2s',
+                        opacity: 0.8
+                    }}
+                    className="sidebar-item"
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>logout</span>
+                    <span style={{ fontWeight: 500, fontSize: '14px' }}>Cerrar Sesión</span>
+                </div>
+            </div>
+        </aside>
+    );
+};

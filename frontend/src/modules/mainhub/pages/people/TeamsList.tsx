@@ -383,33 +383,62 @@ export const TeamsList: FC = () => {
                         </Card>
                     )}
                     {groups.map(group => (
-                        <Card key={group.id} style={{ padding: '20px', position: 'relative' }}>
+                        <Card key={group.id} style={{ padding: '20px', position: 'relative' }} className="sidebar-item">
                             {hasPermission('teams.delete') && (
                                 <button
                                     onClick={() => handleDeleteTeam(group.id)}
                                     style={{
                                         position: 'absolute', top: '12px', right: '12px',
-                                        background: 'transparent', border: 'none', cursor: 'pointer', color: '#EF4444'
+                                        background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-danger-red)',
+                                        opacity: 0.6,
+                                        zIndex: 10
                                     }}
                                 >
                                     <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
                                 </button>
                             )}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingRight: '24px' }}>
-                                <div>
-                                    <h3 className="text-card-title">{group.name}</h3>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                                        <h3 className="text-card-title" style={{ fontWeight: 600 }}>{group.name}</h3>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            padding: '2px 8px',
+                                            borderRadius: '12px',
+                                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                            color: 'var(--color-brand-blue)',
+                                            fontSize: '11px',
+                                            fontWeight: 700
+                                        }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>person</span>
+                                            <span>{group.members_count || 0}</span>
+                                        </div>
+                                    </div>
                                     {group.leader_name && (
-                                        <p className="text-body" style={{ color: 'var(--color-brand-blue)', marginTop: '4px', fontSize: '13px', fontWeight: 600 }}>
+                                        <p className="text-body" style={{ color: 'var(--color-brand-blue)', fontSize: '13px', fontWeight: 600 }}>
                                             {t('teams.leaderLabel', { name: group.leader_name })}
                                         </p>
                                     )}
-                                    <p className="text-body" style={{ color: 'gray', marginTop: group.leader_name ? '4px' : '8px', fontSize: '14px' }}>
+                                    <p className="text-body" style={{ color: 'var(--color-ui-text-soft)', marginTop: '4px', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                         {group.description || (group.leader_name ? '' : t('teams.noDescription'))}
                                     </p>
                                 </div>
-                                <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)' }}>
-                                    {group.is_service_team ? 'diversity_3' : 'group'}
-                                </span>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '10px',
+                                    backgroundColor: 'var(--color-ui-surface)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--color-brand-blue)'
+                                }}>
+                                    <span className="material-symbols-outlined">
+                                        {group.is_service_team ? 'diversity_3' : 'group'}
+                                    </span>
+                                </div>
                             </div>
 
                             <div style={{ marginTop: '20px', display: 'flex', gap: '8px' }}>

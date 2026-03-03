@@ -95,47 +95,58 @@ export const MasterDashboard: FC = () => {
             </div>
 
             {/* Quick Actions / Modules */}
-            <section style={{ marginBottom: '32px' }}>
-                <h2 className="text-h2" style={{ marginBottom: '20px' }}>{t('dashboard.admin.modules') || 'Módulos de Administración'}</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <section style={{ marginBottom: '40px' }}>
+                <h2 className="text-overline" style={{ color: 'var(--color-brand-blue)', marginBottom: '24px', letterSpacing: '1px', fontWeight: 700 }}>{t('dashboard.admin.modules') || 'Módulos de Administración'}</h2>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gap: '16px'
+                }}>
                     {adminOptions.map(opt => (
                         <Card
                             key={opt.id}
                             onClick={opt.action ? opt.action : undefined}
                             style={{
-                                padding: '16px 20px',
+                                padding: '24px',
                                 display: 'flex',
-                                justifyContent: 'space-between',
                                 alignItems: 'center',
+                                gap: '20px',
                                 cursor: 'pointer',
-                                transition: 'transform 0.2s'
+                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                position: 'relative'
                             }}
+                            className="sidebar-item"
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                <div style={{
-                                    width: '52px',
-                                    height: '52px',
-                                    borderRadius: '16px',
-                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'var(--color-brand-blue)'
-                                }}>
-                                    <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>{opt.icon}</span>
-                                </div>
-                                <div>
-                                    <p className="text-card-title" style={{ fontSize: '16px', marginBottom: '2px' }}>{opt.label}</p>
-                                    <p className="text-overline" style={{ color: '#6B7280' }}>{opt.desc}</p>
-                                </div>
+                            <div style={{
+                                width: '56px',
+                                height: '56px',
+                                borderRadius: '16px',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                color: 'var(--color-brand-blue)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid rgba(59, 130, 246, 0.1)'
+                            }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>{opt.icon}</span>
                             </div>
-                            <span className="material-symbols-outlined" style={{ color: '#4B5563' }}>chevron_right</span>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                    <h3 className="text-card-title" style={{ fontSize: '18px' }}>{opt.label}</h3>
+                                    <span className="material-symbols-outlined" style={{ color: 'var(--color-ui-text-soft)', fontSize: '20px' }}>arrow_forward</span>
+                                </div>
+                                <p className="text-body-secondary" style={{ fontSize: '13px', lineHeight: '1.4' }}>{opt.desc}</p>
+                            </div>
                         </Card>
                     ))}
                 </div>
             </section>
 
-            <ActivityFeed />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>
+                <ActivityFeed />
+                {/* Potential room for more admin-specific widgets here */}
+            </div>
+
         </div>
     );
 };

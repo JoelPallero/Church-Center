@@ -8,11 +8,11 @@
   --color-danger-red: #EF4444;
 
   --color-core-bg: #FFFFFF;
-  --color-core-text: #121212;
+  --color-core-text: #1e293b;
   --color-ui-surface: #F3F4F6;
   --color-ui-bg: #FFFFFF;
-  --color-ui-text: #121212;
-  --color-ui-text-soft: #6B7280;
+  --color-ui-text: #1e293b;
+  --color-ui-text-soft: #64748b;
 
   --color-card-bg: #FFFFFF;
   --color-glass-surface: rgba(255, 255, 255, 0.7);
@@ -22,21 +22,41 @@
 
   /* Typography */
   --font-family: 'Inter', sans-serif;
-  --color-accent-text: #3559bd;
+  /* Desktop Layout Variables */
+  --sidebar-width: 260px;
+  --header-height: 72px;
+  --desktop-max-width: 1920px;
+  --main-max-width: 1200px;
+  --main-padding: 24px;
 }
 
 [data-theme='dark'] {
-  --color-core-bg: #121212;
+  --color-core-bg: #0f172a;
   --color-core-text: #FFFFFF;
-  --color-ui-bg: #121212;
-  --color-ui-surface: #1E1E1E;
+  --color-ui-bg: #0f172a;
+  --color-ui-surface: #1e293b;
+  --color-sidebar-bg: #111827;
   --color-ui-text: #FFFFFF;
-  --color-ui-text-soft: #9CA3AF;
-  --color-border-subtle: #333333;
+  --color-ui-text-soft: #94a3b8;
+  --color-border-subtle: #334155;
 
-  --color-card-bg: #1E1E1E;
-  --color-glass-surface: rgba(18, 18, 18, 0.7);
-  --color-accent-text: #3B82F6;
+  --color-card-bg: #1e293b;
+  --color-glass-surface: rgba(15, 23, 42, 0.8);
+  --color-accent-text: #3f6cde;
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --color-ui-bg: #f8fafc;
+    --color-sidebar-bg: #ffffff;
+    --color-card-bg: #ffffff;
+  }
+
+  [data-theme='dark'] {
+    --color-ui-bg: #0f172a;
+    --color-sidebar-bg: #111827;
+    --color-card-bg: #1e293b;
+  }
 }
 
 * {
@@ -309,4 +329,36 @@ option {
   background-color: var(--color-border-subtle);
   margin: 4px 0;
   opacity: 0.5;
+}
+
+.mobile-only {
+  display: block;
+}
+
+.desktop-only {
+  display: none !important;
+}
+
+@media (min-width: 1200px) {
+  .mobile-only {
+    display: none !important;
+  }
+
+  .desktop-only {
+    display: block !important;
+  }
+
+  :root {
+    --main-padding: 40px;
+    --main-max-width: var(--desktop-max-width);
+    --main-margin-left: var(--sidebar-width);
+  }
+}
+
+.sidebar-item:hover {
+  background-color: rgba(63, 108, 222, 0.05) !important;
+}
+
+.sidebar-item:active {
+  transform: scale(0.98);
 }
