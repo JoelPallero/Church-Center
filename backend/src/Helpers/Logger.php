@@ -20,22 +20,22 @@ class Logger
         return sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'msm2_fallback.log';
     }
 
-    public static function info($message)
+    public static function info($message, $context = [])
     {
-        self::log("INFO", $message);
+        self::log("INFO", $message, $context);
     }
 
-    public static function warning($message)
+    public static function warning($message, $context = [])
     {
-        self::log("WARNING", $message);
+        self::log("WARNING", $message, $context);
     }
 
-    public static function error($message)
+    public static function error($message, $context = [])
     {
-        self::log("ERROR", $message);
+        self::log("ERROR", $message, $context);
     }
 
-    private static function log($level, $message)
+    private static function log($level, $message, $context = [])
     {
         $logFile = self::getLogFile();
 
@@ -45,7 +45,8 @@ class Logger
         }
 
         $date = date('Y-m-d H:i:s');
-        $formatted = "[$date] [$level] $message" . PHP_EOL;
+        $contextStr = !empty($context) ? " | Context: " . json_encode($context) : "";
+        $formatted = "[$date] [$level] $message$contextStr" . PHP_EOL;
         @file_put_contents($logFile, $formatted, FILE_APPEND);
     }
 }

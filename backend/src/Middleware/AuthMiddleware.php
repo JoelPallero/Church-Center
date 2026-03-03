@@ -14,18 +14,14 @@ class AuthMiddleware
 
         if (!empty($headers['Authorization'])) {
             $authHeader = $headers['Authorization'];
-        }
-        elseif (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
+        } elseif (!empty($_SERVER['HTTP_AUTHORIZATION'])) {
             $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
-        }
-        elseif (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        } elseif (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
             $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
-        }
-        elseif (!empty($_GET['token'])) {
+        } elseif (!empty($_GET['token'])) {
             // Support URL-based token for SSE / EventSource
             $authHeader = 'Bearer ' . $_GET['token'];
-        }
-        elseif (!empty($_SERVER['QUERY_STRING'])) {
+        } elseif (!empty($_SERVER['QUERY_STRING'])) {
             parse_str($_SERVER['QUERY_STRING'], $query);
             if (!empty($query['token'])) {
                 $authHeader = 'Bearer ' . $query['token'];
@@ -44,6 +40,13 @@ class AuthMiddleware
             throw new \Exception("Unauthorized", 401);
         }
 
-        return $decoded['uid'];
+        // Return standardized Auth payload
+        return [
+            'uid' => $decoded['uid'],
+            'email' => $decoded['email'],
+            // Future: we might want to fetch the current role from DB if JWT is stale
+            // For now, we expect the payload to be trusted
+            'role' => $decoded['role'] ?? 'member'
+        ];
     }
 }

@@ -11,7 +11,7 @@ class UserRepo
     {
         $db = Database::getInstance();
         $stmt = $db->prepare("
-            SELECT u.*, m.name, m.church_id 
+            SELECT u.*, m.name, m.church_id, m.organization_id
             FROM user_accounts u
             JOIN member m ON u.member_id = m.id
             WHERE u.email = ? AND u.is_active = 1
@@ -58,8 +58,7 @@ class UserRepo
             ");
             $stmt->execute([$memberId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             return [];
         }
     }
@@ -91,8 +90,7 @@ class UserRepo
 
             $db->commit();
             return true;
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             if ($db->inTransaction())
                 $db->rollBack();
             return false;
@@ -156,16 +154,19 @@ class UserRepo
     {
         $db = Database::getInstance();
         $stmt = $db->prepare("
-            INSERT INTO member (church_id, name, surname, email, phone, status, invite_token, token_expires_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO member (church_id, organization_id, name, surname, email, phone, status, invitation_status, invited_role_id, invite_token, token_expires_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $data['church_id'] ?? null,
+            $data['organization_id'] ?? null,
             $data['name'],
             $data['surname'] ?? '',
             $data['email'],
             $data['phone'] ?? null,
             $data['status'] ?? 'pending',
+            $data['invitation_status'] ?? 'pending',
+            $data['invited_role_id'] ?? null,
             $data['invite_token'] ?? null,
             $data['token_expires_at'] ?? null
         ]);
@@ -219,8 +220,7 @@ class UserRepo
             $result = $db->prepare("DELETE FROM member WHERE id = ?")->execute([$memberId]);
             $db->commit();
             return $result;
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             if ($db->inTransaction())
                 $db->rollBack();
             throw $e;
@@ -269,7 +269,7 @@ class UserRepo
 
         // Handle Role
         if (isset($data['roleId'])) {
-            self::updateMemberRole($memberId, (int)$data['roleId']);
+            self::updateMemberRole($memberId, (int) $data['roleId']);
         }
 
         // Handle Areas
@@ -297,8 +297,7 @@ class UserRepo
             ");
             $stmt->execute([$memberId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             return [];
         }
     }
@@ -317,8 +316,8 @@ class UserRepo
                 $params = [];
                 foreach ($areaIds as $id) {
                     $placeholders[] = "(?, ?)";
-                    $params[] = (int)$memberId;
-                    $params[] = (int)$id;
+                    $params[] = (int) $memberId;
+                    $params[] = (int) $id;
                 }
                 $sql .= implode(", ", $placeholders);
                 $stmt = $db->prepare($sql);
@@ -326,8 +325,7 @@ class UserRepo
             }
             $db->commit();
             return true;
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             if ($db->inTransaction())
                 $db->rollBack();
             return false;
@@ -339,10 +337,11 @@ class UserRepo
         $tokenHash = hash('sha256', $rawToken);
         $db = Database::getInstance();
         $stmt = $db->prepare("
-            SELECT m.*, c.name as church_name 
+            SELECT m.*, c.name as church_name, r.name as invited_role_name
             FROM member m
             LEFT JOIN church c ON m.church_id = c.id
-            WHERE m.invite_token = ? AND m.token_expires_at > NOW() AND m.status = 'pending'
+            LEFT JOIN roles r ON m.invited_role_id = r.id
+            WHERE m.invite_token = ? AND m.token_expires_at > NOW() AND m.invitation_status = 'pending'
         ");
         $stmt->execute([$tokenHash]);
         return $stmt->fetch();
@@ -371,15 +370,19 @@ class UserRepo
             // 3. Update member status and clear token
             $stmt = $db->prepare("
                 UPDATE member 
-                SET status = 'active', invite_token = NULL, token_expires_at = NULL 
+                SET status = 'active', invitation_status = 'accepted', invite_token = NULL, token_expires_at = NULL 
                 WHERE id = ?
             ");
             $stmt->execute([$memberId]);
 
+            // 4. Assign the role that was originally invited
+            if ($member['invited_role_id']) {
+                self::assignRole($memberId, $member['church_id'], $member['invited_role_id'], 'mainhub');
+            }
+
             $db->commit();
             return true;
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             if ($db->inTransaction())
                 $db->rollBack();
             \App\Helpers\Logger::error("UserRepo::completeInvitation error: " . $e->getMessage());

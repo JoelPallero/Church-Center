@@ -61,5 +61,9 @@ class PermissionRepo
         ");
         $stmt->execute([$memberId]);
         return $stmt->fetchAll();
+    public static function has($memberId, $permission)
+    {
+        $permissions = self::getPermissions($memberId);
+        return in_array($permission, $permissions);
     }
 }

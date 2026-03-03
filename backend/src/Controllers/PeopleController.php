@@ -12,75 +12,90 @@ class PeopleController
     {
         if ($method === 'POST') {
             if ($action === 'invite') {
-                PermissionMiddleware::require($memberId, 'users.invite');
+                if (!\App\Services\AccessControlService::can($memberId, 'users.invite')) {
+                    Response::error("Unauthorized", 403);
+                }
                 $this->invite($memberId);
                 return;
             }
 
             if ($action === 'invite/bulk') {
-                PermissionMiddleware::require($memberId, 'users.invite');
+                if (!\App\Services\AccessControlService::can($memberId, 'users.invite')) {
+                    Response::error("Unauthorized", 403);
+                }
                 $this->bulkInvite($memberId);
                 return;
             }
 
             if ($action === 'approve') {
-                PermissionMiddleware::require($memberId, 'users.approve');
+                if (!\App\Services\AccessControlService::can($memberId, 'users.approve')) {
+                    Response::error("Unauthorized", 403);
+                }
                 $this->approve($memberId);
                 return;
             }
-        }
-        elseif ($method === 'PUT') {
+        } elseif ($method === 'PUT') {
             $pathParts = explode('/', $action);
-            $targetId = is_numeric($pathParts[0]) ? (int)$pathParts[0] : null;
+            $targetId = is_numeric($pathParts[0]) ? (int) $pathParts[0] : null;
             $subAction = $pathParts[1] ?? '';
 
             if ($targetId) {
                 if ($subAction === 'role') {
-                    PermissionMiddleware::require($memberId, 'users.approve');
+                    if (!\App\Services\AccessControlService::can($memberId, 'users.approve')) {
+                        Response::error("Unauthorized", 403);
+                    }
                     $this->updateRole($targetId);
-                }
-                elseif ($subAction === 'status') {
-                    PermissionMiddleware::require($memberId, 'users.approve');
+                } elseif ($subAction === 'status') {
+                    if (!\App\Services\AccessControlService::can($memberId, 'users.approve')) {
+                        Response::error("Unauthorized", 403);
+                    }
                     $this->updateStatus($targetId);
-                }
-                elseif ($subAction === 'profile') {
+                } elseif ($subAction === 'profile') {
+                    // Profile update usually allowed for self or with special permission
+                    // ACS can handle this complex logic
+                    if (!\App\Services\AccessControlService::can($memberId, 'users.profile.edit', ['target' => $targetId])) {
+                        Response::error("Unauthorized", 403);
+                    }
                     $this->updateProfile($memberId, $targetId);
                 }
                 return;
             }
-        }
-        elseif ($method === 'DELETE') {
+        } elseif ($method === 'DELETE') {
             if ($action === 'invite') {
-                PermissionMiddleware::require($memberId, 'users.invite');
+                if (!\App\Services\AccessControlService::can($memberId, 'users.invite')) {
+                    Response::error("Unauthorized", 403);
+                }
                 $this->deleteInvitation();
                 return;
             }
             if (is_numeric($action)) {
-                PermissionMiddleware::require($memberId, 'users.delete');
-                $this->deleteMember((int)$action);
+                if (!\App\Services\AccessControlService::can($memberId, 'users.delete')) {
+                    Response::error("Unauthorized", 403);
+                }
+                $this->deleteMember((int) $action);
                 return;
             }
         }
 
         if ($method === 'GET') {
-            PermissionMiddleware::require($memberId, 'church.read');
+            if (!\App\Services\AccessControlService::can($memberId, 'church.read')) {
+                Response::error("Unauthorized", 403);
+            }
 
             $pathParts = explode('/', $action);
-            $targetId = is_numeric($pathParts[0]) ? (int)$pathParts[0] : null;
+            $targetId = is_numeric($pathParts[0]) ? (int) $pathParts[0] : null;
             $subAction = $pathParts[1] ?? '';
 
             if ($targetId) {
                 if ($subAction === 'areas') {
                     $areas = \App\Repositories\UserRepo::getUserAreas($targetId);
                     Response::json(['success' => true, 'areaIds' => array_map(fn($a) => $a['id'], $areas)]);
-                }
-                elseif ($subAction === 'groups') {
+                } elseif ($subAction === 'groups') {
                     $db = \App\Database::getInstance();
                     $stmt = $db->prepare("SELECT group_id FROM group_members WHERE member_id = ?");
                     $stmt->execute([$targetId]);
                     Response::json(['success' => true, 'groupIds' => $stmt->fetchAll(\PDO::FETCH_COLUMN)]);
-                }
-                else {
+                } else {
                     $user = \App\Repositories\UserRepo::getMemberData($targetId);
                     Response::json(['success' => true, 'user' => $user]);
                 }
@@ -134,6 +149,8 @@ class PeopleController
                 'email' => $email,
                 'church_id' => $churchId,
                 'status' => 'pending',
+                'invitation_status' => 'pending',
+                'invited_role_id' => 5, // Member
                 'invite_token' => $tokenHash,
                 'token_expires_at' => $expiresAt
             ]);
@@ -146,8 +163,7 @@ class PeopleController
                 // Send email
                 $church = \App\Repositories\ChurchRepo::findById($churchId);
                 \App\Helpers\MailHelper::sendInvitation($email, ucfirst($name), 'Miembro', "Church Center - " . ($church['name'] ?? 'Tu Iglesia'), $churchId, $rawToken);
-            }
-            else {
+            } else {
                 $failed++;
             }
         }
@@ -191,6 +207,8 @@ class PeopleController
                 'email' => $email,
                 'church_id' => $churchId,
                 'status' => 'pending',
+                'invitation_status' => 'pending',
+                'invited_role_id' => $roleId ?? 5,
                 'invite_token' => $tokenHash,
                 'token_expires_at' => $expiresAt
             ]);
@@ -202,7 +220,7 @@ class PeopleController
 
                     // Fetch role display name for email
                     $stmt = $db->prepare("SELECT display_name FROM roles WHERE id = ?");
-                    $stmt->execute([(int)$roleId]);
+                    $stmt->execute([(int) $roleId]);
                     $roleRes = $stmt->fetch();
                     if ($roleRes)
                         $roleName = $roleRes['display_name'];
@@ -215,12 +233,10 @@ class PeopleController
                 \App\Helpers\MailHelper::sendInvitation($email, $name, $roleName, "Church Center - " . ($church['name'] ?? 'Tu Iglesia'), $churchId, $rawToken);
 
                 Response::json(['success' => true, 'message' => 'Member invited successfully', 'id' => $newMemberId]);
-            }
-            else {
+            } else {
                 Response::error("Failed to create member record", 500);
             }
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             \App\Helpers\Logger::error("PeopleController::invite error: " . $e->getMessage());
             Response::error("Error al invitar al integrante. Intente nuevamente.", 500);
         }
@@ -229,7 +245,7 @@ class PeopleController
     private function approve($memberId)
     {
         $pathParts = explode('/', $_GET['action'] ?? '');
-        $targetMemberId = (int)($pathParts[0] ?? 0);
+        $targetMemberId = (int) ($pathParts[0] ?? 0);
 
         $data = json_decode(file_get_contents('php://input'), true);
         $roleId = $data['roleId'] ?? $data['role_id'] ?? null;

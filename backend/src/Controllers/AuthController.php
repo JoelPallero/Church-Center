@@ -32,8 +32,7 @@ class AuthController
         Logger::info("Querying UserRepo::findByEmail...");
         try {
             $user = UserRepo::findByEmail($email);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             Logger::error("DB Exception in findByEmail: " . $e->getMessage());
             return Response::error("Error interno del servidor", 500);
         }
@@ -90,6 +89,13 @@ class AuthController
         ];
 
         $token = Jwt::encode($payload);
+
+        Logger::info("Login successful for user ID: " . $user['member_id'], [
+            'event' => 'login_success',
+            'user_id' => $user['member_id'],
+            'email' => $email,
+            'ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
+        ]);
 
         return Response::json([
             'success' => true,
@@ -235,10 +241,18 @@ class AuthController
         $success = \App\Repositories\UserRepo::completeInvitation($invitation['id'], $password);
 
         if ($success) {
+            // Log acceptance
+            Logger::info("Invitation accepted: ID " . $invitation['id'], [
+                'event' => 'invitation_accepted',
+                'user_id' => $invitation['id'],
+                'email' => $invitation['email']
+            ]);
+
             // Generate token for auto-login
             $payload = [
                 'uid' => $invitation['id'],
                 'email' => $invitation['email'],
+                'role' => $invitation['invited_role_name'] ?? 'member', // Assumes Repo returns joined name
                 'iat' => time(),
                 'exp' => time() + 3600
             ];
@@ -254,6 +268,7 @@ class AuthController
             ]);
         }
 
+        Logger::error("Failed to complete invitation for ID: " . $invitation['id']);
         return Response::error("No se pudo completar el registro", 500);
     }
 
