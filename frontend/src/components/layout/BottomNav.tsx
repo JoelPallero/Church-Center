@@ -20,7 +20,7 @@ export const BottomNav: FC = () => {
     if (effectiveIsSuperAdmin) {
         // Superadmin: Dashboard, Reportes, Iglesias, Panel de control
         navItems = [
-            { path: '/', icon: 'dashboard', label: t('nav.dashboard') },
+            { path: '/dashboard', icon: 'dashboard', label: t('nav.dashboard') },
             { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports') },
             { path: '/mainhub/churches', icon: 'church', label: t('nav.churches') },
             { path: '/settings', icon: 'settings_input_component', label: t('nav.settings') }
@@ -30,14 +30,14 @@ export const BottomNav: FC = () => {
         navItems = [
             { path: '/mainhub/ushers', icon: 'how_to_reg', label: t('nav.ushers') },
             { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports') },
-            { path: '/', icon: 'dashboard', label: t('nav.dashboard') },
+            { path: '/dashboard', icon: 'dashboard', label: t('nav.dashboard') },
             { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), isCentral: true },
             { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams') }
         ];
     } else if (isLeader) {
         // Líder/coordinador: Inicio, Equipo, Listados, Canciones, Calendario
         navItems = [
-            { path: '/', icon: 'home', label: t('nav.home') },
+            { path: '/dashboard', icon: 'home', label: t('nav.home') },
             { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams') },
             { path: '/worship/playlists', icon: 'reorder', label: t('nav.playlists'), isCentral: true },
             { path: '/worship/songs', icon: 'music_note', label: t('nav.songs') },
@@ -46,14 +46,14 @@ export const BottomNav: FC = () => {
     } else if (isMember) {
         // Miembros: Dashboard, Biblioteca, Calendario (Off)
         navItems = [
-            { path: '/', icon: 'dashboard', label: t('nav.dashboard') },
+            { path: '/dashboard', icon: 'dashboard', label: t('nav.dashboard') },
             { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), isCentral: true },
             { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), isDisabled: true }
         ];
     } else if (isGuest) {
         // Invitados: Inicio, Mi Perfil
         navItems = [
-            { path: '/', icon: 'home', label: t('nav.home') },
+            { path: '/dashboard', icon: 'home', label: t('nav.home') },
             { path: '/profile', icon: 'person', label: t('nav.me') }
         ];
     }
@@ -83,7 +83,7 @@ export const BottomNav: FC = () => {
                     <NavLink
                         key={item.path}
                         to={item.isDisabled ? '#' : item.path}
-                        end={item.path === '/'}
+                        end={item.path === '/dashboard'}
                         className={({ isActive }) => clsx('nav-link', isActive && !item.isDisabled ? 'text-brand-blue' : 'text-gray-500')}
                         onClick={(e) => { if (item.isDisabled) e.preventDefault(); }}
                         style={({ isActive }) => ({

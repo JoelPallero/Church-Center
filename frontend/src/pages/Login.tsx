@@ -19,7 +19,7 @@ export const Login: FC = () => {
 
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/', { replace: true });
+            navigate('/dashboard', { replace: true });
         }
     }, [isAuthenticated, navigate]);
 
@@ -70,7 +70,23 @@ export const Login: FC = () => {
         }}>
             <div style={{ marginBottom: '32px', textAlign: 'center' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--color-brand-blue)' }}>church</span>
-                <h1 className="text-h1" style={{ marginTop: '16px' }}>{t('auth.signInTitle', { church: t('common.church') })}</h1>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
+                    <h1 className="text-h1">{t('auth.signInTitle', { church: t('common.church') })}</h1>
+                    <span style={{
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        padding: '2px 6px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        color: 'var(--color-brand-blue)',
+                        border: '1px solid rgba(59, 130, 246, 0.2)',
+                        letterSpacing: '0.05em',
+                        lineHeight: 1
+                    }}>
+                        Beta
+                    </span>
+                </div>
                 <p className="text-body" style={{ color: '#6B7280' }}>{t('auth.signInSubtitle')}</p>
             </div>
 

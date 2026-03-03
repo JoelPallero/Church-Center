@@ -18,5 +18,15 @@
 - [x] Añadir por defecto 2 áreas: Ujieres y Alabanza, cuando se crea una iglesia nueva.
 - [x] Para los ujieres: Implementado sistema de conteo y visitantes (Frontend + Backend).
 - [x] La página de reportes no funciona: Corregido error de redirección ybackend implementado.
-- [ ] 
+## Diseño e Identidad
+- [ ] **Rebranding Global**: Cambiar "Church Management" por "Church Center" en todo el sistema (especialmente en el asunto y cuerpo de los emails que se envían).
+- [ ] **Página Institucional**: Implementar la nueva página de aterrizaje institucional (basada en el diseño de Stitch) que describa el ecosistema de Hubs.
+- [ ] **Unificación de Idiomas**: Asegurar que la página institucional y todo el sistema soporte Español, Inglés y Portugués.
+- [ ] **Estructura de Hubs**: Reflejar la división de servicios independientes pero integrados:
+    - **Ministry Hub**: Alabanza y música.
+    - **Diaconos Hub**: Ujieres y logística.
+    - **Tech Hub**: Multimedia, luces y sonido.
+    - **Social Media Hub**: Redes sociales, reels, historias y transmisiones.
+    - **Pastoral Hub**: Panel de control total, reportes en tiempo real, estadísticas, calendarios y gestión de equipos para el Pastor.
+- [ ] usar httpOnly cookies
 - [ ] 

@@ -53,6 +53,9 @@ import { PermissionsManager } from './pages/admin/PermissionsManager';
 // Social Module
 import { SocialDashboard } from './modules/social/pages/SocialDashboard';
 
+import { Home } from './pages/Home';
+import { Pricing } from './pages/Pricing';
+
 const App: FC = () => {
   return (
     <AuthProvider>
@@ -61,16 +64,18 @@ const App: FC = () => {
           <BrowserRouter>
             <Routes>
               {/* Public Routes */}
+              <Route index element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/auth/google/callback" element={<GoogleCallback />} />
               <Route path="/accept-invite" element={<AcceptInvite />} />
 
               <Route element={<ProtectedRoute />}>
                 <Route element={<MainLayout />}>
                   {/* Global / Selection Dashboard */}
-                  <Route index element={<MainDashboard />} />
+                  <Route path="dashboard" element={<MainDashboard />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="settings/invitations" element={<InvitationSettings />} />

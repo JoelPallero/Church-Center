@@ -75,7 +75,23 @@ export const MainLayout: FC = () => {
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <img src="/favicon.png" alt="Logo" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
-                        <span className="text-h2" style={{ color: 'var(--color-accent-text)' }}>{getHubTitle()}</span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                            <span className="text-h2" style={{ color: 'var(--color-accent-text)' }}>{getHubTitle()}</span>
+                            <span style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                padding: '2px 6px',
+                                borderRadius: '6px',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                color: 'var(--color-brand-blue)',
+                                border: '1px solid rgba(59, 130, 246, 0.2)',
+                                letterSpacing: '0.05em',
+                                lineHeight: 1
+                            }}>
+                                Beta
+                            </span>
+                        </div>
                     </div>
                     <div className="flex-center" style={{ gap: '8px' }}>
                         <NotificationCenter
@@ -135,18 +151,18 @@ export const MainLayout: FC = () => {
 
                                 let footerPaths: string[] = [];
                                 if (isSuperAdmin || isMaster) {
-                                    footerPaths = ['/', '/reports', '/mainhub/churches', '/settings'];
+                                    footerPaths = ['/dashboard', '/reports', '/mainhub/churches', '/settings'];
                                 } else if (canManageChurch) {
-                                    footerPaths = ['/', '/dashboard_view', '/reunions', '/mainhub/churches', '/teams'];
+                                    footerPaths = ['/dashboard', '/dashboard_view', '/reunions', '/mainhub/churches', '/teams'];
                                 } else if (isLeader) {
-                                    footerPaths = ['/', '/teams', '/playlists', '/songs', '/reunions'];
+                                    footerPaths = ['/dashboard', '/teams', '/playlists', '/songs', '/reunions'];
                                 } else {
                                     // Member
-                                    footerPaths = ['/', '/worship/songs', '/worship/calendar'];
+                                    footerPaths = ['/dashboard', '/worship/songs', '/worship/calendar'];
                                 }
 
                                 const navItemsMetadata = [
-                                    { path: '/', icon: 'dashboard', label: t('nav.home'), permission: null },
+                                    { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
                                     { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'songs.view' },
                                     { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'churches.view' },
                                     { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'area.create' },
