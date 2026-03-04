@@ -1,12 +1,10 @@
 import type { FC } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { useAuth } from '../../hooks/useAuth';
 import '../../index.css';
 
 export const BottomNav: FC = () => {
-    const { t } = useTranslation();
     const { isSuperAdmin, isMaster, hasPermission } = useAuth();
     const effectiveIsSuperAdmin = isSuperAdmin || isMaster;
 
@@ -21,15 +19,15 @@ export const BottomNav: FC = () => {
 
     // Unified Nav Items logic based on permissions
     const allPossibleItems: NavItem[] = [
-        { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
-        { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'church.update' },
-        { path: '/mainhub/pastor', icon: 'auto_graph', label: t('nav.pastor') || 'Pastor', permission: 'church.update' },
-        { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports'), permission: 'reports.view' },
-        { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'calendar.read' },
-        { path: '/worship/playlists', icon: 'queue_music', label: t('nav.playlists'), permission: 'calendar.read' },
-        { path: '/worship/songs', icon: 'library_music', label: t('nav.songs'), permission: 'song.read' },
-        { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'team.read' },
-        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'church.update' },
+        { path: '/dashboard', icon: 'dashboard', label: 'Dashboard', permission: null },
+        { path: '/mainhub/churches', icon: 'church', label: 'Iglesias', permission: 'church.update' },
+        { path: '/mainhub/pastor', icon: 'auto_graph', label: 'Areas', permission: 'church.update' },
+        { path: '/mainhub/reports', icon: 'analytics', label: 'Reportes', permission: 'reports.view' },
+        { path: '/worship/calendar', icon: 'event', label: 'Calendario', permission: 'calendar.read' },
+        { path: '/worship/playlists', icon: 'queue_music', label: 'Listas', permission: 'calendar.read' },
+        { path: '/worship/songs', icon: 'library_music', label: 'Canciones', permission: 'song.read' },
+        { path: '/mainhub/teams', icon: 'groups', label: 'Equipos', permission: 'team.read' },
+        { path: '/mainhub/people', icon: 'person_search', label: 'Personas', permission: 'church.update' },
     ];
 
     // Filter items based on user permissions
@@ -44,7 +42,7 @@ export const BottomNav: FC = () => {
         navItems = filteredNavItems.filter(i => ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/settings'].includes(i.path));
         // Add settings manually as it might not be in the list
         if (!navItems.find(i => i.path === '/settings')) {
-            navItems.push({ path: '/settings', icon: 'settings', label: t('nav.settings'), permission: null });
+            navItems.push({ path: '/settings', icon: 'settings', label: 'Ajustes', permission: null });
         }
     } else {
         // For others, take the first 5 or relevant ones
@@ -60,8 +58,8 @@ export const BottomNav: FC = () => {
         // Final fallback: Ensure at least Home and Profile
         if (navItems.length === 0) {
             navItems = [
-                { path: '/dashboard', icon: 'home', label: t('nav.home') },
-                { path: '/profile', icon: 'person', label: t('nav.me') }
+                { path: '/dashboard', icon: 'home', label: 'Dashboard' },
+                { path: '/profile', icon: 'person', label: 'Perfil' }
             ];
         }
     }

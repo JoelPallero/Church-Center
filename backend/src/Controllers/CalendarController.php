@@ -11,18 +11,25 @@ class CalendarController
     public function handle($memberId, $action, $method)
     {
         $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
-        if (!$churchId && $method === 'POST') {
-            $data = json_decode(file_get_contents('php://input'), true);
-            $churchId = $data['churchId'] ?? $data['church_id'] ?? $data['instanceId'] ?? null;
-            // Note: if instanceId is used, ideally we should lookup the churchId from the meeting instance in the repo, 
-            // but for now we follow the pattern of requiring it or having a solid check.
+        $data = [];
+        if ($method === 'POST' || $method === 'PUT') {
+            $raw = file_get_contents('php://input');
+            $data = json_decode($raw, true) ?? [];
+            if (!$churchId) {
+                $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+            }
         }
 
-        \App\Middleware\PermissionMiddleware::require($memberId, 'calendar.read', $churchId);
+        $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+        if (!$isSuperAdmin && ($churchId === null || (int) $churchId === 0)) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? null;
+        }
 
         if ($method === 'GET') {
+            \App\Middleware\PermissionMiddleware::require($memberId, 'calendar.read', $churchId);
             if ($action === 'events' || empty($action)) {
-                $this->listEvents($memberId);
+                $this->listEvents($memberId, $churchId);
             } elseif ($action === 'assignment-data') {
                 $this->getAssignmentData($memberId);
             } elseif (is_numeric($action)) {
@@ -30,22 +37,18 @@ class CalendarController
             }
         } elseif ($method === 'POST') {
             if ($action === 'assignment') {
-                \App\Middleware\PermissionMiddleware::require($memberId, 'reunions.view', $churchId);
-                $this->assign($memberId);
+                \App\Middleware\PermissionMiddleware::require($memberId, 'meeting.update', $churchId);
+                $this->assign($memberId, $data);
             } else {
-                \App\Middleware\PermissionMiddleware::require($memberId, 'reunions.view', $churchId);
-                $this->create($memberId);
+                \App\Middleware\PermissionMiddleware::require($memberId, 'meeting.create', $churchId);
+                $this->create($memberId, $churchId, $data);
             }
         }
     }
 
-    private function listEvents($memberId)
+    private function listEvents($memberId, $churchId = null)
     {
-        $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
         if (!$churchId) {
-            // Try to find church from member context
-            $user = \App\Repositories\UserRepo::findById($memberId);
-            // $churchId = $user['church_id'] ?? null; // Repo findById seems to return user_accounts
             $member = \App\Repositories\UserRepo::getMemberData($memberId);
             $churchId = $member['church_id'] ?? null;
         }
@@ -97,14 +100,25 @@ class CalendarController
         ]);
     }
 
-    private function create($memberId)
+    private function create($memberId, $churchId = null, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
-        $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+        if (!$churchId) {
+            $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+        }
 
         if (!$churchId) {
             $member = \App\Repositories\UserRepo::getMemberData($memberId);
             $churchId = $member['church_id'] ?? null;
+        }
+
+        if (!$churchId) {
+            // SuperAdmin fallback: find the first church if nothing else works
+            $churches = \App\Repositories\ChurchRepo::getAll();
+            if (!empty($churches)) {
+                $churchId = $churches[0]['id'];
+            } else {
+                Response::error("Church ID required for meeting creation", 400);
+            }
         }
 
         $calendarId = CalendarRepo::ensureDefaultCalendar($churchId);
@@ -126,9 +140,8 @@ class CalendarController
         Response::json(['success' => !!$meetingId, 'id' => $meetingId]);
     }
 
-    private function assign($memberId)
+    private function assign($memberId, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
         $meetingId = $data['meetingId'] ?? $data['instanceId'] ?? null;
         $targetMemberId = $data['memberId'] ?? null;
 

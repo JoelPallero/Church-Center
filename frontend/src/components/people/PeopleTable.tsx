@@ -18,39 +18,43 @@ export const PeopleTable: FC<PeopleTableProps> = ({
     return (
         <div style={{
             backgroundColor: 'var(--color-card-bg)',
-            borderRadius: '16px',
+            borderRadius: '20px',
             border: '1px solid var(--color-border-subtle)',
-            overflow: 'visible'
+            overflow: 'hidden',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
         }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
-                    <tr style={{ borderBottom: '1px solid var(--color-border-subtle)', backgroundColor: 'rgba(0,0,0,0.02)' }}>
-                        <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-ui-text-soft)' }}>Nombre / Rol</th>
-                        <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-ui-text-soft)' }}>Contacto</th>
-                        <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-ui-text-soft)' }}>Estado</th>
-                        <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-ui-text-soft)' }}>Áreas</th>
-                        <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-ui-text-soft)', textAlign: 'right' }}>Acciones</th>
+                    <tr style={{ borderBottom: '1px solid var(--color-border-subtle)', backgroundColor: 'var(--color-ui-surface)' }}>
+                        <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--color-ui-text-soft)', letterSpacing: '0.05em' }}>Nombre / Rol</th>
+                        <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--color-ui-text-soft)', letterSpacing: '0.05em' }}>Contacto</th>
+                        <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--color-ui-text-soft)', letterSpacing: '0.05em' }}>Estado</th>
+                        <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--color-ui-text-soft)', letterSpacing: '0.05em' }}>Áreas</th>
+                        <th style={{ padding: '16px 24px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--color-ui-text-soft)', letterSpacing: '0.05em', textAlign: 'right' }}>Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody style={{ backgroundColor: 'var(--color-card-bg)' }}>
                     {users.map(item => (
                         <tr
                             key={item.id}
                             onClick={() => onEdit(item)}
-                            style={{ borderBottom: '1px solid var(--color-border-subtle)', cursor: 'pointer' }}
+                            style={{ borderBottom: '1px solid var(--color-border-subtle)', cursor: 'pointer', transition: 'background-color 0.2s' }}
                             className="table-row-hover"
                         >
                             <td style={{ padding: '16px 24px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                     <div style={{
                                         width: '40px', height: '40px', borderRadius: '12px',
-                                        backgroundColor: (item.role?.name === 'pastor' || item.role?.name === 'admin' ? '#9333EA' : '#475569'),
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold'
+                                        backgroundColor: (item.role?.name === 'pastor' || item.role?.name === 'admin' ? '#9333EA' : 'var(--color-ui-surface)'),
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: (item.role?.name === 'pastor' || item.role?.name === 'admin' ? 'white' : 'var(--color-ui-text)'),
+                                        fontWeight: 700,
+                                        fontSize: '16px'
                                     }}>
                                         {item.name.charAt(0)}
                                     </div>
                                     <div>
-                                        <div style={{ fontWeight: 600, color: 'var(--color-ui-text)' }}>{item.name}</div>
+                                        <div style={{ fontWeight: 600, color: 'var(--color-ui-text)', fontSize: '15px' }}>{item.name}</div>
                                         <div style={{ fontSize: '12px', color: 'var(--color-ui-text-soft)' }}>{item.role?.displayName || 'Miembro'}</div>
                                     </div>
                                 </div>
@@ -61,18 +65,28 @@ export const PeopleTable: FC<PeopleTableProps> = ({
                             </td>
                             <td style={{ padding: '16px 24px' }}>
                                 <span style={{
-                                    fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
+                                    fontSize: '10px', fontWeight: 800, textTransform: 'uppercase',
                                     padding: '4px 10px', borderRadius: '20px',
                                     backgroundColor: item.status === 'active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                                    color: item.status === 'active' ? '#10B981' : '#F59E0B'
+                                    color: item.status === 'active' ? '#10B981' : '#F59E0B',
+                                    letterSpacing: '0.02em'
                                 }}>
                                     {getStatusText(item)}
                                 </span>
                             </td>
                             <td style={{ padding: '16px 24px' }}>
-                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                     {item.areas?.map((a: any) => (
-                                        <span key={a.id} style={{ fontSize: '10px', fontWeight: 600, padding: '2px 8px', borderRadius: '6px', border: '1px solid var(--color-border-subtle)', color: 'var(--color-ui-text-soft)' }}>
+                                        <span key={a.id} style={{
+                                            fontSize: '10px',
+                                            fontWeight: 700,
+                                            padding: '2px 10px',
+                                            borderRadius: '6px',
+                                            backgroundColor: 'var(--color-ui-surface)',
+                                            border: '1px solid var(--color-border-subtle)',
+                                            color: 'var(--color-ui-text-soft)',
+                                            textTransform: 'uppercase'
+                                        }}>
                                             {a.name}
                                         </span>
                                     ))}
@@ -84,21 +98,22 @@ export const PeopleTable: FC<PeopleTableProps> = ({
                                         variant="ghost"
                                         icon="more_vert"
                                         onClick={(e: MouseEvent) => { e.stopPropagation(); setActiveMenu(activeMenu === item.id ? null : item.id); }}
-                                        style={{ minWidth: 'auto', padding: '8px' }}
+                                        style={{ minWidth: 'auto', padding: '8px', color: 'var(--color-ui-text-soft)' }}
                                     />
                                     {activeMenu === item.id && (
                                         <div className="dropdown-menu" style={{ right: 0, top: '40px', width: '200px' }}>
                                             {item.status === 'pending' ? (
                                                 <div onClick={() => { onResend(item); setActiveMenu(null); }} className="dropdown-item">
-                                                    <span className="material-symbols-outlined">send</span> Reenviar
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>send</span> Reenviar
                                                 </div>
                                             ) : (
                                                 <div onClick={() => { onEdit(item); setActiveMenu(null); }} className="dropdown-item">
-                                                    <span className="material-symbols-outlined">edit</span> Editar
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span> Editar
                                                 </div>
                                             )}
+                                            <div className="dropdown-divider" />
                                             <div onClick={() => { onDelete(item); setActiveMenu(null); }} className="dropdown-item" style={{ color: 'var(--color-danger-red)' }}>
-                                                <span className="material-symbols-outlined">delete</span> Eliminar
+                                                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span> Eliminar
                                             </div>
                                         </div>
                                     )}

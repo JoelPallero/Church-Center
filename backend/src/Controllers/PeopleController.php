@@ -11,6 +11,14 @@ class PeopleController
     public function handle($memberId, $action, $method)
     {
         $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
+        $data = [];
+        if ($method === 'POST' || $method === 'PUT' || $method === 'DELETE') {
+            $raw = file_get_contents('php://input');
+            $data = json_decode($raw, true) ?? [];
+            if (!$churchId) {
+                $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+            }
+        }
 
         // If churchId is not provided or is 0, and user is not superadmin, 
         // we use their own church for context.
@@ -23,19 +31,19 @@ class PeopleController
         if ($method === 'POST') {
             if ($action === 'invite') {
                 PermissionMiddleware::require($memberId, 'users.invite');
-                $this->invite($memberId);
+                $this->invite($memberId, $data);
                 return;
             }
 
             if ($action === 'invite/bulk') {
                 PermissionMiddleware::require($memberId, 'users.invite');
-                $this->bulkInvite($memberId);
+                $this->bulkInvite($memberId, $data);
                 return;
             }
 
             if ($action === 'approve') {
                 PermissionMiddleware::require($memberId, 'users.approve');
-                $this->approve($memberId);
+                $this->approve($memberId, $data);
                 return;
             }
         } elseif ($method === 'PUT') {
@@ -46,19 +54,19 @@ class PeopleController
             if ($targetId) {
                 if ($subAction === 'role') {
                     PermissionMiddleware::require($memberId, 'users.approve');
-                    $this->updateRole($targetId);
+                    $this->updateRole($targetId, $data);
                 } elseif ($subAction === 'status') {
                     PermissionMiddleware::require($memberId, 'users.approve');
-                    $this->updateStatus($targetId);
+                    $this->updateStatus($targetId, $data);
                 } elseif ($subAction === 'profile') {
-                    $this->updateProfile($memberId, $targetId);
+                    $this->updateProfile($memberId, $targetId, $data);
                 }
                 return;
             }
         } elseif ($method === 'DELETE') {
             if ($action === 'invite') {
                 PermissionMiddleware::require($memberId, 'users.invite');
-                $this->deleteInvitation();
+                $this->deleteInvitation($data);
                 return;
             }
             if (is_numeric($action)) {
@@ -98,9 +106,8 @@ class PeopleController
         }
     }
 
-    private function bulkInvite($memberId)
+    private function bulkInvite($memberId, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
         $emails = $data['emails'] ?? [];
         $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
 
@@ -162,10 +169,9 @@ class PeopleController
         ]);
     }
 
-    public function invite($memberId)
+    public function invite($memberId, $data = [])
     {
         Logger::info("PeopleController::invite called by admin ID: $memberId");
-        $data = json_decode(file_get_contents("php://input"), true);
         $email = $data['email'] ?? '';
         $name = $data['name'] ?? '';
         $roleId = $data['roleId'] ?? $data['role_id'] ?? null;
@@ -227,12 +233,11 @@ class PeopleController
         }
     }
 
-    private function approve($memberId)
+    private function approve($memberId, $data = [])
     {
         $pathParts = explode('/', $_GET['action'] ?? '');
         $targetMemberId = (int) ($pathParts[0] ?? 0);
 
-        $data = json_decode(file_get_contents('php://input'), true);
         $roleId = $data['roleId'] ?? $data['role_id'] ?? null;
 
         if (!$targetMemberId || !$roleId) {
@@ -256,9 +261,8 @@ class PeopleController
         Response::json(['success' => true, 'message' => 'Member approved successfully']);
     }
 
-    private function updateRole($targetId)
+    private function updateRole($targetId, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
         $roleId = $data['roleId'] ?? $data['role_id'] ?? null;
         if (!$roleId)
             Response::error("Role ID required", 400);
@@ -267,9 +271,8 @@ class PeopleController
         Response::json(['success' => $success]);
     }
 
-    private function updateStatus($targetId)
+    private function updateStatus($targetId, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
         $statusId = $data['statusId'] ?? $data['status_id'] ?? null;
         if (!$statusId)
             Response::error("Status ID required", 400);
@@ -281,7 +284,7 @@ class PeopleController
         Response::json(['success' => $success]);
     }
 
-    private function updateProfile($memberId, $targetId)
+    private function updateProfile($memberId, $targetId, $data = [])
     {
         // Security: only self or admin
         $isSuper = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
@@ -289,14 +292,12 @@ class PeopleController
             Response::error("Unauthorized", 403);
         }
 
-        $data = json_decode(file_get_contents('php://input'), true);
         $success = \App\Repositories\UserRepo::updateProfile($targetId, $data);
         Response::json(['success' => $success]);
     }
 
-    private function deleteInvitation()
+    private function deleteInvitation($data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
         $email = $data['email'] ?? null;
         if (!$email)
             Response::error("Email required", 400);

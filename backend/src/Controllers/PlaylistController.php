@@ -11,9 +11,15 @@ class PlaylistController
     public function handle($memberId, $action, $method)
     {
         $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
+        $data = [];
+        if ($method === 'POST' || $method === 'PUT') {
+            $raw = file_get_contents('php://input');
+            $data = json_decode($raw, true) ?? [];
+            if (!$churchId) {
+                $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+            }
+        }
 
-        // If churchId is not provided or is 0, and user is not superadmin, 
-        // we use their own church for context.
         $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
         if (!$isSuperAdmin && ($churchId === null || (int) $churchId === 0)) {
             $member = \App\Repositories\UserRepo::getMemberData($memberId);
@@ -30,7 +36,7 @@ class PlaylistController
             }
         } elseif ($method === 'POST') {
             PermissionMiddleware::requireAnyRole($memberId, ['pastor', 'leader', 'coordinator'], $churchId);
-            $this->create($memberId);
+            $this->create($memberId, $churchId, $data);
         }
     }
 
@@ -89,11 +95,12 @@ class PlaylistController
         Response::json(['success' => true, 'playlist' => $playlist]);
     }
 
-    private function create($memberId)
+    private function create($memberId, $churchId = null, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
         $name = $data['name'] ?? null;
-        $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+        if (!$churchId) {
+            $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+        }
 
         if (!$churchId) {
             $member = \App\Repositories\UserRepo::getMemberData($memberId);

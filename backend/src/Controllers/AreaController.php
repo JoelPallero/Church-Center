@@ -11,6 +11,14 @@ class AreaController
     public function handle($memberId, $action, $method)
     {
         $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
+        $data = [];
+        if ($method === 'POST' || $method === 'PUT') {
+            $raw = file_get_contents('php://input');
+            $data = json_decode($raw, true) ?? [];
+            if (!$churchId) {
+                $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+            }
+        }
 
         // If churchId is not provided or is 0 (General), and user is not superadmin, 
         // we use their own church for permission checking.
@@ -25,10 +33,10 @@ class AreaController
             $this->list($memberId, $churchId);
         } elseif ($method === 'POST') {
             \App\Middleware\PermissionMiddleware::require($memberId, 'church.update', $churchId);
-            $this->create($memberId);
+            $this->create($memberId, $churchId, $data);
         } elseif ($method === 'PUT') {
             \App\Middleware\PermissionMiddleware::require($memberId, 'church.update', $churchId);
-            $this->update($memberId, $action);
+            $this->update($memberId, $action, $data);
         } elseif ($method === 'DELETE') {
             \App\Middleware\PermissionMiddleware::require($memberId, 'church.update', $churchId);
             $this->delete($memberId, $action);
@@ -58,11 +66,12 @@ class AreaController
         Response::json(['success' => true, 'areas' => $areas]);
     }
 
-    private function create($memberId)
+    private function create($memberId, $churchId = null, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
         $name = $data['name'] ?? null;
-        $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? $data['churchId'] ?? $data['church_id'] ?? null;
+        if (!$churchId) {
+            $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+        }
 
         if (!$name || !$churchId) {
             Response::error("Name and Church ID required", 400);
@@ -75,13 +84,12 @@ class AreaController
         Response::json(['success' => !!$id, 'message' => $id ? 'Area created' : 'Error creating area']);
     }
 
-    private function update($memberId, $id)
+    private function update($memberId, $id, $data = [])
     {
         if (!$id || !is_numeric($id)) {
             Response::error("Invalid ID", 400);
         }
 
-        $data = json_decode(file_get_contents('php://input'), true);
         $name = $data['name'] ?? null;
 
         if (!$name) {

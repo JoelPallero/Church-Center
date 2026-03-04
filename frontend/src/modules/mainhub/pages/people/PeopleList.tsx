@@ -295,7 +295,7 @@ export const PeopleList: FC = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                     <div style={{
                                         width: '48px', height: '48px', borderRadius: '16px',
-                                        backgroundColor: (item.role_name === 'guest' || !item.role_name) ? '#6B7280' : (
+                                        backgroundColor: (item.role_name === 'guest' || !item.role_name) ? 'var(--color-ui-surface)' : (
                                             item.role_name === 'pastor' || item.role_name === 'admin' ? '#9333EA' :
                                                 item.role_name === 'leader' ? '#2563EB' :
                                                     item.role_name === 'coordinator' ? '#0D9488' :
@@ -305,8 +305,7 @@ export const PeopleList: FC = () => {
                                         fontWeight: 'bold', color: 'white',
                                         fontSize: '20px',
                                         overflow: 'hidden',
-                                        // Specific styling for guests/no-role to show initial only
-                                        ...((item.role_name === 'guest' || !item.role_name) && { backgroundColor: '#475569' })
+                                        ...((item.role_name === 'guest' || !item.role_name) && { color: 'var(--color-ui-text-soft)' })
                                     }}>
                                         {((item.role_name === 'guest' || !item.role_name)) ? (
                                             item.name.charAt(0)
@@ -324,30 +323,31 @@ export const PeopleList: FC = () => {
                                     </div>
                                     <div>
                                         <h3 className="text-card-title">{item.name}</h3>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                                            <p className="text-body" style={{ color: '#94A3B8', fontSize: '13px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                                            <p className="text-body" style={{ color: 'var(--color-ui-text-soft)', fontSize: '13px' }}>
                                                 {item.role?.displayName || t('people.roles.member')}
                                             </p>
                                             {isMaster && (item as any).church_name && (
                                                 <>
-                                                    <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#475569' }}></span>
+                                                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', backgroundColor: 'var(--color-border-subtle)' }}></span>
                                                     <p className="text-body" style={{ color: 'var(--color-brand-blue)', fontSize: '13px', fontWeight: 600 }}>
                                                         {(item as any).church_name}
                                                     </p>
                                                 </>
                                             )}
-                                            <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#475569' }}></span>
+                                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', backgroundColor: 'var(--color-border-subtle)' }}></span>
                                             <div style={{
                                                 fontSize: '11px',
-                                                fontWeight: 700,
+                                                fontWeight: 800,
                                                 color: item.status === 'active' ? '#10B981' : item.status === 'pending' ? '#F59E0B' : '#EF4444',
-                                                textTransform: 'uppercase'
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.02em'
                                             }}>
                                                 {getStatusText(item)}
                                             </div>
                                             {item.areas && item.areas.length > 0 && (
                                                 <>
-                                                    <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#475569' }}></span>
+                                                    <span style={{ width: '3px', height: '3px', borderRadius: '50%', backgroundColor: 'var(--color-border-subtle)' }}></span>
                                                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                                         {item.areas.map((a: any) => (
                                                             <span key={a.id} style={{
@@ -375,7 +375,7 @@ export const PeopleList: FC = () => {
                                     <Button
                                         variant="ghost"
                                         onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === item.id ? null : item.id); }}
-                                        style={{ padding: '8px', minWidth: 'auto', color: '#94A3B8', background: 'none', border: 'none' }}
+                                        style={{ padding: '8px', minWidth: 'auto', color: 'var(--color-ui-text-soft)', background: 'none', border: 'none' }}
                                     >
                                         <span className="material-symbols-outlined">more_vert</span>
                                     </Button>
@@ -394,7 +394,7 @@ export const PeopleList: FC = () => {
                                                     <div
                                                         onClick={(e) => { e.stopPropagation(); handleDelete(item); setActiveMenu(null); }}
                                                         className="dropdown-item"
-                                                        style={{ color: '#EF4444' }}
+                                                        style={{ color: 'var(--color-danger-red)' }}
                                                     >
                                                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
                                                         {t('common.delete')}
@@ -412,7 +412,7 @@ export const PeopleList: FC = () => {
                                                     <div
                                                         onClick={(e) => { e.stopPropagation(); handleDelete(item); setActiveMenu(null); }}
                                                         className="dropdown-item"
-                                                        style={{ color: '#EF4444' }}
+                                                        style={{ color: 'var(--color-danger-red)' }}
                                                     >
                                                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
                                                         {t('common.delete')}
@@ -426,6 +426,7 @@ export const PeopleList: FC = () => {
                         </Card>
                     ))
                 )}
+
             </div>
 
             <div className="desktop-only">

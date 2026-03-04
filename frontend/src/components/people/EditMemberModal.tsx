@@ -145,19 +145,39 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
     return (
         <div className="modal-overlay" style={{
             position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000,
-            backdropFilter: 'blur(10px)'
+            backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000,
+            backdropFilter: 'blur(8px)',
+            animation: 'fadeIn 0.3s ease-out'
         }} onClick={onClose}>
-            <Card style={{ maxWidth: '440px', width: '95%', padding: '0', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
-                {/* Header: More compact and black */}
-                <div style={{ backgroundColor: '#000000', padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', position: 'relative', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <Card style={{
+                maxWidth: '480px',
+                width: '95%',
+                padding: '0',
+                overflow: 'hidden',
+                border: '1px solid var(--color-border-subtle)',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                backgroundColor: 'var(--color-card-bg)'
+            }} onClick={e => e.stopPropagation()}>
+
+                {/* Header */}
+                <div style={{
+                    padding: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                    position: 'relative',
+                    borderBottom: '1px solid var(--color-border-subtle)',
+                    background: 'linear-gradient(to bottom, var(--color-ui-surface), var(--color-card-bg))'
+                }}>
                     <div style={{
-                        width: '64px', height: '64px', borderRadius: '18px', backgroundColor: 'rgba(255,255,255,0.05)',
+                        width: '64px', height: '64px', borderRadius: '18px',
+                        backgroundColor: 'var(--color-ui-surface)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                        border: `2px solid ${accentColor}`, boxShadow: `0 0 15px ${accentColor}33`
+                        border: `2px solid ${accentColor}`,
+                        boxShadow: `0 0 15px ${accentColor}33`
                     }}>
                         {isGuest ? (
-                            <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'white' }}>{formData.firstName.charAt(0) || '?'}</span>
+                            <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--color-ui-text)' }}>{formData.firstName.charAt(0) || '?'}</span>
                         ) : (
                             <img
                                 src={formData.sex === 'F' ? '/avatars/female.png' : '/avatars/male.png'}
@@ -171,62 +191,88 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                         )}
                     </div>
                     <div style={{ flex: 1 }}>
-                        <h2 className="text-h2" style={{ color: 'white', margin: 0, fontSize: '20px', letterSpacing: '-0.3px' }}>
+                        <h2 className="text-h2" style={{ color: 'var(--color-ui-text)', margin: 0, fontSize: '20px', letterSpacing: '-0.3px' }}>
                             {formData.firstName} {formData.lastName}
                         </h2>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                             <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: accentColor }}></span>
-                            <span className="text-overline" style={{ fontSize: '11px', letterSpacing: '0.5px' }}>
+                            <span className="text-overline" style={{ fontSize: '11px', letterSpacing: '0.5px', color: 'var(--color-ui-text-soft)' }}>
                                 {selectedRole?.displayName || (isGuest ? t('people.guest') : t('people.noRole'))}
                             </span>
                         </div>
                     </div>
-                    <Button variant="ghost" onClick={onClose} style={{ color: '#94A3B8', padding: '4px', minWidth: 'auto', background: 'none' }}>
+                    <Button variant="ghost" onClick={onClose} style={{ color: 'var(--color-ui-text-soft)', padding: '4px', minWidth: 'auto', background: 'none' }}>
                         <span className="material-symbols-outlined">close</span>
                     </Button>
                 </div>
 
-                <div style={{ padding: '24px', maxHeight: '55vh', overflowY: 'auto', backgroundColor: 'var(--color-ui-bg)' }}>
+                <div style={{ padding: '24px', maxHeight: '60vh', overflowY: 'auto' }}>
                     {/* Basic Info */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                         <div>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>{t('common.firstName')}</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px', color: 'var(--color-ui-text-soft)' }}>{t('common.firstName')}</label>
                             <input
-                                className="text-body"
+                                className="text-body w-full"
                                 value={formData.firstName}
                                 onChange={e => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)', color: 'white', outline: 'none', fontSize: '14px' }}
+                                style={{
+                                    backgroundColor: 'var(--color-ui-bg)',
+                                    color: 'var(--color-ui-text)',
+                                    border: '1px solid var(--color-border-subtle)',
+                                    borderRadius: '12px',
+                                    padding: '10px 14px'
+                                }}
                             />
                         </div>
                         <div>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>{t('common.lastName')}</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px', color: 'var(--color-ui-text-soft)' }}>{t('common.lastName')}</label>
                             <input
-                                className="text-body"
+                                className="text-body w-full"
                                 value={formData.lastName}
                                 onChange={e => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)', color: 'white', outline: 'none', fontSize: '14px' }}
+                                style={{
+                                    backgroundColor: 'var(--color-ui-bg)',
+                                    color: 'var(--color-ui-text)',
+                                    border: '1px solid var(--color-border-subtle)',
+                                    borderRadius: '12px',
+                                    padding: '10px 14px'
+                                }}
                             />
                         </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                         <div>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>{t('common.sex')}</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px', color: 'var(--color-ui-text-soft)' }}>{t('common.sex')}</label>
                             <select
                                 value={formData.sex}
                                 onChange={e => setFormData(prev => ({ ...prev, sex: e.target.value }))}
-                                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)', color: 'white', outline: 'none', fontSize: '14px' }}
+                                className="w-full"
+                                style={{
+                                    backgroundColor: 'var(--color-ui-bg)',
+                                    color: 'var(--color-ui-text)',
+                                    border: '1px solid var(--color-border-subtle)',
+                                    borderRadius: '12px',
+                                    padding: '10px 14px'
+                                }}
                             >
                                 <option value="M">{t('common.male')}</option>
                                 <option value="F">{t('common.female')}</option>
                             </select>
                         </div>
                         <div>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>{t('people.filterByRole')}</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px', color: 'var(--color-ui-text-soft)' }}>{t('people.filterByRole')}</label>
                             <select
                                 value={formData.roleId}
                                 onChange={e => setFormData(prev => ({ ...prev, roleId: e.target.value }))}
-                                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)', color: 'white', outline: 'none', fontSize: '14px' }}
+                                className="w-full"
+                                style={{
+                                    backgroundColor: 'var(--color-ui-bg)',
+                                    color: 'var(--color-ui-text)',
+                                    border: '1px solid var(--color-border-subtle)',
+                                    borderRadius: '12px',
+                                    padding: '10px 14px'
+                                }}
                             >
                                 <option value="">{t('people.selectRole')}</option>
                                 {roles.map(r => <option key={r.id} value={r.id}>{r.displayName}</option>)}
@@ -235,54 +281,77 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                     </div>
 
                     <div style={{ marginBottom: '20px' }}>
-                        <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>EMAIL</label>
+                        <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px', color: 'var(--color-ui-text-soft)' }}>EMAIL</label>
                         <input
-                            className="text-body"
+                            className="text-body w-full"
                             value={formData.email}
                             onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                            style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.02)', color: 'white', outline: 'none', fontSize: '14px' }}
+                            style={{
+                                backgroundColor: 'var(--color-ui-bg)',
+                                color: 'var(--color-ui-text)',
+                                border: '1px solid var(--color-border-subtle)',
+                                borderRadius: '12px',
+                                padding: '10px 14px'
+                            }}
                         />
                     </div>
 
                     {/* Org Section */}
-                    <div style={{ padding: '16px', backgroundColor: 'rgba(255,255,255,0.01)', borderRadius: '12px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                    <div style={{
+                        padding: '16px',
+                        backgroundColor: 'var(--color-ui-surface)',
+                        borderRadius: '16px',
+                        marginBottom: '20px',
+                        border: '1px solid var(--color-border-subtle)'
+                    }}>
                         <div style={{ marginBottom: '16px' }}>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '10px', fontSize: '10px' }}>{t('people.mandatoryAreaLabel')}</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '10px', fontSize: '10px', color: 'var(--color-ui-text-soft)' }}>{t('people.mandatoryAreaLabel')}</label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {areas.map(area => (
-                                    <button
-                                        key={area.id}
-                                        type="button"
-                                        onClick={() => toggleArea(area.id)}
-                                        style={{
-                                            padding: '6px 14px',
-                                            borderRadius: '20px',
-                                            fontSize: '12px',
-                                            fontWeight: 600,
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                            border: '1px solid',
-                                            borderColor: formData.areaIds.includes(area.id) ? '#10B981' : 'rgba(255,255,255,0.06)',
-                                            backgroundColor: formData.areaIds.includes(area.id) ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255,255,255,0.02)',
-                                            color: formData.areaIds.includes(area.id) ? '#10B981' : '#64748B'
-                                        }}
-                                    >
-                                        {area.name}
-                                    </button>
-                                ))}
+                                {areas.map(area => {
+                                    const isSelected = formData.areaIds.includes(area.id);
+                                    return (
+                                        <button
+                                            key={area.id}
+                                            type="button"
+                                            onClick={() => toggleArea(area.id)}
+                                            style={{
+                                                padding: '6px 14px',
+                                                borderRadius: '20px',
+                                                fontSize: '12px',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s',
+                                                border: '1px solid',
+                                                borderColor: isSelected ? 'var(--color-brand-blue)' : 'var(--color-border-subtle)',
+                                                backgroundColor: isSelected ? 'rgba(61, 104, 223, 0.1)' : 'var(--color-ui-bg)',
+                                                color: isSelected ? 'var(--color-brand-blue)' : 'var(--color-ui-text-soft)'
+                                            }}
+                                        >
+                                            {area.name}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                         {needsTeam && (
                             <div>
-                                <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px' }}>{t('people.teamBasedOnArea')}</label>
+                                <label className="text-overline" style={{ display: 'block', marginBottom: '6px', fontSize: '10px', color: 'var(--color-ui-text-soft)' }}>{t('people.teamBasedOnArea')}</label>
                                 <select
                                     value={formData.groupId}
                                     onChange={e => setFormData(prev => ({ ...prev, groupId: e.target.value }))}
-                                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'var(--color-ui-bg)', color: 'white', outline: 'none', fontSize: '13px' }}
+                                    className="w-full"
+                                    style={{
+                                        backgroundColor: 'var(--color-ui-bg)',
+                                        color: 'var(--color-ui-text)',
+                                        border: '1px solid var(--color-border-subtle)',
+                                        borderRadius: '12px',
+                                        padding: '10px 14px'
+                                    }}
                                 >
                                     <option value="">{t('people.selectTeam')}</option>
                                     {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                 </select>
+                                <p className="text-overline" style={{ marginTop: '8px', opacity: 0.6 }}>Solo se listan los equipos del área seleccionada.</p>
                             </div>
                         )}
                     </div>
@@ -290,40 +359,57 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                     {/* Instruments (Conditional) */}
                     {isAlabanza && (
                         <div>
-                            <label className="text-overline" style={{ display: 'block', marginBottom: '10px', fontSize: '10px' }}>{t('people.instruments')}</label>
+                            <label className="text-overline" style={{ display: 'block', marginBottom: '10px', fontSize: '10px', color: 'var(--color-ui-text-soft)' }}>{t('people.instruments')}</label>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                {instruments.map(inst => (
-                                    <div
-                                        key={inst.id}
-                                        onClick={() => toggleInstrument(inst.id)}
-                                        style={{
-                                            padding: '6px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer',
-                                            backgroundColor: formData.selectedInstruments.includes(inst.id) ? accentColor : 'rgba(255,255,255,0.03)',
-                                            color: formData.selectedInstruments.includes(inst.id) ? 'white' : '#64748B',
-                                            border: '1px solid',
-                                            borderColor: formData.selectedInstruments.includes(inst.id) ? accentColor : 'rgba(255,255,255,0.06)',
-                                            transition: 'all 0.2s'
-                                        }}
-                                    >
-                                        {inst.name}
-                                    </div>
-                                ))}
+                                {instruments.map(inst => {
+                                    const isSelected = formData.selectedInstruments.includes(inst.id);
+                                    return (
+                                        <div
+                                            key={inst.id}
+                                            onClick={() => toggleInstrument(inst.id)}
+                                            style={{
+                                                padding: '6px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer',
+                                                backgroundColor: isSelected ? accentColor : 'var(--color-ui-surface)',
+                                                color: isSelected ? 'white' : 'var(--color-ui-text-soft)',
+                                                border: '1px solid',
+                                                borderColor: isSelected ? accentColor : 'var(--color-border-subtle)',
+                                                transition: 'all 0.2s',
+                                                fontWeight: isSelected ? 600 : 400
+                                            }}
+                                        >
+                                            {inst.name}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* Footer Actions */}
-                <div style={{ padding: '20px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                <div style={{
+                    padding: '20px 24px',
+                    borderTop: '1px solid var(--color-border-subtle)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: 'var(--color-ui-surface)'
+                }}>
                     <Button
                         variant="ghost"
                         label={t('common.delete')}
                         onClick={handleDeactivate}
-                        style={{ color: '#EF4444', height: '36px', padding: '0 12px', fontSize: '12px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}
+                        style={{ color: 'var(--color-danger-red)', height: '40px', padding: '0 16px' }}
                     />
                     <div style={{ display: 'flex', gap: '12px' }}>
-                        <Button variant="ghost" label={t('common.cancel')} onClick={onClose} disabled={isSaving} style={{ height: '38px', fontSize: '14px' }} />
-                        <Button variant="primary" label={isSaving ? t('common.loading') : t('common.saveChanges')} onClick={handleSave} disabled={isSaving} style={{ height: '38px', fontSize: '14px', background: 'white', color: 'black', fontWeight: 600 }} />
+                        <Button variant="ghost" label={t('common.cancel')} onClick={onClose} disabled={isSaving} />
+                        <Button
+                            variant="primary"
+                            label={isSaving ? t('common.loading') : t('common.saveChanges')}
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            style={{ minWidth: '140px' }}
+                        />
                     </div>
                 </div>
             </Card>

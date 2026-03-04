@@ -362,3 +362,7 @@ option {
 .sidebar-item:active {
   transform: scale(0.98);
 }
+
+.table-row-hover:hover {
+  background-color: var(--color-ui-surface);
+}

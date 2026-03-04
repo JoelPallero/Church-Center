@@ -14,8 +14,15 @@ class TeamController
         $subAction = $parts[1] ?? '';
         $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
 
-        // If churchId is not provided or is 0 (General), and user is not superadmin, 
-        // we use their own church for permission checking.
+        $data = [];
+        if ($method === 'POST' || $method === 'PUT') {
+            $raw = file_get_contents('php://input');
+            $data = json_decode($raw, true) ?? [];
+            if (!$churchId) {
+                $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+            }
+        }
+
         $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
         if (!$isSuperAdmin && ($churchId === null || (int) $churchId === 0)) {
             $member = \App\Repositories\UserRepo::getMemberData($memberId);
@@ -30,31 +37,26 @@ class TeamController
                 $this->list($memberId, $churchId);
             }
         } elseif ($method === 'POST') {
-            // For create/join/assign, we might need to extract churchId from body if not in query
-            if (!$churchId) {
-                $data = json_decode(file_get_contents('php://input'), true);
-                $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
-            }
             \App\Middleware\PermissionMiddleware::require($memberId, 'team.create', $churchId);
 
             if ($id && $subAction === 'members') {
                 if (($parts[2] ?? '') === 'bulk') {
-                    $this->assignBulk($id);
+                    $this->assignBulk($id, $data);
                 } else {
-                    $this->assign($id);
+                    $this->assign($id, $data);
                 }
             } elseif ($id && $subAction === 'join') {
                 $this->join($memberId, $id);
             } else {
-                $this->create($memberId);
+                $this->create($memberId, $churchId, $data);
             }
         } elseif ($method === 'PUT') {
             \App\Middleware\PermissionMiddleware::require($memberId, 'team.update', $churchId);
             if ($id) {
-                $this->update($memberId, $id);
+                $this->update($memberId, $id, $data);
             }
         } elseif ($method === 'DELETE') {
-            \App\Middleware\PermissionMiddleware::require($memberId, 'team.update', $churchId); // Assuming delete needs update/admin level
+            \App\Middleware\PermissionMiddleware::require($memberId, 'team.update', $churchId);
             if ($id) {
                 $this->delete($id);
             }
@@ -88,11 +90,12 @@ class TeamController
         Response::json(['success' => true, 'users' => $members]);
     }
 
-    private function create($memberId)
+    private function create($memberId, $churchId = null, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
         $name = $data['name'] ?? null;
-        $churchId = $data['churchId'] ?? $data['church_id'] ?? $_GET['church_id'] ?? null;
+        if (!$churchId) {
+            $churchId = $data['churchId'] ?? $data['church_id'] ?? $_GET['church_id'] ?? null;
+        }
         $areaId = $data['areaId'] ?? $data['area_id'] ?? null;
 
         if (!$name || !$churchId) {
@@ -112,9 +115,8 @@ class TeamController
         }
     }
 
-    private function assign($groupId)
+    private function assign($groupId, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
         $memberId = $data['memberId'] ?? null;
         $role = $data['roleInGroup'] ?? 'member';
 
@@ -125,9 +127,8 @@ class TeamController
         Response::json(['success' => $success]);
     }
 
-    private function assignBulk($groupId)
+    private function assignBulk($groupId, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
         $memberIds = $data['memberIds'] ?? [];
 
         $success = TeamRepo::assignMembersBulk($groupId, $memberIds);
@@ -146,9 +147,8 @@ class TeamController
         Response::json(['success' => $success]);
     }
 
-    private function update($memberId, $groupId)
+    private function update($memberId, $groupId, $data = [])
     {
-        $data = json_decode(file_get_contents('php://input'), true);
 
         // 1. Update basic info (name, description)
         $success = TeamRepo::update($groupId, $data);
