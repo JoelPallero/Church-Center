@@ -11,6 +11,14 @@ class SongController
     {
         $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
 
+        // If churchId is not provided or is 0 (General), and user is not superadmin, 
+        // we use their own church for permission checking.
+        $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+        if (!$isSuperAdmin && ($churchId === null || (int) $churchId === 0)) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? null;
+        }
+
         if ($method === 'GET') {
             if ($action === 'edits') {
                 PermissionMiddleware::require($memberId, 'song.approve', $churchId);
@@ -56,14 +64,6 @@ class SongController
 
     private function list($memberId, $churchId = null)
     {
-        $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
-
-        // If not super admin and no church_id specified, we find the user's current church
-        if (!$isSuperAdmin && $churchId === null) {
-            $member = \App\Repositories\UserRepo::getMemberData($memberId);
-            $churchId = $member['church_id'] ?? null;
-        }
-
         // Get songs. If $churchId is null (possible for SuperAdmin), we get EVERYTHING.
         $songs = \App\Repositories\SongRepo::getAll($churchId);
 

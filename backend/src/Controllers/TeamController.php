@@ -14,12 +14,20 @@ class TeamController
         $subAction = $parts[1] ?? '';
         $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
 
+        // If churchId is not provided or is 0 (General), and user is not superadmin, 
+        // we use their own church for permission checking.
+        $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+        if (!$isSuperAdmin && ($churchId === null || (int) $churchId === 0)) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? null;
+        }
+
         if ($method === 'GET') {
             \App\Middleware\PermissionMiddleware::require($memberId, 'team.read', $churchId);
             if ($id && $subAction === 'members') {
                 $this->listMembers($id);
             } else {
-                $this->list($memberId);
+                $this->list($memberId, $churchId);
             }
         } elseif ($method === 'POST') {
             // For create/join/assign, we might need to extract churchId from body if not in query
@@ -53,10 +61,18 @@ class TeamController
         }
     }
 
-    private function list($memberId)
+    private function list($memberId, $churchId = null)
     {
-        $churchId = $_GET['churchId'] ?? $_GET['church_id'] ?? null;
         $areaId = $_GET['areaId'] ?? $_GET['area_id'] ?? null;
+
+        if (!$churchId) {
+            $churchId = $_GET['churchId'] ?? $_GET['church_id'] ?? null;
+        }
+
+        if (!$churchId) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? null;
+        }
 
         if (!$churchId) {
             Response::error("Church ID required", 400);

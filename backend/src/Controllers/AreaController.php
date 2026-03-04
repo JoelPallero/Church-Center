@@ -12,9 +12,17 @@ class AreaController
     {
         $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
 
+        // If churchId is not provided or is 0 (General), and user is not superadmin, 
+        // we use their own church for permission checking.
+        $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+        if (!$isSuperAdmin && ($churchId === null || (int) $churchId === 0)) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? null;
+        }
+
         if ($method === 'GET') {
             \App\Middleware\PermissionMiddleware::require($memberId, 'church.read', $churchId);
-            $this->list($memberId);
+            $this->list($memberId, $churchId);
         } elseif ($method === 'POST') {
             \App\Middleware\PermissionMiddleware::require($memberId, 'church.update', $churchId);
             $this->create($memberId);
@@ -27,11 +35,14 @@ class AreaController
         }
     }
 
-    private function list($memberId)
+    private function list($memberId, $churchId = null)
     {
-        $churchId = $_GET['churchId'] ?? $_GET['church_id'] ?? null;
-
         $isMaster = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+
+        if (!$churchId && !$isMaster) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? null;
+        }
 
         if (!$churchId && !$isMaster) {
             Response::error("Church ID required", 400);

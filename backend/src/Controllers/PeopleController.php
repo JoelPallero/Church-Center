@@ -10,6 +10,16 @@ class PeopleController
 {
     public function handle($memberId, $action, $method)
     {
+        $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
+
+        // If churchId is not provided or is 0, and user is not superadmin, 
+        // we use their own church for context.
+        $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+        if (!$isSuperAdmin && ($churchId === null || (int) $churchId === 0)) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? null;
+        }
+
         if ($method === 'POST') {
             if ($action === 'invite') {
                 PermissionMiddleware::require($memberId, 'users.invite');
@@ -59,7 +69,6 @@ class PeopleController
         }
 
         if ($method === 'GET') {
-            $churchId = $_GET['church_id'] ?? null;
             PermissionMiddleware::require($memberId, 'church.update', $churchId);
 
             $pathParts = explode('/', $action);

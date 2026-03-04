@@ -11,6 +11,7 @@ class AuthController
 {
     public function login()
     {
+        $start = microtime(true);
         error_log("AuthController::login called");
         $rawInput = file_get_contents("php://input");
         $data = json_decode($rawInput, true);
@@ -18,64 +19,41 @@ class AuthController
         $password = $data['password'] ?? '';
         $recaptchaToken = $data['recaptchaToken'] ?? '';
 
+        $captchaStart = microtime(true);
         if (!$this->verifyRecaptcha($recaptchaToken)) {
             Logger::error("Auth failed: reCAPTCHA verification failed.");
             return Response::error("Verificación de seguridad fallida", 403);
         }
+        $captchaEnd = microtime(true);
+        Logger::info("reCAPTCHA check took: " . ($captchaEnd - $captchaStart) . "s");
 
         Logger::info("--- AUTH ATTEMPT START ---");
-        Logger::info("Email: $email");
-        Logger::info("Input Data Keys: " . implode(', ', array_keys($data ?? [])));
 
         if (empty($email) || empty($password)) {
             Logger::error("Auth failed: Missing credentials.");
             return Response::error("El correo y la contraseña son obligatorios", 400);
         }
 
-        Logger::info("Querying UserRepo::findByEmail...");
+        $dbStart = microtime(true);
         try {
             $user = UserRepo::findByEmail($email);
         } catch (\Exception $e) {
             Logger::error("DB Exception in findByEmail: " . $e->getMessage());
             return Response::error("Error interno del servidor", 500);
         }
+        $dbEnd = microtime(true);
+        Logger::info("DB lookup took: " . ($dbEnd - $dbStart) . "s");
 
         if (!$user) {
             Logger::info("Auth failed: User not found in DB or is_active != 1");
             return Response::error("Credenciales inválidas", 401);
         }
 
-        // DETAILED PASSWORD AUDIT
+        $passStart = microtime(true);
         $storedHash = $user['password_hash'];
-        $providedPassLen = strlen($password);
-        $storedHashLen = strlen($storedHash);
-
-        $hashInfo = password_get_info($storedHash);
         $verify = password_verify($password, $storedHash);
-
-        Logger::info("Password Verification Audit:");
-        Logger::info("- Provided Password Length: $providedPassLen");
-        Logger::info("- Stored Hash Length: $storedHashLen");
-        Logger::info("- Stored Hash Start: " . substr($storedHash, 0, 7) . "...");
-        Logger::info("- Stored Hash Hex (first 10): " . bin2hex(substr($storedHash, 0, 5)));
-        Logger::info("- Hash Info (Algo Name): " . ($hashInfo['algoName'] ?? 'unknown'));
-        Logger::info("- Verify Result: " . ($verify ? "SUCCESS" : "FAILURE"));
-
-        // Check for common encoding issues
-        if (!$verify) {
-            // Check if perhaps there's an encoding mismatch or hidden chars
-            Logger::info("Failure analysis: Checking for hidden characters...");
-            if (trim($password) !== $password) {
-                Logger::info("! WARNING: Provided password has whitespace at edges.");
-            }
-            // Log hex of input password (securely, only length or partial if absolutely needed, but here we log full hex for audit)
-            Logger::info("- Raw hex provided pass: " . bin2hex($password));
-
-            // Log environment info that could affect hashing
-            Logger::info("System Environment Info:");
-            Logger::info("- PHP Version: " . PHP_VERSION);
-            Logger::info("- Default Password Algo: " . (defined('PASSWORD_BCRYPT') ? 'BCRYPT' : 'UNKNOWN'));
-        }
+        $passEnd = microtime(true);
+        Logger::info("Password verify took: " . ($passEnd - $passStart) . "s");
 
         if (!$verify) {
             Logger::error("Auth failed: Incorrect password for ($email)");
@@ -92,6 +70,9 @@ class AuthController
         ];
 
         $token = Jwt::encode($payload);
+
+        $totalTime = microtime(true) - $start;
+        Logger::info("Total login process took: " . $totalTime . "s");
 
         return Response::json([
             'success' => true,
@@ -264,7 +245,6 @@ class AuthController
     {
         if (empty($token)) {
             Logger::warning("verifyRecaptcha: Empty token provided.");
-            // Determine if we should allow empty tokens (e.g., during transition or local dev)
             return false;
         }
 
@@ -288,14 +268,18 @@ class AuthController
             'http' => [
                 'header' => "Content-type: application/x-www-form-urlencoded\r\n",
                 'method' => 'POST',
-                'content' => http_build_query($data)
+                'content' => http_build_query($data),
+                'timeout' => 3.0 // 3 seconds timeout
             ]
         ];
 
         $context = stream_context_create($options);
         $result = @file_get_contents($url, false, $context);
-        if ($result === false)
-            return true;
+
+        if ($result === false) {
+            Logger::warning("verifyRecaptcha: Google API request failed (timeout?). Bypassing for user UX.");
+            return true; // Fallback to true if we can't verify to avoid blocking the user
+        }
 
         $response = json_decode($result, true);
         return $response['success'] && ($response['score'] ?? 1.0) >= 0.5;
