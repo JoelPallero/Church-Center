@@ -7,15 +7,23 @@ use PDO;
 
 class PlaylistRepo
 {
-    public static function getByChurch($churchId)
+    public static function getByChurch($churchId, $groupId = null)
     {
         try {
             $db = Database::getInstance('music');
-            $stmt = $db->prepare("SELECT * FROM playlists WHERE church_id = ? AND is_active = 1 ORDER BY created_at DESC");
-            $stmt->execute([$churchId]);
+            $sql = "SELECT * FROM playlists WHERE church_id = ? AND is_active = 1";
+            $params = [$churchId];
+
+            if ($groupId) {
+                $sql .= " AND (group_id = ? OR group_id IS NULL)";
+                $params[] = $groupId;
+            }
+
+            $sql .= " ORDER BY created_at DESC";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             \App\Helpers\Logger::error("PlaylistRepo::getByChurch error: " . $e->getMessage());
             return [];
         }
@@ -45,22 +53,20 @@ class PlaylistRepo
             $stmt = $db->prepare($sql);
             $stmt->execute(array_merge([$churchId], $allowedCreators));
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             \App\Helpers\Logger::error("PlaylistRepo::getVisibleForMember error: " . $e->getMessage());
             return [];
         }
     }
 
-    public static function create($churchId, $name, $createdBy, $description = null)
+    public static function create($churchId, $name, $createdBy, $description = null, $groupId = null)
     {
         try {
             $db = Database::getInstance('music');
-            $stmt = $db->prepare("INSERT INTO playlists (church_id, name, description, created_by) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$churchId, $name, $description, $createdBy]);
+            $stmt = $db->prepare("INSERT INTO playlists (church_id, group_id, name, description, created_by) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$churchId, $groupId, $name, $description, $createdBy]);
             return $db->lastInsertId();
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             \App\Helpers\Logger::error("PlaylistRepo::create error: " . $e->getMessage());
             return false;
         }
@@ -76,8 +82,7 @@ class PlaylistRepo
                 ON DUPLICATE KEY UPDATE order_index = VALUES(order_index)
             ");
             return $stmt->execute([$playlistId, $songId, $orderIndex]);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             \App\Helpers\Logger::error("PlaylistRepo::addSong error: " . $e->getMessage());
             return false;
         }
@@ -96,8 +101,7 @@ class PlaylistRepo
             ");
             $stmt->execute([$playlistId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             \App\Helpers\Logger::error("PlaylistRepo::getSongs error: " . $e->getMessage());
             return [];
         }

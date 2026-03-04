@@ -14,10 +14,11 @@ export const DesktopSidebar: FC = () => {
         { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'church.update' },
         { path: '/mainhub/reports', icon: 'auto_graph', label: 'Estadísticas', permission: 'reports.view' },
         { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'calendar.read' },
+        { path: '/worship/playlists', icon: 'queue_music', label: t('nav.playlists'), permission: 'calendar.read' },
+        { path: '/worship/songs', icon: 'library_music', label: t('nav.songs'), permission: 'song.read' },
         { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'church.update' },
         { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'team.read' },
         { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'church.update' },
-        { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'song.read' },
     ];
 
     const bottomItems = [

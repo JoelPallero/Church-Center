@@ -43,4 +43,25 @@ class PermissionMiddleware
 
         Response::error("Forbidden: Missing required permissions", 403);
     }
+
+    /**
+     * Ensures the member has at least one of the provided roles.
+     */
+    public static function requireAnyRole($memberId, array $roleNames, $churchId = null)
+    {
+        if (PermissionRepo::isSuperAdmin($memberId)) {
+            return true;
+        }
+
+        $roles = PermissionRepo::getServiceRoles($memberId, $churchId);
+        $userRoleNames = array_map(fn($r) => $r['name'], $roles);
+
+        foreach ($roleNames as $role) {
+            if (in_array($role, $userRoleNames)) {
+                return true;
+            }
+        }
+
+        Response::error("Forbidden: Unauthorized role", 403);
+    }
 }

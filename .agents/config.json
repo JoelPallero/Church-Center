@@ -1,0 +1,38 @@
+[
+    {
+        "name": "DocSync Agent",
+        "type": "persistent",
+        "scope": "current_project",
+        "capabilities": [
+            "repository_access",
+            "notebooklm_mcp"
+        ],
+        "mode": "background",
+        "trigger": "on_change",
+        "instruction_file": ".agents/workflows/docsync-agent.md"
+    },
+    {
+        "name": "TestRunner Agent",
+        "type": "persistent",
+        "scope": "current_project",
+        "capabilities": [
+            "repository_access",
+            "terminal"
+        ],
+        "mode": "manual_trigger",
+        "trigger": "structural_change",
+        "instruction_file": ".agents/workflows/test-runner.md"
+    },
+    {
+        "name": "ErrorResolver Agent",
+        "type": "persistent",
+        "scope": "current_project",
+        "capabilities": [
+            "repository_access",
+            "code_modification"
+        ],
+        "mode": "listener",
+        "trigger": "on_log_change",
+        "instruction_file": ".agents/workflows/error-resolver.md"
+    }
+]

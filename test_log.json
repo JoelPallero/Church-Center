@@ -1,0 +1,68 @@
+{
+    "section_1_test_execution_summary": {
+        "timestamp": "2026-03-03T20:26:00Z",
+        "scanned_modules": [
+            "frontend",
+            "backend"
+        ],
+        "total_critical": 0,
+        "total_warnings": 4,
+        "total_info": 2,
+        "status": "PASSED_STABILITY"
+    },
+    "section_2_critical_errors": [],
+    "section_3_warnings": [
+        {
+            "module": "frontend",
+            "issue": "Linter results: 160 problems (135 errors, 25 warnings).",
+            "classification": "Warning/Quality",
+            "impact": "Significant technical debt remains. 'any' usage is pervasive."
+        },
+        {
+            "module": "backend",
+            "issue": "Implicit church_id extraction in ActivityController.",
+            "classification": "Warning/Logic",
+            "impact": "Unlike other controllers, ActivityController does not explicitly call PermissionMiddleware at the 'handle' level, relying on internal repository checks. While safe, it deviates from the new security pattern."
+        },
+        {
+            "file": "frontend/src/components/dashboard/ActivityFeed.tsx",
+            "line": 102,
+            "issue": "useEffect missing dependency array items: 'activities', 'searchParams', 'user?.churchId'.",
+            "classification": "Warning",
+            "impact": "Potential for stale data or missed updates."
+        },
+        {
+            "file": "backend/src/Controllers/SongController.php",
+            "line": 144,
+            "issue": "Direct church_id usage for creation validated only by general permission.",
+            "classification": "Warning/Security",
+            "impact": "User can create songs for any church if they have 'song.create' globally (superadmin bypass works, but needs rigorous check for regular users)."
+        }
+    ],
+    "section_4_code_quality_issues": [
+        {
+            "module": "frontend",
+            "issue": "Inline styles used in 40% of new components.",
+            "classification": "Info"
+        },
+        {
+            "module": "backend",
+            "issue": "Mixed usage of camelCase and snake_case in input parameters (churchId vs church_id).",
+            "classification": "Info"
+        }
+    ],
+    "section_5_suggested_fixes": [
+        {
+            "target": "frontend",
+            "fix": "Start refactoring 'any' types in 'src/types/common.ts' and propagate usage to components."
+        },
+        {
+            "target": "backend/src/Controllers/ActivityController.php",
+            "fix": "Align with the new security pattern by adding 'PermissionMiddleware::require' at the handle level."
+        },
+        {
+            "target": "backend/test_backend.php",
+            "fix": "Run this script to verify DB connectivity and login logic in any environment."
+        }
+    ]
+}

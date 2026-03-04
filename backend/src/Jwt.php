@@ -4,18 +4,26 @@ namespace App;
 
 class Jwt
 {
+    private static $cachedSecret = null;
+
     private static function getSecret()
     {
+        if (self::$cachedSecret !== null) {
+            return self::$cachedSecret;
+        }
+
         $configPath = APP_ROOT . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'database.env';
         if (!file_exists($configPath)) {
             error_log("JWT: database.env not found at $configPath. Using default_secret.");
-            return 'default_secret';
+            self::$cachedSecret = 'default_secret';
+            return self::$cachedSecret;
         }
         $env = @parse_ini_file($configPath);
         $secret = $env['JWT_SECRET'] ?? 'default_secret';
         if ($secret === 'default_secret') {
             error_log("JWT: JWT_SECRET not found in env. Using default_secret.");
         }
+        self::$cachedSecret = $secret;
         return $secret;
     }
 

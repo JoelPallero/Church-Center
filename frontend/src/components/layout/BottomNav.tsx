@@ -26,10 +26,10 @@ export const BottomNav: FC = () => {
         { path: '/mainhub/pastor', icon: 'auto_graph', label: t('nav.pastor') || 'Pastor', permission: 'church.update' },
         { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports'), permission: 'reports.view' },
         { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'calendar.read' },
-        { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'church.update' },
+        { path: '/worship/playlists', icon: 'queue_music', label: t('nav.playlists'), permission: 'calendar.read' },
+        { path: '/worship/songs', icon: 'library_music', label: t('nav.songs'), permission: 'song.read' },
         { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'team.read' },
         { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'church.update' },
-        { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'song.read' }
     ];
 
     // Filter items based on user permissions
@@ -48,7 +48,7 @@ export const BottomNav: FC = () => {
         }
     } else {
         // For others, take the first 5 or relevant ones
-        const prioritized = ['/dashboard', '/mainhub/reports', '/worship/calendar', '/mainhub/teams', '/worship/songs'];
+        const prioritized = ['/dashboard', '/worship/calendar', '/worship/playlists', '/worship/songs', '/mainhub/teams'];
         navItems = filteredNavItems.filter(i => prioritized.includes(i.path));
 
         // If still too few, backfill from filteredNavItems
