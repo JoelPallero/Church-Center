@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, useCallback, useMemo } from 'react'
 import type { FC, PropsWithChildren } from 'react';
 import { AuthService } from '../services/authService';
 import type { User, Church } from '../types/domain';
+import { MOCK_PROFILES, MOCK_CHURCH } from '../utils/mockData';
 
 interface AuthContextType {
     user: User | null;
@@ -14,10 +15,12 @@ interface AuthContextType {
     isLoading: boolean;
     isAuthenticated: boolean;
     login: (email: string, password: string, recaptchaToken?: string) => Promise<void>;
+    loginAsMock: (profileKey: string) => void;
     logout: () => void;
     register: (name: string, email: string) => Promise<any>;
     impersonateRole: (roleName: string | null) => void;
     isLocalhost: boolean;
+    isMockMode: boolean;
     hasPermission: (permission: string) => boolean;
     hasService: (serviceKey: string) => boolean;
     hasRole: (roleName: string) => boolean;
@@ -34,6 +37,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [impersonatedRole, setImpersonatedRole] = useState<any>(null);
+    const [isMockMode, setIsMockMode] = useState(false);
 
     const isLocalhost = useMemo(() =>
         window.location.hostname === 'localhost' ||
@@ -44,6 +48,20 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
     const loadBootstrap = useCallback(async () => {
         setIsLoading(true);
         const token = localStorage.getItem('auth_token');
+        const mockProfile = localStorage.getItem('dev_mock_profile');
+
+        if (isLocalhost && mockProfile && MOCK_PROFILES[mockProfile]) {
+            const profile = MOCK_PROFILES[mockProfile];
+            setUser(profile.user);
+            setChurch(MOCK_CHURCH);
+            setRoles(profile.roles);
+            setPermissions(profile.permissions);
+            setServices(profile.user.services?.map(s => s.serviceKey) || []);
+            setIsSuperAdmin(profile.roles.includes('superadmin'));
+            setIsMockMode(true);
+            setIsLoading(false);
+            return;
+        }
 
         if (!token) {
             setUser(null);
@@ -83,6 +101,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
                 setServices(rawServs || []);
                 setRoles(rawRoles || []);
                 setIsSuperAdmin(is_superadmin || false);
+                setIsMockMode(false);
             } else {
                 localStorage.removeItem('auth_token');
                 setUser(null);
@@ -94,7 +113,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [isLocalhost]);
 
     useEffect(() => {
         loadBootstrap();
@@ -105,6 +124,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         try {
             const response = await AuthService.login(email, password, recaptchaToken);
             if (response.success && response.access_token) {
+                localStorage.removeItem('dev_mock_profile');
                 localStorage.setItem('auth_token', response.access_token);
                 await loadBootstrap();
             } else {
@@ -116,12 +136,20 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         }
     };
 
+    const loginAsMock = useCallback((profileKey: string) => {
+        if (!isLocalhost) return;
+        localStorage.setItem('dev_mock_profile', profileKey);
+        localStorage.removeItem('auth_token');
+        loadBootstrap();
+    }, [isLocalhost, loadBootstrap]);
+
     const register = async (name: string, email: string) => {
         return await AuthService.register(name, email);
     };
 
     const logout = useCallback(() => {
         AuthService.logout();
+        localStorage.removeItem('dev_mock_profile');
         setUser(null);
         setChurch(null);
         setRoles([]);
@@ -129,14 +157,26 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         setServices([]);
         setIsSuperAdmin(false);
         setImpersonatedRole(null);
+        setIsMockMode(false);
     }, []);
 
-    const impersonateRole = (roleName: string | null) => {
+    const impersonateRole = useCallback((roleName: string | null) => {
         if (!isLocalhost) return;
         if (!roleName) {
             setImpersonatedRole(null);
+            loadBootstrap();
             return;
         }
+
+        // Apply mock permissions if available
+        if (MOCK_PROFILES[roleName]) {
+            const profile = MOCK_PROFILES[roleName];
+            setPermissions(profile.permissions);
+            setRoles(profile.roles);
+            setServices(profile.user.services?.map(s => s.serviceKey) || []);
+            setIsSuperAdmin(profile.roles.includes('superadmin'));
+        }
+
         setImpersonatedRole({
             id: 0,
             name: roleName,
@@ -144,22 +184,22 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
             level: 10,
             isSystemRole: true
         });
-    };
+    }, [isLocalhost, loadBootstrap]);
 
-    const hasPermission = (permission: string) => {
-        if (isSuperAdmin) return true;
+    const hasPermission = useCallback((permission: string) => {
+        if (isSuperAdmin || permissions.includes('*')) return true;
         return permissions.includes(permission);
-    };
+    }, [isSuperAdmin, permissions]);
 
-    const hasService = (serviceKey: string) => {
-        if (isSuperAdmin) return true;
+    const hasService = useCallback((serviceKey: string) => {
+        if (isSuperAdmin || permissions.includes('*')) return true;
         return services.includes(serviceKey);
-    };
+    }, [isSuperAdmin, services, permissions]);
 
-    const hasRole = (roleName: string) => {
+    const hasRole = useCallback((roleName: string) => {
         if (isSuperAdmin && roleName === 'superadmin') return true;
         return roles.includes(roleName);
-    };
+    }, [isSuperAdmin, roles]);
 
     const currentUser = useMemo((): User | null => {
         if (!user) return null;
@@ -167,7 +207,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         return {
             ...user,
             role: impersonatedRole,
-            isMaster: impersonatedRole.name === 'master'
+            isMaster: impersonatedRole.name === 'master' || impersonatedRole.name === 'superadmin'
         };
     }, [user, impersonatedRole]);
 
@@ -183,10 +223,12 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
             isLoading,
             isAuthenticated: !!currentUser,
             login,
+            loginAsMock,
             logout,
             register,
             impersonateRole,
             isLocalhost,
+            isMockMode,
             hasPermission,
             hasService,
             hasRole

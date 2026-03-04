@@ -6,6 +6,7 @@ import { ToastProvider } from './context/ToastContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { ModuleGuard } from './components/layout/ModuleGuard';
+import { DevProfileSelector } from './components/dev/DevProfileSelector';
 
 // Shared / Core Pages
 import { Login } from './pages/Login';
@@ -61,6 +62,7 @@ const App: FC = () => {
     <AuthProvider>
       <ThemeProvider>
         <ToastProvider>
+          {import.meta.env.DEV && <DevProfileSelector />}
           <BrowserRouter>
             <Routes>
               {/* Public Routes */}

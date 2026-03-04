@@ -1,0 +1,92 @@
+import type { User, Church, UserRoleName } from '../types/domain';
+
+export const MOCK_CHURCH: Church = {
+    id: 1,
+    name: 'Iglesia Dev Local',
+    slug: 'iglesia-dev',
+    subscriptionPlan: 'enterprise'
+};
+
+const createMockUser = (roleName: UserRoleName, id: number, name: string): User => {
+    const isSuperAdmin = roleName === 'superadmin' || roleName === 'master';
+
+    return {
+        id,
+        name,
+        email: `${roleName}@dev.local`,
+        churchId: isSuperAdmin ? null : 1,
+        roleId: 0,
+        statusId: 1,
+        status: 'active',
+        isMaster: isSuperAdmin,
+        role: {
+            id: 0,
+            name: roleName,
+            displayName: roleName.charAt(0).toUpperCase() + roleName.slice(1),
+            level: isSuperAdmin ? 0 : 100,
+            isSystemRole: true
+        },
+        services: [
+            { serviceKey: 'worship', enabled: true },
+            { serviceKey: 'mainhub', enabled: true },
+            { serviceKey: 'social', enabled: true }
+        ],
+        areas: [
+            { id: 1, name: 'Alabanza' },
+            { id: 2, name: 'Ujieres' }
+        ]
+    };
+};
+
+export const MOCK_PROFILES: Record<string, { user: User; permissions: string[]; roles: string[] }> = {
+    superadmin: {
+        user: createMockUser('superadmin', 1, 'Dev SuperAdmin'),
+        permissions: ['*'],
+        roles: ['superadmin']
+    },
+    master: {
+        user: createMockUser('master', 1, 'Dev Master'),
+        permissions: ['*'],
+        roles: ['superadmin', 'master']
+    },
+    pastor: {
+        user: createMockUser('pastor', 2, 'Dev Pastor'),
+        permissions: [
+            'church.update',
+            'reports.view',
+            'calendar.read',
+            'song.read',
+            'team.read',
+            'people.read',
+            'people.write'
+        ],
+        roles: ['pastor']
+    },
+    leader: {
+        user: createMockUser('leader', 3, 'Dev Lider'),
+        permissions: [
+            'calendar.read',
+            'song.read',
+            'team.read',
+            'song.write'
+        ],
+        roles: ['leader']
+    },
+    coordinator: {
+        user: createMockUser('coordinator', 4, 'Dev Coordinador'),
+        permissions: [
+            'calendar.read',
+            'song.read',
+            'team.read'
+        ],
+        roles: ['coordinator']
+    },
+    member: {
+        user: createMockUser('member', 5, 'Dev Miembro'),
+        permissions: [
+            'calendar.read',
+            'song.read'
+        ],
+        roles: ['member']
+    }
+};

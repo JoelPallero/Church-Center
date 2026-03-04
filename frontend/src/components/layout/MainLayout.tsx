@@ -5,7 +5,6 @@ import { BottomNav } from './BottomNav';
 import { useAuth } from '../../hooks/useAuth';
 import { NotificationCenter } from '../ui/NotificationCenter';
 import { ToastContainer } from '../ui/Toast';
-import { DevRoleSwitcher } from '../dev/DevRoleSwitcher';
 import { DesktopSidebar } from './DesktopSidebar';
 
 export const MainLayout: FC = () => {
@@ -322,7 +321,6 @@ export const MainLayout: FC = () => {
                 <BottomNav />
             </div>
             <ToastContainer />
-            <DevRoleSwitcher />
         </div>
     );
 };
