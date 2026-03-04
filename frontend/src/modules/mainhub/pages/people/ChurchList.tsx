@@ -254,6 +254,7 @@ export const ChurchList: FC = () => {
                                         <Button
                                             variant="ghost"
                                             icon="edit"
+                                            aria-label={t('common.edit') || 'Editar'}
                                             onClick={() => navigate(`/mainhub/churches/edit/${church.id}`)}
                                             style={{ padding: '8px', minWidth: 'auto', color: 'var(--color-ui-text-soft)' }}
                                         />
@@ -261,6 +262,7 @@ export const ChurchList: FC = () => {
                                             <Button
                                                 variant="ghost"
                                                 icon="block"
+                                                aria-label={t('churches.status.deactivate') || 'Desactivar'}
                                                 onClick={() => handleAction(church, 'deactivate')}
                                                 style={{ padding: '8px', minWidth: 'auto', color: '#F59E0B' }}
                                                 title={t('churches.deactivate')}
@@ -269,6 +271,7 @@ export const ChurchList: FC = () => {
                                             <Button
                                                 variant="ghost"
                                                 icon="settings_backup_restore"
+                                                aria-label={t('churches.status.restore') || 'Restaurar'}
                                                 onClick={() => handleAction(church, 'restore')}
                                                 style={{ padding: '8px', minWidth: 'auto', color: '#10B981' }}
                                                 title={t('churches.restore')}

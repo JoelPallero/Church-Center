@@ -52,13 +52,14 @@ export const MOCK_PROFILES: Record<string, { user: User; permissions: string[]; 
     pastor: {
         user: createMockUser('pastor', 2, 'Dev Pastor'),
         permissions: [
-            'church.update',
+            'church.update_own',
             'reports.view',
             'calendar.read',
             'song.read',
             'team.read',
             'people.read',
-            'people.write'
+            'people.write',
+            'church.view_own'
         ],
         roles: ['pastor']
     },

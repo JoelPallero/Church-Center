@@ -174,6 +174,12 @@ export const MainLayout: FC = () => {
                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person</span>
                                     <span>Mi perfil</span>
                                 </div>
+                                {hasPermission('church.update_own') && (
+                                    <div onClick={() => { navigate(`/mainhub/churches/edit/${user?.churchId}`); setUserMenuOpen(false); }} className="dropdown-item">
+                                        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>church</span>
+                                        <span>Mi Iglesia</span>
+                                    </div>
+                                )}
                                 <div onClick={() => { navigate('/worship/instruments'); setUserMenuOpen(false); }} className="dropdown-item">
                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>piano</span>
                                     <span>Mis Instrumentos</span>
@@ -290,6 +296,12 @@ export const MainLayout: FC = () => {
                                                 <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person</span>
                                                 <span>Mi perfil</span>
                                             </div>
+                                            {hasPermission('church.update_own') && (
+                                                <div onClick={() => { navigate(`/mainhub/churches/edit/${user?.churchId}`); setUserMenuOpen(false); }} className="dropdown-item">
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>church</span>
+                                                    <span>Mi Iglesia</span>
+                                                </div>
+                                            )}
                                             <div onClick={() => { navigate('/worship/instruments'); setUserMenuOpen(false); }} className="dropdown-item">
                                                 <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>piano</span>
                                                 <span>Mis Instrumentos</span>

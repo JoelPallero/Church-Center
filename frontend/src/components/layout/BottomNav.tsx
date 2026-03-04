@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import '../../index.css';
 
 export const BottomNav: FC = () => {
-    const { isSuperAdmin, isMaster, hasPermission } = useAuth();
+    const { isSuperAdmin, isMaster, hasPermission, user } = useAuth();
     const effectiveIsSuperAdmin = isSuperAdmin || isMaster;
 
     interface NavItem {
@@ -21,6 +21,7 @@ export const BottomNav: FC = () => {
     const allPossibleItems: NavItem[] = [
         { path: '/dashboard', icon: 'dashboard', label: 'Dashboard', permission: null },
         { path: '/mainhub/churches', icon: 'church', label: 'Iglesias', permission: 'church.update' },
+        { path: `/mainhub/churches/edit/${user?.churchId}`, icon: 'church', label: 'Mi Iglesia', permission: 'church.update_own' },
         { path: '/mainhub/pastor', icon: 'auto_graph', label: 'Areas', permission: 'church.update' },
         { path: '/mainhub/reports', icon: 'analytics', label: 'Reportes', permission: 'reports.view' },
         { path: '/worship/calendar', icon: 'event', label: 'Calendario', permission: 'calendar.read' },

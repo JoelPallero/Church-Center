@@ -12,6 +12,7 @@ export const DesktopSidebar: FC = () => {
     const menuItems = [
         { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
         { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'church.update' },
+        { path: `/mainhub/churches/edit/${useAuth().user?.churchId}`, icon: 'store', label: 'Mi Iglesia', permission: 'church.update_own' },
         { path: '/mainhub/reports', icon: 'auto_graph', label: 'Estadísticas', permission: 'reports.view' },
         { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'calendar.read' },
         { path: '/worship/playlists', icon: 'queue_music', label: t('nav.playlists'), permission: 'calendar.read' },

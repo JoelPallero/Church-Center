@@ -6,6 +6,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'danger' | 'neutral' | 'ghost';
     label?: string;
     icon?: string;
+    'aria-label'?: string;
     children?: ReactNode;
 }
 
@@ -22,6 +23,7 @@ export const Button: FC<ButtonProps> = ({ variant = 'primary', label, icon, chil
     return (
         <button
             className={clsx('btn-base', variantClass, className)}
+            aria-label={props['aria-label'] || label}
             {...props}
         >
             {icon && <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{icon}</span>}
