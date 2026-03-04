@@ -7,24 +7,24 @@ export const DesktopSidebar: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
-    const { hasPermission } = useAuth();
+    const { hasPermission, logout } = useAuth();
 
     const menuItems = [
         { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
-        { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'churches.view' },
-        { path: '/mainhub/reports', icon: 'auto_graph', label: 'Estadísticas', permission: 'church.update' },
-        { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'reunions.view' },
-        { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'area.create' },
-        { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'teams.view' },
-        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'users.view' },
-        { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'songs.view' },
+        { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'church.update' },
+        { path: '/mainhub/reports', icon: 'auto_graph', label: 'Estadísticas', permission: 'reports.view' },
+        { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'calendar.read' },
+        { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'church.update' },
+        { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'team.read' },
+        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'church.update' },
+        { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'song.read' },
     ];
 
     const bottomItems = [
         { path: '/settings', icon: 'settings', label: t('nav.settings') || 'Panel de Control' }
     ];
 
-    const visibleItems = menuItems.filter(item => !item.permission || (item.permission === 'church.update' ? hasPermission('church.update') : hasPermission(item.permission)));
+    const visibleItems = menuItems.filter(item => !item.permission || hasPermission(item.permission));
 
     return (
         <aside style={{
@@ -99,7 +99,7 @@ export const DesktopSidebar: FC = () => {
                     </div>
                 ))}
                 <div
-                    onClick={() => { useAuth().logout(); navigate('/login'); }}
+                    onClick={() => { logout(); navigate('/login'); }}
                     style={{
                         display: 'flex',
                         alignItems: 'center',

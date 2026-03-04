@@ -8,6 +8,8 @@ class RoleController
 {
     public function handle($memberId, $action, $method)
     {
+        \App\Middleware\PermissionMiddleware::require($memberId, 'church.read');
+
         if ($method === "GET") {
             $this->list();
         }

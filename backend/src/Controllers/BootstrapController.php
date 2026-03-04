@@ -17,8 +17,8 @@ class BootstrapController
         }
 
         $church = ChurchRepo::findById($member['church_id']);
-        $permissions = PermissionRepo::getPermissions($memberId);
-        $serviceRoles = PermissionRepo::getServiceRoles($memberId);
+        $permissions = PermissionRepo::getPermissions($memberId, $member['church_id']);
+        $serviceRoles = PermissionRepo::getServiceRoles($memberId, $member['church_id']);
 
         $isSuper = PermissionRepo::isSuperAdmin($memberId);
         $roles = array_map(fn($r) => $r['name'], $serviceRoles);

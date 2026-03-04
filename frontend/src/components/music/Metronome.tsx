@@ -63,7 +63,7 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
         osc.stop(time + 0.06);
     }, []);
 
-    const scheduler = useCallback(() => {
+    const scheduler = useCallback(function runScheduler() {
         if (!audioContext.current) return;
 
         while (nextClickTime.current < audioContext.current.currentTime + 0.1) {
@@ -79,7 +79,7 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
             nextClickTime.current += (secondsPerBeat / 2);
             currentTick.current = (currentTick.current + 1) % 8;
         }
-        timerID.current = window.setTimeout(scheduler, 25);
+        timerID.current = window.setTimeout(runScheduler, 25);
     }, [playClick]);
 
     const toggleMetronome = (e?: any) => {

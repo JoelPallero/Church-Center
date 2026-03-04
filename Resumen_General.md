@@ -19,17 +19,22 @@ MinistryHub (MSM2 / Church-Center) es una plataforma integral, modular y de múl
 ### 3. Personas y Equipos
 - **Directorio de Miembros**: Gestión centralizada de la información de los integrantes.
 - **Estructura por Áreas y Equipos**: Organización jerárquica (ej. Área de Multimedia -> Equipo de Video).
+- **Gestión de Áreas Independientes**: Módulo específico para superadmins para administrar áreas de forma global.
 - **Asignación de Roles**: Diferenciación entre líderes de equipo y miembros regulares.
 
-### 4. Calendario y Reuniones
+### 4. Seguridad y Acceso
+- **reCAPTCHA Invisible (v3)**: Integración de seguridad en el login para prevenir ataques automatizados sin fricción para el usuario.
+- **Control de Acceso (RBAC)**: Roles diferenciados por iglesia (Admin, Miembro), incluyendo un rol de **"Master"** con acceso global.
+
+### 5. Calendario y Reuniones
 - **Agenda de Servicios**: Programación de reuniones con vistas de lista y de cuadrícula mensual.
 - **Detalle de Orden de Servicio**: Planificación detallada de cada momento del servicio.
 
-### 5. Notificaciones y Actividad
+### 6. Notificaciones y Actividad
 - **Logs de Actividad**: Registro histórico de cambios y acciones realizadas en el sistema (Auditoría).
 - **Sistema de Notificaciones**: Alertas sobre servicios programados y cambios importantes. Incluye soporte para **plantillas editables** (hasta 3 predefinidas) para personalizar la comunicación.
 
-### 6. Internacionalización (i18n)
+### 7. Internacionalización (i18n)
 - Soporte completo para múltiples idiomas: **Español, Inglés y Portugués**, gestionado mediante un sistema de claves JSON para asegurar consistencia en toda la interfaz.
 
 ## ¿Qué puede hacer el usuario?

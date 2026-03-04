@@ -24,16 +24,19 @@ El sistema sigue una arquitectura de desacoplamiento entre el núcleo administra
 ### Backend (Lógica de Servidor)
 - **Lenguaje**: PHP (Estructura personalizada orientada a objetos).
 - **Manejador de Dependencias**: Autoloader manual basado en PSR-4 (dentro de `bootstrap.php`).
-- **Seguridad**: JWT (JSON Web Tokens) para autenticación sin estado y segura.
+- **Seguridad**: 
+    - **JWT (JSON Web Tokens)**: Autenticación sin estado.
+    - **reCAPTCHA v3**: Verificación en el lado del servidor para el endpoint de login.
 - **Estructura de Código**: Patrón **Controller-Repository**, separando la lógica de las rutas de la lógica de acceso a datos.
 - **Middlewares**: Implementación de filtros para protección de rutas y validación de roles de usuario.
-- **Gestión de Sesiones**: Stateless (vía JWT) para escalabilidad.
+- **Gestión de Sesiones**: Stateless (vía JWT).
 
 ### Base de Datos
 - **Motor**: MySQL.
-- **Acceso a Datos**: PDO (PHP Data Objects) para prevención de inyecciones SQL y portabilidad.
+- **Acceso a Datos**: PDO (PHP Data Objects).
 - **Estructura**:
     - Esquema de Usuarios/Miembros (Gestión de roles y login).
+    - Esquema de Gestión de Áreas (CRUD independiente para superadmins).
     - Esquema de Música (Canciones, acordes, setlists).
     - Logs de Actividad (Auditoríade acciones).
     - Notificaciones y Calendario (Persistencia de eventos).
@@ -41,11 +44,13 @@ El sistema sigue una arquitectura de desacoplamiento entre el núcleo administra
 ---
 
 ## Infraestructura y DevOps
-- **Docker**: Soporte para contenedores en el entorno de desarrollo local.
-- **IA & Diseño**: Integración con **Stitch MCP** y **Gemini CLI** para acelerar flujos de diseño UI/UX y generación de código frontend.
+- **Docker**: Entorno de desarrollo local.
+- **IA & Diseño**: Integración con **Stitch MCP** y **Gemini CLI**.
+- **Optimización de Build**: 
+    - **Code Splitting**: Uso de `dynamic import()` para reducir el tamaño del bundle inicial.
+    - **Manual Chunks**: Configuración de Rollup para agrupar librerías pesadas (ej. vendor) en chunks separados.
 - **Gestión de Versiones**: Git.
-- **Estrategia de Despliegue**: Build de frontend inyectado en la carpeta pública, con el backend residiendo en un nivel superior inaccesible desde la web por seguridad.
-- **Variables de Entorno**: Configuración centralizada vía archivos `.env` dentro de la carpeta privada de backend.
+- **Estrategia de Despliegue**: Build de frontend inyectado en la carpeta pública, con el backend residiendo en un nivel superior inaccesible.
 
 ## Resumen de Integración
-El frontend consume una API REST modular construida totalmente en PHP "vanilla" profesionalizado, lo que permite un rendimiento óptimo sin la sobrecarga de frameworks pesados, manteniendo al mismo tiempo una experiencia de usuario moderna y dinámica propia de una Single Page Application (SPA).
+El frontend consume una API REST modular construida totalmente en PHP "vanilla" profesionalizado. Se han implementado mejoras recientes en el editor de canciones (soporte para notación romana, transposición mejorada) y se ha realizado una auditoría completa de UI/UX para asegurar paridad entre escritorio y móvil siguiendo diseños de Stitch.

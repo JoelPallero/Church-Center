@@ -14,15 +14,15 @@ export const InstrumentForm: FC<Props> = ({ onComplete, initialSelected = [] }) 
     const [selected, setSelected] = useState<number[]>(initialSelected);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadInstruments();
-    }, []);
-
     const loadInstruments = async () => {
         const data = await peopleService.getInstruments();
         setInstruments(data);
         setLoading(false);
     };
+
+    useEffect(() => {
+        loadInstruments();
+    }, []);
 
     const toggleInstrument = (id: number) => {
         setSelected(prev =>

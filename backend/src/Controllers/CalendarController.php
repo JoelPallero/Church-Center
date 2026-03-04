@@ -10,6 +10,16 @@ class CalendarController
 {
     public function handle($memberId, $action, $method)
     {
+        $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
+        if (!$churchId && $method === 'POST') {
+            $data = json_decode(file_get_contents('php://input'), true);
+            $churchId = $data['churchId'] ?? $data['church_id'] ?? $data['instanceId'] ?? null;
+            // Note: if instanceId is used, ideally we should lookup the churchId from the meeting instance in the repo, 
+            // but for now we follow the pattern of requiring it or having a solid check.
+        }
+
+        \App\Middleware\PermissionMiddleware::require($memberId, 'calendar.read', $churchId);
+
         if ($method === 'GET') {
             if ($action === 'events' || empty($action)) {
                 $this->listEvents($memberId);
@@ -20,8 +30,10 @@ class CalendarController
             }
         } elseif ($method === 'POST') {
             if ($action === 'assignment') {
+                \App\Middleware\PermissionMiddleware::require($memberId, 'reunions.view', $churchId);
                 $this->assign($memberId);
             } else {
+                \App\Middleware\PermissionMiddleware::require($memberId, 'reunions.view', $churchId);
                 $this->create($memberId);
             }
         }

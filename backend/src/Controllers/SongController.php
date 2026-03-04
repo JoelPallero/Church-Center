@@ -9,30 +9,40 @@ class SongController
 {
     public function handle($memberId, $action, $method)
     {
+        $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
+
         if ($method === 'GET') {
             if ($action === 'edits') {
-                PermissionMiddleware::require($memberId, 'song.approve');
+                PermissionMiddleware::require($memberId, 'song.approve', $churchId);
                 $this->listEdits($memberId);
             } elseif (is_numeric($action)) {
-                PermissionMiddleware::require($memberId, 'song.read');
+                PermissionMiddleware::require($memberId, 'song.read', $churchId);
                 $this->show($action);
             } else {
-                PermissionMiddleware::require($memberId, 'song.read');
-                $this->list($memberId);
+                PermissionMiddleware::require($memberId, 'song.read', $churchId);
+                $this->list($memberId, $churchId);
             }
         } elseif ($method === 'POST') {
             if ($action === 'propose_edit') {
                 $this->proposeEdit($memberId);
             } elseif ($action === 'resolve_edit') {
-                PermissionMiddleware::require($memberId, 'song.approve');
+                PermissionMiddleware::require($memberId, 'song.approve', $churchId);
                 $this->resolveEdit($memberId);
             } else {
-                PermissionMiddleware::require($memberId, 'song.create');
+                // Default POST is create
+                PermissionMiddleware::require($memberId, 'song.create', $churchId);
                 $this->create($memberId);
             }
-        } elseif ($method === 'DELETE') {
+        } elseif ($method === 'PUT') {
+            // Edición
+            PermissionMiddleware::require($memberId, 'song.update', $churchId);
             if (is_numeric($action)) {
-                PermissionMiddleware::require($memberId, 'song.delete');
+                $this->update($action);
+            }
+        } elseif ($method === 'DELETE') {
+            // Baja
+            PermissionMiddleware::require($memberId, 'song.delete', $churchId);
+            if (is_numeric($action)) {
                 $this->delete((int) $action);
             }
         }
@@ -44,9 +54,8 @@ class SongController
         Response::json(['success' => $success, 'message' => $success ? 'Song deleted' : 'Failed to delete song']);
     }
 
-    private function list($memberId)
+    private function list($memberId, $churchId = null)
     {
-        $churchId = $_GET['church_id'] ?? null;
         $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
 
         // If not super admin and no church_id specified, we find the user's current church
@@ -130,6 +139,17 @@ class SongController
         }
 
         Response::json(['success' => $success, 'message' => "Edición " . ($status === 'approved' ? 'aprobada' : 'rechazada')]);
+    }
+
+    private function update($id)
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$id || !is_numeric($id)) {
+            return Response::error("Invalid Song ID");
+        }
+
+        $success = \App\Repositories\SongRepo::update($id, $input);
+        Response::json(['success' => $success, 'message' => $success ? 'Song updated' : 'Failed to update song']);
     }
 
     private function create($memberId)

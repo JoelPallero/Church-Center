@@ -7,7 +7,7 @@ use PDO;
 
 class PermissionRepo
 {
-    public static function getPermissions($memberId)
+    public static function getPermissions($memberId, $churchId = null)
     {
         $db = Database::getInstance();
 
@@ -26,14 +26,22 @@ class PermissionRepo
         }
 
         // 2. Regular permissions from service roles
-        $stmt = $db->prepare("
+        $sql = "
             SELECT DISTINCT p.name 
             FROM user_service_roles usr
             JOIN role_permissions rp ON usr.role_id = rp.role_id
             JOIN permissions p ON rp.permission_id = p.id
             WHERE usr.member_id = ?
-        ");
-        $stmt->execute([$memberId]);
+        ";
+
+        $params = [$memberId];
+        if ($churchId) {
+            $sql .= " AND usr.church_id = ?";
+            $params[] = $churchId;
+        }
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
@@ -49,17 +57,25 @@ class PermissionRepo
         return (bool) $stmt->fetch();
     }
 
-    public static function getServiceRoles($memberId)
+    public static function getServiceRoles($memberId, $churchId = null)
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare("
+        $sql = "
             SELECT r.name, r.service_id, s.key as service_key
             FROM user_service_roles usr
             JOIN roles r ON usr.role_id = r.id
             JOIN services s ON r.service_id = s.id
             WHERE usr.member_id = ?
-        ");
-        $stmt->execute([$memberId]);
+        ";
+
+        $params = [$memberId];
+        if ($churchId) {
+            $sql .= " AND usr.church_id = ?";
+            $params[] = $churchId;
+        }
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 }

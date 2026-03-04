@@ -12,14 +12,23 @@ class TeamController
         $parts = explode('/', $action);
         $id = is_numeric($parts[0]) ? (int) $parts[0] : null;
         $subAction = $parts[1] ?? '';
+        $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
 
         if ($method === 'GET') {
+            \App\Middleware\PermissionMiddleware::require($memberId, 'team.read', $churchId);
             if ($id && $subAction === 'members') {
                 $this->listMembers($id);
             } else {
                 $this->list($memberId);
             }
         } elseif ($method === 'POST') {
+            // For create/join/assign, we might need to extract churchId from body if not in query
+            if (!$churchId) {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+            }
+            \App\Middleware\PermissionMiddleware::require($memberId, 'team.create', $churchId);
+
             if ($id && $subAction === 'members') {
                 if (($parts[2] ?? '') === 'bulk') {
                     $this->assignBulk($id);
@@ -32,10 +41,12 @@ class TeamController
                 $this->create($memberId);
             }
         } elseif ($method === 'PUT') {
+            \App\Middleware\PermissionMiddleware::require($memberId, 'team.update', $churchId);
             if ($id) {
                 $this->update($memberId, $id);
             }
         } elseif ($method === 'DELETE') {
+            \App\Middleware\PermissionMiddleware::require($memberId, 'team.update', $churchId); // Assuming delete needs update/admin level
             if ($id) {
                 $this->delete($id);
             }

@@ -10,17 +10,22 @@ class PlaylistController
 {
     public function handle($memberId, $action, $method)
     {
-        PermissionMiddleware::require($memberId, 'calendar.read');
+        $churchId = $_GET['church_id'] ?? null;
+        if (!$churchId && $method === 'POST') {
+            $raw = file_get_contents('php://input');
+            $data = json_decode($raw, true);
+            $churchId = $data['churchId'] ?? $data['church_id'] ?? null;
+        }
+
+        PermissionMiddleware::require($memberId, 'calendar.read', $churchId);
 
         if ($method === 'GET') {
             if (is_numeric($action)) {
                 $this->show($action);
-            }
-            else {
+            } else {
                 $this->list($memberId);
             }
-        }
-        elseif ($method === 'POST') {
+        } elseif ($method === 'POST') {
             $this->create($memberId);
         }
     }
@@ -45,8 +50,7 @@ class PlaylistController
 
         if ($isRestricted) {
             $playlists = PlaylistRepo::getVisibleForMember($churchId, $memberId);
-        }
-        else {
+        } else {
             $playlists = PlaylistRepo::getByChurch($churchId);
         }
 

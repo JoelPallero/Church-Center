@@ -9,20 +9,25 @@ class ReportController
 {
     public function handle($memberId, $action, $method)
     {
+        $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
+
+        \App\Middleware\PermissionMiddleware::require($memberId, 'church.read', $churchId);
+
         if ($method === 'GET') {
             if ($action === 'pastor_stats') {
-                $this->pastorStats($memberId);
-            }
-            else {
-                $this->dashboard($memberId);
+                $this->pastorStats($memberId, $churchId);
+            } else {
+                $this->dashboard($memberId, $churchId);
             }
         }
     }
 
-    private function pastorStats($memberId)
+    private function pastorStats($memberId, $churchId = null)
     {
-        $member = \App\Repositories\UserRepo::getMemberData($memberId);
-        $churchId = $_GET['church_id'] ?? ($member['church_id'] ?? null);
+        if (!$churchId) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? null;
+        }
 
         if (!$churchId) {
             Response::error("Church ID required", 400);
@@ -36,10 +41,12 @@ class ReportController
         ]);
     }
 
-    private function dashboard($memberId)
+    private function dashboard($memberId, $churchId = null)
     {
-        $member = \App\Repositories\UserRepo::getMemberData($memberId);
-        $churchId = $_GET['church_id'] ?? ($member['church_id'] ?? null);
+        if (!$churchId) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? null;
+        }
 
         if ($churchId) {
             $stats = \App\Repositories\ReportRepo::getChurchStats($churchId);
@@ -53,15 +60,19 @@ class ReportController
             ]);
         }
 
-        // Fallback to global dashboard stats if no church context
-        $stats = \App\Repositories\ReportRepo::getGlobalStats();
-        $dbStatus = $stats['db_status'] ?? ['main' => 'online', 'music' => 'error'];
-        unset($stats['db_status']);
+        // Only allow global stats access if superadmin
+        if (\App\Repositories\PermissionRepo::isSuperAdmin($memberId)) {
+            $stats = \App\Repositories\ReportRepo::getGlobalStats();
+            $dbStatus = $stats['db_status'] ?? ['main' => 'online', 'music' => 'error'];
+            unset($stats['db_status']);
 
-        Response::json([
-            'success' => true,
-            'db_status' => $dbStatus,
-            'data' => $stats
-        ]);
+            Response::json([
+                'success' => true,
+                'db_status' => $dbStatus,
+                'data' => $stats
+            ]);
+        }
+
+        Response::error("Church context required for dashboard", 403);
     }
 }

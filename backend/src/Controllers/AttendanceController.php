@@ -10,20 +10,24 @@ class AttendanceController
     public function handle($memberId, $action, $method)
     {
         $meetingId = $_GET['meeting_id'] ?? $_GET['meetingId'] ?? null;
+        $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
 
         if ($method === 'GET') {
+            \App\Middleware\PermissionMiddleware::require($memberId, 'church.read', $churchId);
             if ($action === 'report') {
                 $this->getReport($memberId);
             } elseif ($meetingId) {
                 $this->getAttendance($meetingId);
             }
         } elseif ($method === 'POST') {
+            \App\Middleware\PermissionMiddleware::require($memberId, 'reunions.view', $churchId);
             if ($action === 'count') {
                 $this->saveCount($memberId, $meetingId);
             } elseif ($action === 'visitor') {
                 $this->addVisitor($memberId, $meetingId);
             }
         } elseif ($method === 'DELETE') {
+            \App\Middleware\PermissionMiddleware::require($memberId, 'reunions.view', $churchId);
             if ($action === 'visitor' && isset($_GET['id'])) {
                 $this->deleteVisitor($memberId, $_GET['id']);
             }

@@ -417,19 +417,24 @@ ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 -- Permisos base
 INSERT INTO permissions (name, display_name, module, description) VALUES
- ('church.read', 'Ver iglesia', 'church', 'Permite ver información de iglesia'),
- ('church.update', 'Editar iglesia', 'church', 'Permite editar configuración de iglesia'),
- ('area.create', 'Crear áreas', 'area', 'Permite crear áreas'),
- ('area.update', 'Editar áreas', 'area', 'Permite editar áreas'),
- ('team.create', 'Crear equipos', 'team', 'Permite crear equipos'),
- ('team.update', 'Editar equipos', 'team', 'Permite editar equipos'),
- ('team.manage_members', 'Gestionar miembros', 'team', 'Agregar/quitar miembros'),
+  ('church.read', 'Ver iglesia', 'church', 'Permite ver información de iglesia'),
+  ('church.update', 'Editar iglesia', 'church', 'Permite editar configuración de iglesia'),
+  ('area.create', 'Crear áreas', 'area', 'Permite crear áreas'),
+  ('area.update', 'Editar áreas', 'area', 'Permite editar áreas'),
+  ('team.read', 'Ver equipos', 'team', 'Permite ver equipos'),
+  ('team.create', 'Crear equipos', 'team', 'Permite crear equipos'),
+  ('team.update', 'Editar equipos', 'team', 'Permite editar equipos'),
+  ('team.manage_members', 'Gestionar miembros', 'team', 'Agregar/quitar miembros'),
+  ('person.read', 'Ver personas', 'person', 'Permite ver listado de personas'),
   ('calendar.read', 'Ver calendario', 'calendar', 'Ver calendarios'),
   ('meeting.create', 'Crear reuniones', 'calendar', 'Crear reuniones'),
   ('meeting.update', 'Editar reuniones', 'calendar', 'Editar reuniones'),
   ('song.read', 'Ver canciones', 'song', 'Ver canciones'),
   ('song.create', 'Crear canciones', 'song', 'Crear canciones'),
-  ('song.approve', 'Aprobar cambios', 'song', 'Permite moderar ediciones de canciones')
+  ('song.update', 'Editar canciones', 'song', 'Editar canciones'),
+  ('song.delete', 'Borrar canciones', 'song', 'Borrar canciones'),
+  ('song.approve', 'Aprobar cambios', 'song', 'Permite moderar ediciones de canciones'),
+  ('reports.view', 'Ver estadísticas', 'reports', 'Permite ver reportes y dashboard')
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 -- Seeds de Instrumentos
@@ -439,35 +444,17 @@ INSERT IGNORE INTO instruments (name, category) VALUES
 ('Guitarra Eléctrica', 'Cuerdas'), ('Bajo', 'Cuerdas'), ('Batería', 'Percusión'),
 ('Violín', 'Cuerdas'), ('Saxo', 'Vientos');
 
--- Asignación de permisos a PASTOR
+-- MEMBER
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r
 JOIN services s ON s.id = r.service_id
 JOIN permissions p
-WHERE r.name='pastor'
+WHERE r.name='member'
   AND s.`key`='mainhub'
   AND p.name IN (
-    'church.read','church.update',
-    'area.create','area.update',
-    'team.create','team.update','team.manage_members',
-    'calendar.read','meeting.create','meeting.update',
-    'song.read','song.create','song.approve'
-  )
-ON DUPLICATE KEY UPDATE role_id=role_id;
-
--- LEADER
-INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r
-JOIN services s ON s.id = r.service_id
-JOIN permissions p
-WHERE r.name='leader'
-  AND s.`key`='mainhub'
-  AND p.name IN (
-    'church.read',
-    'team.create','team.update','team.manage_members',
-    'calendar.read','meeting.create','meeting.update',
+    'team.read',
+    'calendar.read',
     'song.read'
   )
 ON DUPLICATE KEY UPDATE role_id=role_id;
@@ -481,25 +468,53 @@ JOIN permissions p
 WHERE r.name='coordinator'
   AND s.`key`='mainhub'
   AND p.name IN (
-    'church.read',
-    'team.update',
-    'calendar.read','meeting.update',
-    'song.read'
+    'team.read',
+    'calendar.read',
+    'song.read',
+    'song.create',
+    'song.update'
   )
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
--- MEMBER
+-- LEADER
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM roles r
 JOIN services s ON s.id = r.service_id
 JOIN permissions p
-WHERE r.name='member'
+WHERE r.name='leader'
   AND s.`key`='mainhub'
   AND p.name IN (
-    'church.read',
+    'team.read',
+    'team.create',
+    'team.update',
+    'team.manage_members',
     'calendar.read',
-    'song.read'
+    'meeting.create',
+    'meeting.update',
+    'song.read',
+    'song.create',
+    'song.update',
+    'song.delete'
+  )
+ON DUPLICATE KEY UPDATE role_id=role_id;
+
+-- PASTOR
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN services s ON s.id = r.service_id
+JOIN permissions p
+WHERE r.name='pastor'
+  AND s.`key`='mainhub'
+  AND p.name IN (
+    'church.read', 'church.update',
+    'area.create', 'area.update',
+    'team.read', 'team.create', 'team.update', 'team.manage_members',
+    'person.read',
+    'calendar.read', 'meeting.create', 'meeting.update',
+    'song.read', 'song.create', 'song.update', 'song.delete', 'song.approve',
+    'reports.view'
   )
 ON DUPLICATE KEY UPDATE role_id=role_id;
 

@@ -28,9 +28,6 @@ export const Login: FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            // Skip reCAPTCHA for now due to 401/403 errors
-            const recaptchaToken = '';
-            /*
             const recaptchaToken = await new Promise<string>((resolve) => {
                 if (!(window as any).grecaptcha) {
                     console.error('reCAPTCHA not loaded');
@@ -46,7 +43,6 @@ export const Login: FC = () => {
                         });
                 });
             });
-            */
 
             await login(email, password, recaptchaToken);
         } catch (err: any) {
@@ -169,33 +165,6 @@ export const Login: FC = () => {
                     />
                 </form>
 
-                <div style={{ margin: '24px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-subtle)' }} />
-                    <span className="text-overline" style={{ color: '#6B7280' }}>O CONTINUAR CON</span>
-                    <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--color-border-subtle)' }} />
-                </div>
-
-                <Button
-                    onClick={() => {
-                        document.cookie = "msm_google_mode=login; path=/; max-age=600";
-                        const redirectUri = encodeURIComponent(`${window.location.origin}/api/auth/google/callback`);
-                        window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${import.meta.env.VITE_GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=email%20profile`;
-                    }}
-                    variant="ghost"
-                    style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '12px',
-                        border: '1px solid var(--color-border-subtle)',
-                        borderRadius: '12px',
-                        backgroundColor: 'var(--color-ui-bg)'
-                    }}
-                >
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: '18px', height: '18px' }} />
-                    <span className="text-body" style={{ fontWeight: 500 }}>Continuar con Google</span>
-                </Button>
             </Card>
 
             <div style={{ marginTop: '24px', textAlign: 'center', maxWidth: '300px' }}>

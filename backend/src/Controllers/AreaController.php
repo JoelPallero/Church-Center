@@ -10,17 +10,19 @@ class AreaController
 {
     public function handle($memberId, $action, $method)
     {
+        $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
+
         if ($method === 'GET') {
-            \App\Middleware\PermissionMiddleware::require($memberId, 'church.read');
+            \App\Middleware\PermissionMiddleware::require($memberId, 'church.read', $churchId);
             $this->list($memberId);
         } elseif ($method === 'POST') {
-            \App\Middleware\PermissionMiddleware::require($memberId, 'area.create');
+            \App\Middleware\PermissionMiddleware::require($memberId, 'church.update', $churchId);
             $this->create($memberId);
         } elseif ($method === 'PUT') {
-            \App\Middleware\PermissionMiddleware::require($memberId, 'area.create');
+            \App\Middleware\PermissionMiddleware::require($memberId, 'church.update', $churchId);
             $this->update($memberId, $action);
         } elseif ($method === 'DELETE') {
-            \App\Middleware\PermissionMiddleware::require($memberId, 'area.create');
+            \App\Middleware\PermissionMiddleware::require($memberId, 'church.update', $churchId);
             $this->delete($memberId, $action);
         }
     }

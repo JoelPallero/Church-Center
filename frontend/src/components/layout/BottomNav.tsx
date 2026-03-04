@@ -22,19 +22,19 @@ export const BottomNav: FC = () => {
     // Unified Nav Items logic based on permissions
     const allPossibleItems: NavItem[] = [
         { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
-        { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'churches.view' },
+        { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'church.update' },
         { path: '/mainhub/pastor', icon: 'auto_graph', label: t('nav.pastor') || 'Pastor', permission: 'church.update' },
         { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports'), permission: 'reports.view' },
-        { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'reunions.view' },
-        { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'area.create' },
-        { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'teams.view' },
-        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'users.view' },
-        { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'songs.view' }
+        { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'calendar.read' },
+        { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'church.update' },
+        { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'team.read' },
+        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'church.update' },
+        { path: '/worship/songs', icon: 'music_note', label: t('nav.songs'), permission: 'song.read' }
     ];
 
     // Filter items based on user permissions
     const filteredNavItems = allPossibleItems.filter(item =>
-        !item.permission || (item.permission === 'church.update' ? hasPermission('church.update') : hasPermission(item.permission))
+        !item.permission || hasPermission(item.permission)
     );
 
     // Limit to 5 items for mobile bottom nav, prioritizing key hubs

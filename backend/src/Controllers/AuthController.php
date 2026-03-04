@@ -18,7 +18,10 @@ class AuthController
         $password = $data['password'] ?? '';
         $recaptchaToken = $data['recaptchaToken'] ?? '';
 
-        // reCAPTCHA disabled temporarily
+        if (!$this->verifyRecaptcha($recaptchaToken)) {
+            Logger::error("Auth failed: reCAPTCHA verification failed.");
+            return Response::error("Verificación de seguridad fallida", 403);
+        }
 
         Logger::info("--- AUTH ATTEMPT START ---");
         Logger::info("Email: $email");
@@ -32,8 +35,7 @@ class AuthController
         Logger::info("Querying UserRepo::findByEmail...");
         try {
             $user = UserRepo::findByEmail($email);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             Logger::error("DB Exception in findByEmail: " . $e->getMessage());
             return Response::error("Error interno del servidor", 500);
         }
@@ -260,8 +262,11 @@ class AuthController
 
     private function verifyRecaptcha($token)
     {
-        if (empty($token))
+        if (empty($token)) {
+            Logger::warning("verifyRecaptcha: Empty token provided.");
+            // Determine if we should allow empty tokens (e.g., during transition or local dev)
             return false;
+        }
 
         $configPath = APP_ROOT . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'database.env';
         if (!file_exists($configPath))
