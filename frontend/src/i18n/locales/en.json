@@ -15,8 +15,12 @@
         "ok": "OK",
         "yes": "Yes",
         "no": "No",
+        "pastoralHub": "Pastoral Hub",
         "ministryHub": "Ministry Hub",
-        "smHub": "SM Hub",
+        "soundHub": "Sound Hub",
+        "multimediaHub": "Multimedia Hub",
+        "diaconosHub": "Diaconos Hub",
+        "socialMediaHub": "Social Media",
         "churchCenter": "Church Center",
         "individual": "Individual",
         "bulk": "Bulk",
@@ -388,7 +392,7 @@
         "pt": "Portuguese"
     },
     "chat": {
-        "welcome": "Hello! I am your MinistryHub assistant. How can I help you today?",
+        "welcome": "Hello! I am your Church Center assistant. How can I help you today?",
         "online": "Online to help you",
         "inputPlaceholder": "Ask anything...",
         "error": "Sorry, there was a problem processing your request. Please try again."

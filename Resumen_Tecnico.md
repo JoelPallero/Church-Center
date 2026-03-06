@@ -1,4 +1,4 @@
-# Resumen Técnico de la Aplicación (MinistryHub)
+# Resumen Técnico de la Aplicación (Church Center)
 
 ## Arquitectura del Proyecto
 El sistema sigue una arquitectura de desacoplamiento entre el núcleo administrativo y la interfaz de usuario, optimizada para despliegues en entornos de hosting tradicionales.

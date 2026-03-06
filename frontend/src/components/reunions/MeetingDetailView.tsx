@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { AssignmentForm } from './AssignmentForm';
 import { SetlistAssignmentForm } from './SetlistAssignmentForm';
+import { useAuth } from '../../hooks/useAuth';
 
 interface MeetingDetailViewProps {
     instanceId: number;
@@ -11,15 +12,22 @@ interface MeetingDetailViewProps {
 }
 
 export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onClose }) => {
+    const { isMaster, user, hasRole } = useAuth();
     const [details, setDetails] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [assignmentData, setAssignmentData] = useState<any>(null);
     const [activeModal, setActiveModal] = useState<'none' | 'team' | 'setlist'>('none');
 
+    const isPastor = user?.role?.name === 'pastor' || hasRole('pastor');
+    const isLeader = user?.role?.name === 'leader' || hasRole('leader');
+    const canManageMeetings = isMaster || isPastor || isLeader;
+
     useEffect(() => {
         fetchDetails();
-        fetchAssignmentData();
-    }, [instanceId]);
+        if (canManageMeetings) {
+            fetchAssignmentData();
+        }
+    }, [instanceId, canManageMeetings]);
 
     const fetchAssignmentData = async () => {
         try {
@@ -65,7 +73,22 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                         <p className="text-overline" style={{ color: 'var(--color-brand-blue)' }}>
                             {new Date(details.instance_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                         </p>
-                        <h2 className="text-h2" style={{ margin: '4px 0' }}>{details.title}</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <h2 className="text-h2" style={{ margin: '4px 0' }}>{details.title}</h2>
+                            {details.category && (
+                                <span style={{
+                                    fontSize: '12px',
+                                    padding: '4px 12px',
+                                    borderRadius: '20px',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                    color: '#3B82F6',
+                                    fontWeight: '600',
+                                    border: '1px solid rgba(59, 130, 246, 0.3)'
+                                }}>
+                                    {details.category}
+                                </span>
+                            )}
+                        </div>
                         <p className="text-body" style={{ color: '#6B7280' }}>
                             {new Date(details.start_datetime_utc).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                             {' - '}
@@ -74,17 +97,41 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                     </div>
                 </div>
                 {details.description && (
-                    <p className="text-body" style={{ marginTop: '16px', fontSize: '14px', fontStyle: 'italic' }}>
-                        {details.description}
-                    </p>
+                    <div style={{ marginTop: '16px' }}>
+                        <h5 className="text-overline" style={{ fontSize: '10px', marginBottom: '4px' }}>CRONOGRAMA / NOTAS</h5>
+                        <p className="text-body" style={{ fontSize: '14px', fontStyle: 'italic', margin: 0 }}>
+                            {details.description}
+                        </p>
+                    </div>
                 )}
+
+                {(() => {
+                    const preacher = details.team.find((m: any) =>
+                        m.role?.toLowerCase().includes('pastor') ||
+                        m.role?.toLowerCase().includes('predicador')
+                    );
+                    if (preacher) {
+                        return (
+                            <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', backgroundColor: 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                                <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)' }}>record_voice_over</span>
+                                <div>
+                                    <p className="text-overline" style={{ margin: 0, opacity: 0.6 }}>PASTOR / PREDICADOR</p>
+                                    <p className="text-body" style={{ fontWeight: 'bold', margin: 0 }}>{preacher.member_name}</p>
+                                </div>
+                            </div>
+                        );
+                    }
+                    return null;
+                })()}
             </section>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 <section>
                     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <h4 className="text-overline">EQUIPO ASIGNADO</h4>
-                        <Button variant="ghost" icon="person_add" style={{ padding: '4px' }} onClick={() => setActiveModal('team')} />
+                        {canManageMeetings && (
+                            <Button variant="ghost" icon="person_add" style={{ padding: '4px' }} onClick={() => setActiveModal('team')} />
+                        )}
                     </header>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {details.team.length > 0 ? details.team.map((member: any) => (
@@ -115,7 +162,9 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                 <section>
                     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <h4 className="text-overline">SETLIST</h4>
-                        <Button variant="ghost" icon="playlist_add" style={{ padding: '4px' }} onClick={() => setActiveModal('setlist')} />
+                        {canManageMeetings && (
+                            <Button variant="ghost" icon="playlist_add" style={{ padding: '4px' }} onClick={() => setActiveModal('setlist')} />
+                        )}
                     </header>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {details.setlists.length > 0 ? details.setlists.map((sl: any) => (
@@ -185,3 +234,4 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
         </div>
     );
 };
+

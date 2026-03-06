@@ -42,21 +42,28 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
     }, []);
 
     const loadData = async () => {
-        const targetChurchId = user.church_id || user.churchId;
-        const [rData, aData, iData] = await Promise.all([
-            peopleService.getRoles(),
-            peopleService.getAreas(targetChurchId),
-            peopleService.getInstruments()
-        ]);
-        setRoles(rData);
-        setAreas(aData);
-        setInstruments(iData);
+        try {
+            console.log('Loading profile data...', { userId: user.id });
+            const targetChurchId = user.church_id || user.churchId;
+            const [rData, aData, iData] = await Promise.all([
+                peopleService.getRoles(),
+                peopleService.getAreas(targetChurchId),
+                peopleService.getInstruments()
+            ]);
 
-        // If user already has areas, load groups for the first one (legacy logic/preview)
-        const currentAreaId = formData.areaIds[0] || user.areas?.[0]?.id;
-        if (currentAreaId) {
-            const gData = await peopleService.getGroups(targetChurchId, currentAreaId);
-            setGroups(gData);
+            console.log('Data loaded:', { rolesCount: rData.length, areasCount: aData.length });
+            setRoles(rData);
+            setAreas(aData);
+            setInstruments(iData);
+
+            // If user already has areas, load groups for the first one (legacy logic/preview)
+            const currentAreaId = formData.areaIds[0] || user.areas?.[0]?.id;
+            if (currentAreaId) {
+                const gData = await peopleService.getGroups(targetChurchId, currentAreaId);
+                setGroups(gData);
+            }
+        } catch (err) {
+            console.error('Error in loadData:', err);
         }
     };
 

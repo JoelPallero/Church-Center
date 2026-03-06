@@ -1,6 +1,6 @@
-# Documentación Técnica - Release Beta/Alfa (MinistryHub)
+# Documentación Técnica - Release Beta/Alfa (Church Center)
 
-Esta documentación está dirigida a desarrolladores y colaboradores técnicos que se integran con el producto MinistryHub (MSM2).
+Esta documentación está dirigida a desarrolladores y colaboradores técnicos que se integran con el producto Church Center (MSM2).
 
 ## Registro de Versiones (Changelog)
 

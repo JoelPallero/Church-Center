@@ -20,8 +20,12 @@
         "sending": "Enviando...",
         "failed": "falharam",
         "error_unexpected": "Erro inesperado",
+        "pastoralHub": "Pastoral Hub",
         "ministryHub": "Ministry Hub",
-        "smHub": "SM Hub",
+        "soundHub": "Hub de Som",
+        "multimediaHub": "Hub de Multimídia",
+        "diaconosHub": "Diaconos Hub",
+        "socialMediaHub": "Social Media",
         "churchCenter": "Church Center"
     },
     "nav": {
@@ -314,7 +318,7 @@
         "pt": "Português"
     },
     "chat": {
-        "welcome": "Olá! Eu sou seu assistente do MinistryHub. Como posso ajudar você hoje?",
+        "welcome": "Olá! Eu sou seu assistente do Church Center. Como posso ajudar você hoje?",
         "online": "Online para ajudar você",
         "inputPlaceholder": "Pergunte qualquer coisa...",
         "error": "Desculpe, houve um problema ao processar sua solicitação. Por favor, tente novamente."

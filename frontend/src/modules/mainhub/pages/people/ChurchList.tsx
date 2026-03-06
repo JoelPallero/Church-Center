@@ -89,31 +89,66 @@ export const ChurchList: FC = () => {
 
     return (
         <div>
-            <header style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h1 className="text-h1">{t('churches.title')}</h1>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <div style={{ display: 'flex', backgroundColor: 'var(--color-ui-surface)', borderRadius: '10px', padding: '4px', gap: '4px' }}>
-                            <Button
-                                variant={viewMode === 'list' ? 'primary' : 'ghost'}
-                                icon="format_list_bulleted"
-                                onClick={() => setViewMode('list')}
-                                style={{ padding: '6px', minWidth: 'auto' }}
-                            />
-                            <Button
-                                variant={viewMode === 'grid' ? 'primary' : 'ghost'}
-                                icon="grid_view"
+            <header style={{ display: 'flex', flexDirection: 'column', marginBottom: '32px', gap: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                        <h1 className="text-h1" style={{ margin: 0 }}>{t('churches.title')}</h1>
+
+                        <div style={{
+                            backgroundColor: 'var(--color-ui-surface)',
+                            padding: '4px',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            gap: '2px',
+                            border: '1px solid var(--color-border-subtle)',
+                            height: '44px',
+                            alignItems: 'center'
+                        }}>
+                            <button
                                 onClick={() => setViewMode('grid')}
-                                style={{ padding: '6px', minWidth: 'auto' }}
-                            />
+                                style={{
+                                    height: '34px',
+                                    width: '38px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    backgroundColor: viewMode === 'grid' ? 'var(--color-brand-blue)' : 'transparent',
+                                    color: viewMode === 'grid' ? 'white' : 'var(--color-ui-text-soft)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>grid_view</span>
+                            </button>
+                            <button
+                                onClick={() => setViewMode('list')}
+                                style={{
+                                    height: '34px',
+                                    width: '38px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    backgroundColor: viewMode === 'list' ? 'var(--color-brand-blue)' : 'transparent',
+                                    color: viewMode === 'list' ? 'white' : 'var(--color-ui-text-soft)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>format_list_bulleted</span>
+                            </button>
                         </div>
-                        <Button
-                            variant="primary"
-                            icon="add"
-                            label={t('churches.new')}
-                            onClick={() => navigate('/mainhub/churches/new')}
-                        />
                     </div>
+
+                    <Button
+                        variant="primary"
+                        icon="add"
+                        label={t('churches.new')}
+                        onClick={() => navigate('/mainhub/churches/new')}
+                    />
                 </div>
 
                 <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
@@ -148,7 +183,7 @@ export const ChurchList: FC = () => {
                 </div>
 
                 {showFilters && (
-                    <Card style={{ padding: '16px', marginTop: '12px' }}>
+                    <Card style={{ padding: '16px' }}>
                         <p className="text-overline" style={{ color: 'gray' }}>{t('churches.filters.upcoming')}</p>
                     </Card>
                 )}
@@ -285,7 +320,6 @@ export const ChurchList: FC = () => {
                     ))
                 )}
             </div>
-
         </div>
     );
 };

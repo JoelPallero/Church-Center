@@ -1,14 +1,17 @@
-# ⛪ MinistryHub - Church Management Platform
+# ⛪ Church Center - Global Church Management Platform
 
-**MinistryHub** is a professional, modular, and multi-tenant ecosystem designed to streamline church administration, worship leadership, and community engagement. Built with a high-performance stack, it scales from local congregations to global multi-site organizations.
+**Church Center** is a professional, modular, and multi-tenant ecosystem designed to streamline church administration, worship leadership, and community engagement. Built with a high-performance stack, it scales from local congregations to global multi-site organizations.
 
 ---
 
 ## 🌟 Vision and Philosophy
-The platform is designed around the concept of **"The Right Tool for the Right Task"**. Instead of a monolithic app, MinistryHub uses a **Multi-Hub** architecture:
+The platform is designed around the concept of **"The Right Tool for the Right Task"**. Instead of a monolithic app, Church Center uses a **Multi-Hub** architecture tailored for each area of service:
+- **Pastoral Hub**: For senior leadership and church vision.
 - **Ministry Hub**: For worship teams, songs, and setlists.
-- **Social Media Hub**: For communication and media teams.
-- **Church Center**: For overall administration, people management, and reporting.
+- **Sound Hub**: For audio management and sound production teams.
+- **Multimedia Hub**: For visual production, projection, and lyrics management.
+- **Diaconos Hub**: For ushers, security, and hospitality teams.
+- **Social Media Hub**: For communication and digital media teams.
 
 ---
 
@@ -119,4 +122,4 @@ All UI strings are managed via `frontend/src/i18n/locales/`. This allows for:
 
 ---
 
-© 2026 MinistryHub Team. Built for the Church of today and tomorrow.
+© 2026 Church Center Team. Built for the Church of today and tomorrow.

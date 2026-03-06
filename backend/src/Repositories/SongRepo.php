@@ -11,7 +11,7 @@ class SongRepo
     {
         try {
             $db = Database::getInstance('music');
-            $sql = "SELECT * FROM songs WHERE is_active = 1";
+            $sql = "SELECT id, church_id, title, artist, category, is_active FROM songs WHERE is_active = 1";
             $params = [];
 
             if ($churchId !== null) {

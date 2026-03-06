@@ -7,55 +7,62 @@ import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { ModuleGuard } from './components/layout/ModuleGuard';
 import { DevProfileSelector } from './components/dev/DevProfileSelector';
+import { Suspense, lazy } from 'react';
 
 // Shared / Core Pages
-import { Login } from './pages/Login';
-import { ForgotPassword } from './pages/ForgotPassword';
-import { ResetPassword } from './pages/ResetPassword';
-import { Profile } from './pages/Profile';
-import { Settings } from './pages/Settings';
-import { InvitationSettings } from './pages/InvitationSettings';
-import { PrivacySupport } from './pages/PrivacySupport';
-import { LiveDebug } from './pages/LiveDebug';
-import { GoogleCallback } from './pages/GoogleCallback';
-import { AcceptInvite } from './pages/AcceptInvite';
-import { MainDashboard } from './pages/MainDashboard';
+const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
+const ResetPassword = lazy(() => import('./pages/ResetPassword').then(m => ({ default: m.ResetPassword })));
+const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
+const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
+const InvitationSettings = lazy(() => import('./pages/InvitationSettings').then(m => ({ default: m.InvitationSettings })));
+const PrivacySupport = lazy(() => import('./pages/PrivacySupport').then(m => ({ default: m.PrivacySupport })));
+const LiveDebug = lazy(() => import('./pages/LiveDebug').then(m => ({ default: m.LiveDebug })));
+const GoogleCallback = lazy(() => import('./pages/GoogleCallback').then(m => ({ default: m.GoogleCallback })));
+const AcceptInvite = lazy(() => import('./pages/AcceptInvite').then(m => ({ default: m.AcceptInvite })));
+const MainDashboard = lazy(() => import('./pages/MainDashboard').then(m => ({ default: m.MainDashboard })));
 
 // Worship Module
-import { WorshipDashboard } from './modules/worship/pages/WorshipDashboard';
-import { SongList } from './modules/worship/pages/SongList';
-import { SongDetail } from './modules/worship/pages/SongDetail';
-import { SongEditor } from './modules/worship/pages/SongEditor';
-import { PendingApprovals } from './modules/worship/pages/PendingApprovals';
-import { Playlists } from './modules/worship/pages/Playlists';
-import { PlaylistDetail } from './modules/worship/pages/PlaylistDetail';
-import { CalendarPage } from './modules/worship/reunions/CalendarPage';
+const WorshipDashboard = lazy(() => import('./modules/worship/pages/WorshipDashboard').then(m => ({ default: m.WorshipDashboard })));
+const SongList = lazy(() => import('./modules/worship/pages/SongList').then(m => ({ default: m.SongList })));
+const SongDetail = lazy(() => import('./modules/worship/pages/SongDetail').then(m => ({ default: m.SongDetail })));
+const SongEditor = lazy(() => import('./modules/worship/pages/SongEditor').then(m => ({ default: m.SongEditor })));
+const PendingApprovals = lazy(() => import('./modules/worship/pages/PendingApprovals').then(m => ({ default: m.PendingApprovals })));
+const Playlists = lazy(() => import('./modules/worship/pages/Playlists').then(m => ({ default: m.Playlists })));
+const PlaylistDetail = lazy(() => import('./modules/worship/pages/PlaylistDetail').then(m => ({ default: m.PlaylistDetail })));
+const CalendarPage = lazy(() => import('./modules/worship/reunions/CalendarPage').then(m => ({ default: m.CalendarPage })));
 
 // MainHub Module
-import { MainHubDashboard } from './modules/mainhub/pages/MainHubDashboard';
-import { PeopleList } from './modules/mainhub/pages/people/PeopleList';
-import { TeamsList } from './modules/mainhub/pages/people/TeamsList';
-import { InvitePerson } from './modules/mainhub/pages/people/InvitePerson';
-import { MemberApprovals } from './modules/mainhub/pages/people/MemberApprovals';
-import { GroupSelection } from './modules/mainhub/pages/people/GroupSelection';
-import { Reports } from './modules/mainhub/pages/Reports';
-import { MasterDashboard } from './modules/mainhub/pages/MasterDashboard';
-import { PastorDashboard } from './modules/mainhub/pages/PastorDashboard';
-import { ChurchList } from './modules/mainhub/pages/people/ChurchList';
-import { ChurchEditor } from './modules/mainhub/pages/people/ChurchEditor';
-import { AreaList } from './modules/mainhub/pages/people/AreaList';
-import { AreaSetup } from './modules/mainhub/pages/people/AreaSetup';
-import { TeamSetup } from './modules/mainhub/pages/people/TeamSetup';
-import { ChurchSelect } from './modules/mainhub/pages/people/ChurchSelect';
-import { UshersDashboard } from './modules/mainhub/pages/ushers/UshersDashboard';
-import { AttendanceEntry } from './modules/mainhub/pages/ushers/AttendanceEntry';
-import { PermissionsManager } from './pages/admin/PermissionsManager';
+const MainHubDashboard = lazy(() => import('./modules/mainhub/pages/MainHubDashboard').then(m => ({ default: m.MainHubDashboard })));
+const PeopleList = lazy(() => import('./modules/mainhub/pages/people/PeopleList').then(m => ({ default: m.PeopleList })));
+const TeamsList = lazy(() => import('./modules/mainhub/pages/people/TeamsList').then(m => ({ default: m.TeamsList })));
+const InvitePerson = lazy(() => import('./modules/mainhub/pages/people/InvitePerson').then(m => ({ default: m.InvitePerson })));
+const MemberApprovals = lazy(() => import('./modules/mainhub/pages/people/MemberApprovals').then(m => ({ default: m.MemberApprovals })));
+const GroupSelection = lazy(() => import('./modules/mainhub/pages/people/GroupSelection').then(m => ({ default: m.GroupSelection })));
+const Reports = lazy(() => import('./modules/mainhub/pages/Reports').then(m => ({ default: m.Reports })));
+const MasterDashboard = lazy(() => import('./modules/mainhub/pages/MasterDashboard').then(m => ({ default: m.MasterDashboard })));
+const PastorDashboard = lazy(() => import('./modules/mainhub/pages/PastorDashboard').then(m => ({ default: m.PastorDashboard })));
+const ChurchList = lazy(() => import('./modules/mainhub/pages/people/ChurchList').then(m => ({ default: m.ChurchList })));
+const ChurchEditor = lazy(() => import('./modules/mainhub/pages/people/ChurchEditor').then(m => ({ default: m.ChurchEditor })));
+const AreaList = lazy(() => import('./modules/mainhub/pages/people/AreaList').then(m => ({ default: m.AreaList })));
+const AreaSetup = lazy(() => import('./modules/mainhub/pages/people/AreaSetup').then(m => ({ default: m.AreaSetup })));
+const TeamSetup = lazy(() => import('./modules/mainhub/pages/people/TeamSetup').then(m => ({ default: m.TeamSetup })));
+const ChurchSelect = lazy(() => import('./modules/mainhub/pages/people/ChurchSelect').then(m => ({ default: m.ChurchSelect })));
+const UshersDashboard = lazy(() => import('./modules/mainhub/pages/ushers/UshersDashboard').then(m => ({ default: m.UshersDashboard })));
+const AttendanceEntry = lazy(() => import('./modules/mainhub/pages/ushers/AttendanceEntry').then(m => ({ default: m.AttendanceEntry })));
+const PermissionsManager = lazy(() => import('./pages/admin/PermissionsManager').then(m => ({ default: m.PermissionsManager })));
 
 // Social Module
-import { SocialDashboard } from './modules/social/pages/SocialDashboard';
+const SocialDashboard = lazy(() => import('./modules/social/pages/SocialDashboard').then(m => ({ default: m.SocialDashboard })));
 
-import { Home } from './pages/Home';
-import { Pricing } from './pages/Pricing';
+const Home = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })));
+const Pricing = lazy(() => import('./pages/Pricing').then(m => ({ default: m.Pricing })));
+
+const LoadingFallback: FC = () => (
+  <div className="flex-center w-full" style={{ height: '100vh' }}>
+    <div className="spinner"></div>
+  </div>
+);
 
 const App: FC = () => {
   return (
@@ -64,80 +71,82 @@ const App: FC = () => {
         <ToastProvider>
           {import.meta.env.DEV && <DevProfileSelector />}
           <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route index element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/auth/google/callback" element={<GoogleCallback />} />
-              <Route path="/accept-invite" element={<AcceptInvite />} />
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                {/* Public Routes */}
+                <Route index element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/auth/google/callback" element={<GoogleCallback />} />
+                <Route path="/accept-invite" element={<AcceptInvite />} />
 
-              <Route element={<ProtectedRoute />}>
-                <Route element={<MainLayout />}>
-                  {/* Global / Selection Dashboard */}
-                  <Route path="dashboard" element={<MainDashboard />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="settings/invitations" element={<InvitationSettings />} />
-                  <Route path="privacy" element={<PrivacySupport />} />
-                  <Route path="debug" element={<LiveDebug />} />
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<MainLayout />}>
+                    {/* Global / Selection Dashboard */}
+                    <Route path="dashboard" element={<MainDashboard />} />
+                    <Route path="profile" element={<Profile />} />
+                    <Route path="settings" element={<Settings />} />
+                    <Route path="settings/invitations" element={<InvitationSettings />} />
+                    <Route path="privacy" element={<PrivacySupport />} />
+                    <Route path="debug" element={<LiveDebug />} />
 
-                  {/* Worship Hub */}
-                  <Route path="worship" element={<ModuleGuard moduleKey="worship" />}>
-                    <Route index element={<WorshipDashboard />} />
-                    <Route path="songs" element={<SongList />} />
-                    <Route path="songs/new" element={<SongEditor />} />
-                    <Route path="songs/:id" element={<SongDetail />} />
-                    <Route path="songs/:id/edit" element={<SongEditor />} />
-                    <Route path="songs/approvals" element={<PendingApprovals />} />
-                    <Route path="playlists" element={<Playlists />} />
-                    <Route path="playlists/:id" element={<PlaylistDetail />} />
-                    <Route path="calendar" element={<CalendarPage />} />
+                    {/* Worship Hub */}
+                    <Route path="worship" element={<ModuleGuard moduleKey="worship" />}>
+                      <Route index element={<WorshipDashboard />} />
+                      <Route path="songs" element={<SongList />} />
+                      <Route path="songs/new" element={<SongEditor />} />
+                      <Route path="songs/:id" element={<SongDetail />} />
+                      <Route path="songs/:id/edit" element={<SongEditor />} />
+                      <Route path="songs/approvals" element={<PendingApprovals />} />
+                      <Route path="playlists" element={<Playlists />} />
+                      <Route path="playlists/:id" element={<PlaylistDetail />} />
+                      <Route path="calendar" element={<CalendarPage />} />
+                    </Route>
+
+                    {/* Social Hub */}
+                    <Route path="social" element={<ModuleGuard moduleKey="social" />}>
+                      <Route index element={<SocialDashboard />} />
+                    </Route>
+
+                    {/* MainHub (Pastoral/Admin) */}
+                    <Route path="mainhub" element={<ModuleGuard moduleKey="mainhub" />}>
+                      <Route index element={<MainHubDashboard />} />
+                      <Route path="people" element={<PeopleList />} />
+                      <Route path="people/approvals" element={<MemberApprovals />} />
+                      <Route path="people/invite" element={<InvitePerson />} />
+                      <Route path="teams" element={<TeamsList />} />
+                      <Route path="reports" element={<Reports />} />
+                      <Route path="master" element={<MasterDashboard />} />
+                      <Route path="pastor" element={<PastorDashboard />} />
+                      <Route path="ushers" element={<UshersDashboard />} />
+                      <Route path="ushers/attendance/:meetingId" element={<AttendanceEntry />} />
+                      <Route path="churches" element={<ChurchList />} />
+                      <Route path="churches/new" element={<ChurchEditor />} />
+                      <Route path="churches/edit/:id" element={<ChurchEditor />} />
+                      <Route path="areas" element={<AreaList />} />
+                      <Route path="setup-areas" element={<AreaSetup />} />
+                      <Route path="setup-teams" element={<TeamSetup />} />
+                      <Route path="select-church/:target" element={<ChurchSelect />} />
+                      <Route path="admin/permissions" element={<PermissionsManager />} />
+                      <Route path="join-teams" element={<GroupSelection />} />
+                    </Route>
+
+                    {/* Legacy Redirects for Backward Compatibility */}
+                    <Route path="churches/*" element={<Navigate to="/mainhub/churches" replace />} />
+                    <Route path="songs/*" element={<Navigate to="/worship/songs" replace />} />
+                    <Route path="playlists/*" element={<Navigate to="/worship/playlists" replace />} />
+                    <Route path="reunions/*" element={<Navigate to="/worship/calendar" replace />} />
+                    <Route path="people/*" element={<Navigate to="/mainhub/people" replace />} />
+                    <Route path="teams/*" element={<Navigate to="/mainhub/teams" replace />} />
+                    <Route path="reports/*" element={<Navigate to="/mainhub/reports" replace />} />
                   </Route>
-
-                  {/* Social Hub */}
-                  <Route path="social" element={<ModuleGuard moduleKey="social" />}>
-                    <Route index element={<SocialDashboard />} />
-                  </Route>
-
-                  {/* MainHub (Pastoral/Admin) */}
-                  <Route path="mainhub" element={<ModuleGuard moduleKey="mainhub" />}>
-                    <Route index element={<MainHubDashboard />} />
-                    <Route path="people" element={<PeopleList />} />
-                    <Route path="people/approvals" element={<MemberApprovals />} />
-                    <Route path="people/invite" element={<InvitePerson />} />
-                    <Route path="teams" element={<TeamsList />} />
-                    <Route path="reports" element={<Reports />} />
-                    <Route path="master" element={<MasterDashboard />} />
-                    <Route path="pastor" element={<PastorDashboard />} />
-                    <Route path="ushers" element={<UshersDashboard />} />
-                    <Route path="ushers/attendance/:meetingId" element={<AttendanceEntry />} />
-                    <Route path="churches" element={<ChurchList />} />
-                    <Route path="churches/new" element={<ChurchEditor />} />
-                    <Route path="churches/edit/:id" element={<ChurchEditor />} />
-                    <Route path="areas" element={<AreaList />} />
-                    <Route path="setup-areas" element={<AreaSetup />} />
-                    <Route path="setup-teams" element={<TeamSetup />} />
-                    <Route path="select-church/:target" element={<ChurchSelect />} />
-                    <Route path="admin/permissions" element={<PermissionsManager />} />
-                    <Route path="join-teams" element={<GroupSelection />} />
-                  </Route>
-
-                  {/* Legacy Redirects for Backward Compatibility */}
-                  <Route path="churches/*" element={<Navigate to="/mainhub/churches" replace />} />
-                  <Route path="songs/*" element={<Navigate to="/worship/songs" replace />} />
-                  <Route path="playlists/*" element={<Navigate to="/worship/playlists" replace />} />
-                  <Route path="reunions/*" element={<Navigate to="/worship/calendar" replace />} />
-                  <Route path="people/*" element={<Navigate to="/mainhub/people" replace />} />
-                  <Route path="teams/*" element={<Navigate to="/mainhub/teams" replace />} />
-                  <Route path="reports/*" element={<Navigate to="/mainhub/reports" replace />} />
                 </Route>
-              </Route>
 
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
           </BrowserRouter>
         </ToastProvider>
       </ThemeProvider>

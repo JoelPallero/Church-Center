@@ -285,6 +285,7 @@ CREATE TABLE meetings (
   start_at DATETIME NOT NULL,
   end_at DATETIME NULL,
   location VARCHAR(255) NULL,
+  category VARCHAR(100) NULL,
   created_by_member_id INT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -388,10 +389,13 @@ CREATE TABLE IF NOT EXISTS invitation_templates (
    ========================================================= */
 
 INSERT INTO services (`key`, name, description, active) VALUES
-  ('mainhub', 'Church Center', 'Administración general', 1),
-  ('worship', 'Ministry Hub',  'Áreas y equipos', 1),
-  ('social',  'SM Hub',        'Social/Media hub', 1)
-ON DUPLICATE KEY UPDATE name=VALUES(name);
+  ('mainhub', 'Pastoral Hub', 'Administración base de la iglesia', 1),
+  ('worship', 'Ministry Hub',  'Gestión de música y alabanza', 1),
+  ('social',  'Social Media Hub', 'Gestión de redes sociales', 1),
+  ('sound',   'Sound Hub', 'Gestión de sonido y audio', 1),
+  ('multimedia', 'Multimedia Hub', 'Proyección, letras y contenido visual', 1),
+  ('ushers',  'Diaconos Hub', 'Servicio de Ujieres y Recepción', 1)
+ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);
 
 -- Roles
 INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
@@ -429,6 +433,7 @@ INSERT INTO permissions (name, display_name, module, description) VALUES
   ('calendar.read', 'Ver calendario', 'calendar', 'Ver calendarios'),
   ('meeting.create', 'Crear reuniones', 'calendar', 'Crear reuniones'),
   ('meeting.update', 'Editar reuniones', 'calendar', 'Editar reuniones'),
+  ('meeting.delete', 'Eliminar reuniones', 'calendar', 'Eliminar reuniones'),
   ('song.read', 'Ver canciones', 'song', 'Ver canciones'),
   ('song.create', 'Crear canciones', 'song', 'Crear canciones'),
   ('song.update', 'Editar canciones', 'song', 'Editar canciones'),

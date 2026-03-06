@@ -12,13 +12,14 @@ export const Playlists: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { user, isMaster } = useAuth();
+    const { user, isMaster, hasRole } = useAuth();
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [reunionsCount, setReunionsCount] = useState(0);
     const [loading, setLoading] = useState(true);
 
     const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
-    const isPastor = user?.role?.name === 'pastor';
+    const isPastor = user?.role?.name === 'pastor' || hasRole('pastor');
+    const isLeader = user?.role?.name === 'leader' || hasRole('leader') || user?.role?.name === 'coordinator' || hasRole('coordinator');
     const profileChurchId = user?.churchId;
     const finalChurchId = churchId || profileChurchId;
 
@@ -50,7 +51,6 @@ export const Playlists: FC = () => {
         }
     };
 
-    const isLeader = user?.role?.name === 'leader' || user?.role?.name === 'coordinator';
 
     if (loading) {
         return (

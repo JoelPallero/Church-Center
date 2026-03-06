@@ -7,12 +7,22 @@ export const DesktopSidebar: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
-    const { hasPermission, logout } = useAuth();
+    const { hasPermission, logout, user, isSuperAdmin } = useAuth();
 
     const menuItems = [
         { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
-        { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), permission: 'church.update' },
-        { path: `/mainhub/churches/edit/${useAuth().user?.churchId}`, icon: 'store', label: 'Mi Iglesia', permission: 'church.update_own' },
+        {
+            path: '/mainhub/churches',
+            icon: 'church',
+            label: t('nav.churches'),
+            visible: isSuperAdmin
+        },
+        {
+            path: `/mainhub/churches/edit/${user?.churchId}`,
+            icon: 'store',
+            label: 'Mi Iglesia',
+            visible: !isSuperAdmin && user?.churchId && hasPermission('church.update')
+        },
         { path: '/mainhub/reports', icon: 'auto_graph', label: 'Estadísticas', permission: 'reports.view' },
         { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'calendar.read' },
         { path: '/worship/playlists', icon: 'queue_music', label: t('nav.playlists'), permission: 'calendar.read' },
@@ -22,11 +32,15 @@ export const DesktopSidebar: FC = () => {
         { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'church.update' },
     ];
 
+
     const bottomItems = [
         { path: '/settings', icon: 'settings', label: t('nav.settings') || 'Panel de Control' }
     ];
 
-    const visibleItems = menuItems.filter(item => !item.permission || hasPermission(item.permission));
+    const visibleItems = menuItems.filter(item => {
+        if (item.visible !== undefined) return item.visible;
+        return !item.permission || hasPermission(item.permission);
+    });
 
     return (
         <aside style={{

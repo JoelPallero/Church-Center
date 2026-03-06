@@ -39,7 +39,19 @@ export const MainLayout: FC = () => {
             return t('common.ministryHub');
         }
         if (location.pathname.startsWith('/social')) {
-            return t('common.smHub');
+            return t('common.socialMediaHub');
+        }
+        if (location.pathname.startsWith('/sound')) {
+            return t('common.soundHub');
+        }
+        if (location.pathname.startsWith('/multimedia')) {
+            return t('common.multimediaHub');
+        }
+        if (location.pathname.startsWith('/mainhub/pastor')) {
+            return t('common.pastoralHub');
+        }
+        if (location.pathname.startsWith('/mainhub/ushers')) {
+            return t('common.diaconosHub');
         }
         if (location.pathname.startsWith('/mainhub')) {
             return t('common.churchCenter');
@@ -174,7 +186,7 @@ export const MainLayout: FC = () => {
                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person</span>
                                     <span>Mi perfil</span>
                                 </div>
-                                {hasPermission('church.update_own') && (
+                                {hasPermission('church.update_own') && user?.churchId && !hasPermission('church.update') && (
                                     <div onClick={() => { navigate(`/mainhub/churches/edit/${user?.churchId}`); setUserMenuOpen(false); }} className="dropdown-item">
                                         <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>church</span>
                                         <span>Mi Iglesia</span>
@@ -188,6 +200,40 @@ export const MainLayout: FC = () => {
                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>settings</span>
                                     <span>Configuraciones</span>
                                 </div>
+
+                                {(isSuperAdmin || isMaster) && (
+                                    <>
+                                        <div className="dropdown-divider" />
+                                        <div style={{ padding: '8px 16px', fontSize: '11px', fontWeight: 700, color: 'var(--color-ui-text-soft)', textTransform: 'uppercase' }}>
+                                            Navegación
+                                        </div>
+                                        <div onClick={() => { navigate('/worship/calendar'); setUserMenuOpen(false); }} className="dropdown-item">
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>event</span>
+                                            <span>{t('nav.calendar')}</span>
+                                        </div>
+                                        <div onClick={() => { navigate('/worship/playlists'); setUserMenuOpen(false); }} className="dropdown-item">
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>queue_music</span>
+                                            <span>Listados</span>
+                                        </div>
+                                        <div onClick={() => { navigate('/worship/songs'); setUserMenuOpen(false); }} className="dropdown-item">
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>library_music</span>
+                                            <span>{t('songs.title')}</span>
+                                        </div>
+                                        <div onClick={() => { navigate('/mainhub/areas'); setUserMenuOpen(false); }} className="dropdown-item">
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>layers</span>
+                                            <span>{t('nav.areas')}</span>
+                                        </div>
+                                        <div onClick={() => { navigate('/mainhub/teams'); setUserMenuOpen(false); }} className="dropdown-item">
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>groups</span>
+                                            <span>{t('nav.teams')}</span>
+                                        </div>
+                                        <div onClick={() => { navigate('/mainhub/people'); setUserMenuOpen(false); }} className="dropdown-item">
+                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person_search</span>
+                                            <span>{t('nav.people')}</span>
+                                        </div>
+                                    </>
+                                )}
+
                                 <div className="dropdown-divider" />
                                 <div onClick={() => { handleLogout(); setUserMenuOpen(false); }} className="dropdown-item" style={{ color: 'var(--color-danger-red)', fontWeight: 600 }}>
                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>logout</span>
@@ -296,7 +342,7 @@ export const MainLayout: FC = () => {
                                                 <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person</span>
                                                 <span>Mi perfil</span>
                                             </div>
-                                            {hasPermission('church.update_own') && (
+                                            {hasPermission('church.update_own') && user?.churchId && !hasPermission('church.update') && (
                                                 <div onClick={() => { navigate(`/mainhub/churches/edit/${user?.churchId}`); setUserMenuOpen(false); }} className="dropdown-item">
                                                     <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>church</span>
                                                     <span>Mi Iglesia</span>

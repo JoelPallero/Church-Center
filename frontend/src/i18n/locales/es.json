@@ -35,9 +35,13 @@
         "sex": "Sexo",
         "male": "Masculino",
         "female": "Femenino",
-        "ministryHub": "Portal Alabanza",
-        "smHub": "Portal Redes",
-        "churchCenter": "Perfil de Iglesia",
+        "pastoralHub": "Pastoral Hub",
+        "ministryHub": "Ministry Hub",
+        "soundHub": "Sonido Hub",
+        "multimediaHub": "Multimedia Hub",
+        "diaconosHub": "Diaconos Hub",
+        "socialMediaHub": "Social Media",
+        "churchCenter": "Church Center",
         "selectChurch": "Selecciona una iglesia"
     },
     "worship": {
@@ -196,7 +200,14 @@
         "service_order": "Orden de Servicio",
         "viewList": "Lista",
         "viewCalendar": "Calendario",
+        "viewGrid": "Cuadrícula",
+        "viewMonth": "Mes",
         "today": "Hoy",
+        "filters": "Filtros",
+        "allTypes": "Todos los tipos",
+        "allCategories": "Todas las categorías",
+        "dateRange": "Rango de fechas",
+        "advanced": "Avanzado",
         "newMeeting": "Nueva Reunión",
         "details": "Detalles de la Reunión",
         "noMeetings": "No hay reuniones programadas para este período.",
@@ -400,7 +411,7 @@
         "pt": "Português"
     },
     "chat": {
-        "welcome": "¡Hola! Soy tu asistente de MinistryHub. ¿En qué puedo ayudarte hoy?",
+        "welcome": "¡Hola! Soy tu asistente de Church Center. ¿En qué puedo ayudarte hoy?",
         "online": "En línea para ayudarte",
         "inputPlaceholder": "Pregunta lo que sea...",
         "error": "Lo siento, hubo un problema al procesar tu solicitud. Por favor intenta de nuevo."

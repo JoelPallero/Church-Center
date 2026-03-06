@@ -12,7 +12,7 @@ En Church Center, nos tomamos muy en serio tu privacidad.
 ## 2. Soporte al Cliente y Ayuda
 Si tienes problemas con la plataforma:
 - **Primer Paso**: Contacta al líder de tu equipo o al administrador de tu iglesia. Ellos tienen las herramientas para resolver la mayoría de los problemas de acceso o configuración.
-- **Soporte Técnico**: Si el problema es técnico (un error en la página, algo no carga), los administradores pueden escalar el reporte al equipo de desarrollo de MinistryHub.
+- **Soporte Técnico**: Si el problema es técnico (un error en la página, algo no carga), los administradores pueden escalar el reporte al equipo de desarrollo de Church Center.
 - **Preguntas Frecuentes (FAQ)**:
     - *¿Cómo cambio mi contraseña?* Solicita un enlace de restablecimiento en la pantalla de login.
     - *¿No veo mi iglesia?* Asegúrate de haber sido invitado por un administrador y de estar usando el correo correcto.

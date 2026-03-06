@@ -13,6 +13,7 @@ export const BottomNav: FC = () => {
         icon: string;
         label: string;
         permission?: string | null;
+        visible?: boolean;
         isCentral?: boolean;
         isDisabled?: boolean;
     }
@@ -20,8 +21,8 @@ export const BottomNav: FC = () => {
     // Unified Nav Items logic based on permissions
     const allPossibleItems: NavItem[] = [
         { path: '/dashboard', icon: 'dashboard', label: 'Dashboard', permission: null },
-        { path: '/mainhub/churches', icon: 'church', label: 'Iglesias', permission: 'church.update' },
-        { path: `/mainhub/churches/edit/${user?.churchId}`, icon: 'church', label: 'Mi Iglesia', permission: 'church.update_own' },
+        { path: '/mainhub/churches', icon: 'church', label: 'Iglesias', visible: isSuperAdmin },
+        { path: `/mainhub/churches/edit/${user?.churchId}`, icon: 'church', label: 'Mi Iglesia', visible: !isSuperAdmin && !!user?.churchId && hasPermission('church.update') },
         { path: '/mainhub/pastor', icon: 'auto_graph', label: 'Areas', permission: 'church.update' },
         { path: '/mainhub/reports', icon: 'analytics', label: 'Reportes', permission: 'reports.view' },
         { path: '/worship/calendar', icon: 'event', label: 'Calendario', permission: 'calendar.read' },
@@ -32,9 +33,10 @@ export const BottomNav: FC = () => {
     ];
 
     // Filter items based on user permissions
-    const filteredNavItems = allPossibleItems.filter(item =>
-        !item.permission || hasPermission(item.permission)
-    );
+    const filteredNavItems = allPossibleItems.filter(item => {
+        if (item.visible !== undefined) return item.visible;
+        return !item.permission || hasPermission(item.permission);
+    });
 
     // Limit to 5 items for mobile bottom nav, prioritizing key hubs
     let navItems: NavItem[] = filteredNavItems;
@@ -89,10 +91,10 @@ export const BottomNav: FC = () => {
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}
-                        to={item.isDisabled ? '#' : item.path}
+                        to={item.isDisabled || item.path.includes('undefined') ? '#' : item.path}
                         end={item.path === '/dashboard'}
                         className={({ isActive }) => clsx('nav-link', isActive && !item.isDisabled ? 'text-brand-blue' : 'text-gray-500')}
-                        onClick={(e) => { if (item.isDisabled) e.preventDefault(); }}
+                        onClick={(e) => { if (item.isDisabled || item.path.includes('undefined')) e.preventDefault(); }}
                         style={({ isActive }) => ({
                             display: 'flex',
                             flexDirection: 'column',
@@ -102,8 +104,8 @@ export const BottomNav: FC = () => {
                             transition: 'all 0.2s ease',
                             flex: 1,
                             position: 'relative',
-                            opacity: item.isDisabled ? 0.4 : 1,
-                            cursor: item.isDisabled ? 'default' : 'pointer'
+                            opacity: (item.isDisabled || item.path.includes('undefined')) ? 0.4 : 1,
+                            cursor: (item.isDisabled || item.path.includes('undefined')) ? 'default' : 'pointer'
                         })}
                     >
                         {({ isActive }) => (
@@ -112,12 +114,12 @@ export const BottomNav: FC = () => {
                                     width: '64px',
                                     height: '64px',
                                     borderRadius: '50%',
-                                    backgroundColor: item.isDisabled ? '#4B5563' : 'var(--color-brand-blue)',
+                                    backgroundColor: (item.isDisabled || item.path.includes('undefined')) ? '#4B5563' : 'var(--color-brand-blue)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     marginTop: '-40px',
-                                    boxShadow: item.isDisabled ? 'none' : '0 8px 16px rgba(61, 104, 223, 0.4)',
+                                    boxShadow: (item.isDisabled || item.path.includes('undefined')) ? 'none' : '0 8px 16px rgba(61, 104, 223, 0.4)',
                                     border: '4px solid var(--color-ui-bg)',
                                     color: 'white'
                                 }}>
@@ -128,14 +130,14 @@ export const BottomNav: FC = () => {
                             ) : (
                                 <>
                                     <span className="material-symbols-outlined" style={{
-                                        fontVariationSettings: (isActive && !item.isDisabled) ? "'FILL' 1, 'wght' 600" : "'FILL' 0, 'wght' 400",
+                                        fontVariationSettings: (isActive && !item.isDisabled && !item.path.includes('undefined')) ? "'FILL' 1, 'wght' 600" : "'FILL' 0, 'wght' 400",
                                         fontSize: '28px',
                                         marginBottom: '4px'
                                     }}>
                                         {item.icon}
                                     </span>
                                     {item.label && (
-                                        <span className="text-overline" style={{ fontSize: '10px', fontWeight: (isActive && !item.isDisabled) ? 700 : 500 }}>
+                                        <span className="text-overline" style={{ fontSize: '10px', fontWeight: (isActive && !item.isDisabled && !item.path.includes('undefined')) ? 700 : 500 }}>
                                             {item.label}
                                         </span>
                                     )}

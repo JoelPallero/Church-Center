@@ -30,7 +30,16 @@ class CalendarRepo
 
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Map fields for frontend compatibility
+        foreach ($results as &$meeting) {
+            $meeting['instance_date'] = date('Y-m-d', strtotime($meeting['start_at']));
+            $meeting['start_datetime_utc'] = $meeting['start_at'];
+            $meeting['end_datetime_utc'] = $meeting['end_at'];
+        }
+
+        return $results;
     }
 
     public static function getMeetingDetails($meetingId)
@@ -94,8 +103,8 @@ class CalendarRepo
     {
         $db = Database::getInstance();
         $stmt = $db->prepare("
-            INSERT INTO meetings (calendar_id, title, description, start_at, end_at, location, created_by_member_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO meetings (calendar_id, title, description, start_at, end_at, location, category, created_by_member_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             $data['calendar_id'],
@@ -104,9 +113,17 @@ class CalendarRepo
             $data['start_at'],
             $data['end_at'] ?? null,
             $data['location'] ?? null,
+            $data['category'] ?? null,
             $data['created_by_member_id'] ?? null
         ]);
         return $db->lastInsertId();
+    }
+
+    public static function deleteMeeting($id)
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("DELETE FROM meetings WHERE id = ?");
+        return $stmt->execute([$id]);
     }
 
     public static function assignMember($meetingId, $memberId, $role, $instrumentId = null)

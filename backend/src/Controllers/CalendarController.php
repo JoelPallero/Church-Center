@@ -43,7 +43,20 @@ class CalendarController
                 \App\Middleware\PermissionMiddleware::require($memberId, 'meeting.create', $churchId);
                 $this->create($memberId, $churchId, $data);
             }
+        } elseif ($method === 'DELETE') {
+            \App\Middleware\PermissionMiddleware::require($memberId, 'meeting.delete', $churchId);
+            $this->delete($memberId, $action);
         }
+    }
+
+    private function delete($memberId, $id)
+    {
+        if (!is_numeric($id)) {
+            Response::error("Invalid meeting ID", 400);
+        }
+
+        $success = CalendarRepo::deleteMeeting($id);
+        Response::json(['success' => $success]);
     }
 
     private function listEvents($memberId, $churchId = null)
@@ -59,6 +72,13 @@ class CalendarController
 
         $start = $_GET['start'] ?? null;
         $end = $_GET['end'] ?? null;
+        $month = $_GET['month'] ?? null;
+        $year = $_GET['year'] ?? date('Y');
+
+        if (!$start && $month) {
+            $start = "$year-" . str_pad($month, 2, '0', STR_PAD_LEFT) . "-01 00:00:00";
+            $end = date("Y-m-t 23:59:59", strtotime($start));
+        }
 
         $meetings = CalendarRepo::getMeetingsByChurch($churchId, $start, $end);
 
@@ -112,13 +132,7 @@ class CalendarController
         }
 
         if (!$churchId) {
-            // SuperAdmin fallback: find the first church if nothing else works
-            $churches = \App\Repositories\ChurchRepo::getAll();
-            if (!empty($churches)) {
-                $churchId = $churches[0]['id'];
-            } else {
-                Response::error("Church ID required for meeting creation", 400);
-            }
+            Response::error("Church ID required for meeting creation", 400);
         }
 
         $calendarId = CalendarRepo::ensureDefaultCalendar($churchId);
@@ -130,6 +144,7 @@ class CalendarController
             'start_at' => $data['start_at'] ?? $data['date'] ?? date('Y-m-d H:i:s'),
             'end_at' => $data['end_at'] ?? null,
             'location' => $data['location'] ?? '',
+            'category' => $data['category'] ?? null,
             'created_by_member_id' => $memberId
         ]);
 
@@ -139,6 +154,7 @@ class CalendarController
 
         Response::json(['success' => !!$meetingId, 'id' => $meetingId]);
     }
+
 
     private function assign($memberId, $data = [])
     {

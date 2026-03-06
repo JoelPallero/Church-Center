@@ -58,8 +58,7 @@ class UserRepo
             ");
             $stmt->execute([$memberId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             return [];
         }
     }
@@ -91,8 +90,7 @@ class UserRepo
 
             $db->commit();
             return true;
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             if ($db->inTransaction())
                 $db->rollBack();
             return false;
@@ -117,7 +115,7 @@ class UserRepo
     {
         $db = Database::getInstance();
         $sql = "
-            SELECT m.*, r.name as role_name, r.display_name as role_display, c.name as church_name
+            SELECT m.id, m.church_id, m.name, m.surname, m.email, m.phone, m.status, r.name as role_name, r.display_name as role_display, c.name as church_name
             FROM member m
             LEFT JOIN church c ON m.church_id = c.id
             LEFT JOIN services s ON s.key = 'mainhub'
@@ -219,8 +217,7 @@ class UserRepo
             $result = $db->prepare("DELETE FROM member WHERE id = ?")->execute([$memberId]);
             $db->commit();
             return $result;
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             if ($db->inTransaction())
                 $db->rollBack();
             throw $e;
@@ -269,7 +266,7 @@ class UserRepo
 
         // Handle Role
         if (isset($data['roleId'])) {
-            self::updateMemberRole($memberId, (int)$data['roleId']);
+            self::updateMemberRole($memberId, (int) $data['roleId']);
         }
 
         // Handle Areas
@@ -297,8 +294,7 @@ class UserRepo
             ");
             $stmt->execute([$memberId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             return [];
         }
     }
@@ -317,8 +313,8 @@ class UserRepo
                 $params = [];
                 foreach ($areaIds as $id) {
                     $placeholders[] = "(?, ?)";
-                    $params[] = (int)$memberId;
-                    $params[] = (int)$id;
+                    $params[] = (int) $memberId;
+                    $params[] = (int) $id;
                 }
                 $sql .= implode(", ", $placeholders);
                 $stmt = $db->prepare($sql);
@@ -326,8 +322,7 @@ class UserRepo
             }
             $db->commit();
             return true;
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             if ($db->inTransaction())
                 $db->rollBack();
             return false;
@@ -378,8 +373,7 @@ class UserRepo
 
             $db->commit();
             return true;
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             if ($db->inTransaction())
                 $db->rollBack();
             \App\Helpers\Logger::error("UserRepo::completeInvitation error: " . $e->getMessage());

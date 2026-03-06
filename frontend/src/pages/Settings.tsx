@@ -234,7 +234,7 @@ export const Settings: FC = () => {
                     </section>
 
                     <section style={{ textAlign: 'center', marginTop: '16px', opacity: 0.5 }}>
-                        <p className="text-overline" style={{ fontSize: '10px' }}>MinistryHub v2.0.0-alpha • Powered by Church Center</p>
+                        <p className="text-overline" style={{ fontSize: '10px' }}>Church Center v2.0.0-alpha</p>
                     </section>
                 </div>
             </div>

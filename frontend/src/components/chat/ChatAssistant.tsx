@@ -157,7 +157,7 @@ export const ChatAssistant: FC = () => {
                             <span className="material-symbols-outlined">robot_2</span>
                         </div>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Asistente MinistryHub</h3>
+                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Asistente Church Center</h3>
                             <p style={{ margin: 0, fontSize: '12px', opacity: 0.8 }}>{t('chat.online')}</p>
                         </div>
                     </div>

@@ -1,7 +1,7 @@
-# Resumen General de la Aplicación (MinistryHub)
+# Resumen General de la Aplicación (Church Center)
 
-## ¿Qué es MinistryHub?
-MinistryHub (MSM2 / Church-Center) es una plataforma integral, modular y de múltiples inquilinos (multi-tenant) diseñada para la gestión profesional de iglesias y congregaciones. Permite administrar múltiples sedes o ministerios desde una única cuenta, ofreciendo herramientas específicas para la organización de servicios, gestión de personas, música y administración técnica.
+## ¿Qué es Church Center?
+Church Center (MSM2 / Church-Center) es una plataforma integral, modular y de múltiples inquilinos (multi-tenant) diseñada para la gestión profesional de iglesias y congregaciones. Permite administrar múltiples sedes o ministerios desde una única cuenta, ofreciendo herramientas específicas para la organización de servicios, gestión de personas, música y administración técnica.
 
 ## Capacidades Principales
 
@@ -9,7 +9,7 @@ MinistryHub (MSM2 / Church-Center) es una plataforma integral, modular y de múl
 - **Seleccionador de Iglesias**: Permite a los usuarios cambiar entre diferentes congregaciones si tienen permisos.
 - **Flujo de Configuración (Wizard)**: Proceso paso a paso para dar de alta nuevas iglesias, áreas, equipos y líderes.
 - **Control de Acceso (RBAC)**: Roles diferenciados por iglesia (Admin, Miembro), incluyendo un rol de **"Master"** con acceso global para supervisión total.
-- **Branding Contextual**: El sistema adapta el logo y nombre (Ministry Hub, SM Hub, Church Center) automáticamente según el rol del usuario y la ruta.
+- **Branding Contextual**: El sistema adapta el logo y nombre (Pastoral Hub, Ministry Hub, Sound Hub, Multimedia Hub, Diaconos Hub, Social Media Hub) automáticamente según el rol del usuario y el contexto de navegación.
 
 ### 2. Módulo de Alabanza (Worship)
 - **Biblioteca de Canciones**: Soporte completo para formato ChordPro, permitiendo transposición de tonos y visualización de acordes.
@@ -18,7 +18,7 @@ MinistryHub (MSM2 / Church-Center) es una plataforma integral, modular y de múl
 
 ### 3. Personas y Equipos
 - **Directorio de Miembros**: Gestión centralizada de la información de los integrantes.
-- **Estructura por Áreas y Equipos**: Organización jerárquica (ej. Área de Multimedia -> Equipo de Video).
+- **Estructura por Áreas y Equipos**: Organización jerárquica (ej. Multimedia Hub -> Equipo de Proyección).
 - **Gestión de Áreas Independientes**: Módulo específico para superadmins para administrar áreas de forma global.
 - **Asignación de Roles**: Diferenciación entre líderes de equipo y miembros regulares.
 
