@@ -18,15 +18,15 @@ class CalendarRepo
         $params = [$churchId];
 
         if ($start) {
-            $sql .= " AND m.start_at >= ?";
+            $sql .= " AND (m.start_at >= ? OR m.meeting_type = 'recurrent')";
             $params[] = $start;
         }
         if ($end) {
-            $sql .= " AND m.start_at <= ?";
+            $sql .= " AND (m.start_at <= ? OR m.meeting_type = 'recurrent')";
             $params[] = $end;
         }
 
-        $sql .= " ORDER BY m.start_at ASC";
+        $sql .= " ORDER BY m.start_at ASC, m.start_time ASC";
 
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
@@ -34,9 +34,20 @@ class CalendarRepo
 
         // Map fields for frontend compatibility
         foreach ($results as &$meeting) {
-            $meeting['instance_date'] = date('Y-m-d', strtotime($meeting['start_at']));
+            // Provide a stable date for recurrent meetings if start_at is null
+            if ($meeting['meeting_type'] === 'recurrent' && !$meeting['start_at']) {
+                // If we are in a month view, we might want to return multiple instances
+                // but for now we just return the master record and frontend can handle repeating it
+                $meeting['instance_date'] = null; // Let frontend handle recurrence
+            } else {
+                $meeting['instance_date'] = date('Y-m-d', strtotime($meeting['start_at']));
+            }
+
             $meeting['start_datetime_utc'] = $meeting['start_at'];
             $meeting['end_datetime_utc'] = $meeting['end_at'];
+
+            // Ensure meeting_type is present (default to special if missing in DB)
+            $meeting['meeting_type'] = $meeting['meeting_type'] ?? 'special';
         }
 
         return $results;
@@ -102,20 +113,32 @@ class CalendarRepo
     public static function createMeeting($data)
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare("
-            INSERT INTO meetings (calendar_id, title, description, start_at, end_at, location, category, created_by_member_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ");
+
+        // We handle both legacy and new fields
+        $meetingType = $data['meeting_type'] ?? 'special';
+
+        $sql = "INSERT INTO meetings (
+                    calendar_id, title, description, start_at, end_at, 
+                    location, category, created_by_member_id,
+                    meeting_type, day_of_week, start_time, end_time
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $stmt = $db->prepare($sql);
         $stmt->execute([
             $data['calendar_id'],
             $data['title'],
             $data['description'] ?? null,
-            $data['start_at'],
+            $data['start_at'] ?? null,
             $data['end_at'] ?? null,
             $data['location'] ?? null,
             $data['category'] ?? null,
-            $data['created_by_member_id'] ?? null
+            $data['created_by_member_id'] ?? null,
+            $meetingType,
+            $data['day_of_week'] ?? null,
+            $data['start_time'] ?? null,
+            $data['end_time'] ?? null
         ]);
+
         return $db->lastInsertId();
     }
 

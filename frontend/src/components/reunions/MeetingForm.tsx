@@ -20,6 +20,7 @@ export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initial
     const { t } = useTranslation();
     const { isMaster, user } = useAuth();
     const [churches, setChurches] = useState<Church[]>([]);
+    const [customTags, setCustomTags] = useState<string[]>([]);
     const PREDEFINED_CATEGORIES = [
         "Reuniones ocasionales",
         "Cambios de horario",
@@ -193,29 +194,52 @@ export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initial
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
                 <label className="text-overline" style={{ display: 'block', marginBottom: '4px' }}>Categoría / Tag</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <select
-                        name="category"
-                        value={formData.category}
-                        onChange={handleChange}
-                        style={{ flex: 1 }}
-                    >
-                        <option value="">Sin categoría</option>
-                        {PREDEFINED_CATEGORIES.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                        <option value="Otros">Otros (Personalizado)</option>
-                    </select>
-                    {formData.category === 'Otros' && (
-                        <input
-                            type="text"
-                            name="custom_category"
-                            placeholder="Escribe el tag..."
-                            value={formData.custom_category}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <select
+                            name="category"
+                            value={formData.category}
                             onChange={handleChange}
                             style={{ flex: 1 }}
-                            required
-                        />
+                        >
+                            <option value="">Sin categoría</option>
+                            {PREDEFINED_CATEGORIES.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                            {customTags.map(tag => (
+                                <option key={tag} value={tag}>{tag}</option>
+                            ))}
+                            <option value="Otros">+ Añadir nuevo tag...</option>
+                        </select>
+                    </div>
+                    {formData.category === 'Otros' && (
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input
+                                type="text"
+                                name="custom_category"
+                                placeholder="Escribe el nombre del tag..."
+                                value={formData.custom_category}
+                                onChange={handleChange}
+                                style={{ flex: 1 }}
+                                autoFocus
+                            />
+                            <Button
+                                variant="secondary"
+                                label="Añadir"
+                                onClick={() => {
+                                    if (formData.custom_category.trim()) {
+                                        setCustomTags(prev => [...prev, formData.custom_category.trim()]);
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            category: formData.custom_category.trim(),
+                                            custom_category: ''
+                                        }));
+                                    }
+                                }}
+                                type="button"
+                                style={{ height: '36px' }}
+                            />
+                        </div>
                     )}
                 </div>
             </div>

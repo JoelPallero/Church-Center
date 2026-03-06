@@ -282,8 +282,12 @@ CREATE TABLE meetings (
   calendar_id INT NOT NULL,
   title VARCHAR(160) NOT NULL,
   description TEXT NULL,
-  start_at DATETIME NOT NULL,
-  end_at DATETIME NULL,
+  meeting_type ENUM('special', 'recurrent') NOT NULL DEFAULT 'special',
+  start_at DATETIME NULL,           -- Direct date for special meetings
+  end_at DATETIME NULL,             -- Direct end date for special meetings
+  day_of_week TINYINT NULL,         -- 0-6 for recurrent meetings
+  start_time TIME NULL,             -- Start time for recurrent meetings
+  end_time TIME NULL,               -- End time for recurrent meetings
   location VARCHAR(255) NULL,
   category VARCHAR(100) NULL,
   created_by_member_id INT NULL,

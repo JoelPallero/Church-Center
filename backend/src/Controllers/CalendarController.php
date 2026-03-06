@@ -141,8 +141,12 @@ class CalendarController
             'calendar_id' => $calendarId,
             'title' => $data['title'] ?? 'Untitled Meeting',
             'description' => $data['description'] ?? '',
-            'start_at' => $data['start_at'] ?? $data['date'] ?? date('Y-m-d H:i:s'),
+            'start_at' => $data['start_at'] ?? null,
             'end_at' => $data['end_at'] ?? null,
+            'meeting_type' => $data['meeting_type'] ?? 'special',
+            'day_of_week' => $data['recurrence']['day_of_week'] ?? null,
+            'start_time' => $data['recurrence']['start_time'] ?? null,
+            'end_time' => $data['recurrence']['end_time'] ?? null,
             'location' => $data['location'] ?? '',
             'category' => $data['category'] ?? null,
             'created_by_member_id' => $memberId

@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import api from '../../services/api';
 import { AssignmentForm } from './AssignmentForm';
 import { SetlistAssignmentForm } from './SetlistAssignmentForm';
 import { useAuth } from '../../hooks/useAuth';
@@ -31,13 +32,9 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
 
     const fetchAssignmentData = async () => {
         try {
-            const token = localStorage.getItem('auth_token');
-            const response = await fetch(`/api/calendar/assignment-data`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (data.success) {
-                setAssignmentData(data);
+            const response = await api.get('/calendar/assignment-data');
+            if (response.data.success) {
+                setAssignmentData(response.data);
             }
         } catch (err) {
             console.error('Error fetching assignment data:', err);
@@ -47,13 +44,9 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
     const fetchDetails = async () => {
         setIsLoading(true);
         try {
-            const token = localStorage.getItem('auth_token');
-            const response = await fetch(`/api/calendar/events/${instanceId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            if (data.success) {
-                setDetails(data.details);
+            const response = await api.get(`/calendar/${instanceId}`);
+            if (response.data.success) {
+                setDetails(response.data.details);
             }
         } catch (err) {
             console.error('Error fetching details:', err);

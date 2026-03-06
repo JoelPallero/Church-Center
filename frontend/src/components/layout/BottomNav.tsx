@@ -22,7 +22,7 @@ export const BottomNav: FC = () => {
     const allPossibleItems: NavItem[] = [
         { path: '/dashboard', icon: 'dashboard', label: 'Dashboard', permission: null },
         { path: '/mainhub/churches', icon: 'church', label: 'Iglesias', visible: isSuperAdmin },
-        { path: `/mainhub/churches/edit/${user?.churchId}`, icon: 'church', label: 'Mi Iglesia', visible: !isSuperAdmin && !!user?.churchId && hasPermission('church.update') },
+        { path: `/mainhub/churches/edit/${user?.churchId}`, icon: 'church', label: 'Mi Iglesia', visible: !isSuperAdmin && !isMaster && !!user?.churchId && hasPermission('church.update') },
         { path: '/mainhub/pastor', icon: 'auto_graph', label: 'Areas', permission: 'church.update' },
         { path: '/mainhub/reports', icon: 'analytics', label: 'Reportes', permission: 'reports.view' },
         { path: '/worship/calendar', icon: 'event', label: 'Calendario', permission: 'calendar.read' },

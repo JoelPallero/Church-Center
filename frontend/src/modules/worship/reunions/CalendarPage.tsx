@@ -88,9 +88,23 @@ export const CalendarPage: FC = () => {
             'Reuniones que no cambian': '#059669',
             'Ocasional': '#FCD34D',
             'Especial': '#FB923C',
-            'Equipo': '#4F46E5'
+            'Equipo': '#4F46E5',
+            'Reuniones ocasionales': '#FCD34D',
+            'Reuniones especiales': '#FB923C',
+            'Reuniones de equipos': '#4F46E5'
         };
-        return colors[category] || '#6B7280';
+
+        // Generate a random stable color for custom categories if not in the list
+        if (!colors[category]) {
+            let hash = 0;
+            for (let i = 0; i < category.length; i++) {
+                hash = category.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+            return "#" + "00000".substring(0, 6 - c.length) + c;
+        }
+
+        return colors[category];
     };
 
     const shouldShowTag = (instance: MeetingInstance) => {
@@ -115,11 +129,12 @@ export const CalendarPage: FC = () => {
     }, [finalChurchId, isMaster, isPastor, currentDate, activeTab]);
 
     const fetchInstances = async () => {
+        setIsLoading(true);
         try {
             const params: any = {};
 
-            // Only filter by month/year if we are in the Calendar tab
-            // In the Meetings tab, we want to see everything so the client-side filters work correctly
+            // In both tabs, we might benefit from having everything for the current month
+            // or all meetings for the list.
             if (activeTab === 'calendar') {
                 params.month = currentDate.getMonth() + 1;
                 params.year = currentDate.getFullYear();
@@ -134,7 +149,40 @@ export const CalendarPage: FC = () => {
             });
             const data = response.data;
             if (data.success) {
-                setInstances(data.instances || []);
+                const rawInstances = data.instances || [];
+
+                // If it's the calendar view, we need to expand recurrent meetings into actual instances
+                if (activeTab === 'calendar') {
+                    const expanded: MeetingInstance[] = [];
+                    const year = currentDate.getFullYear();
+                    const month = currentDate.getMonth();
+
+                    rawInstances.forEach((inst: any) => {
+                        if (inst.meeting_type === 'recurrent') {
+                            // Find all occurrences of this day_of_week in the current month
+                            const dayOfWeek = inst.day_of_week ?? 0;
+                            const lastOfMonth = new Date(year, month + 1, 0);
+
+                            for (let d = 1; d <= lastOfMonth.getDate(); d++) {
+                                const date = new Date(year, month, d);
+                                if (date.getDay() === parseInt(dayOfWeek as any)) {
+                                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                                    expanded.push({
+                                        ...inst,
+                                        instance_date: dateStr,
+                                        start_datetime_utc: `${dateStr}T${inst.start_time || '00:00:00'}`,
+                                        end_datetime_utc: `${dateStr}T${inst.end_time || '00:00:00'}`
+                                    });
+                                }
+                            }
+                        } else if (inst.instance_date) {
+                            expanded.push(inst);
+                        }
+                    });
+                    setInstances(expanded);
+                } else {
+                    setInstances(rawInstances);
+                }
             }
         } catch (err) {
             console.error('Error fetching calendar:', err);
@@ -188,8 +236,11 @@ export const CalendarPage: FC = () => {
         const matchesCategory = filters.category === 'all' || inst.category === filters.category;
 
         // Date filters (string comparison for YYYY-MM-DD is safe and efficient)
-        const matchesDateFrom = !filters.dateFrom || inst.instance_date >= filters.dateFrom;
-        const matchesDateTo = !filters.dateTo || inst.instance_date <= filters.dateTo;
+        // If it's a recurrent master record (instance_date is null), we match if any of the other filters match
+        const isRecurrentMaster = !inst.instance_date && inst.meeting_type === 'recurrent';
+
+        const matchesDateFrom = isRecurrentMaster || !filters.dateFrom || inst.instance_date! >= filters.dateFrom;
+        const matchesDateTo = isRecurrentMaster || !filters.dateTo || inst.instance_date! <= filters.dateTo;
 
         return matchesSearch && matchesType && matchesCategory && matchesDateFrom && matchesDateTo;
     });

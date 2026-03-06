@@ -7,7 +7,7 @@ export const DesktopSidebar: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
-    const { hasPermission, logout, user, isSuperAdmin } = useAuth();
+    const { hasPermission, logout, user, isSuperAdmin, isMaster } = useAuth();
 
     const menuItems = [
         { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
@@ -21,7 +21,7 @@ export const DesktopSidebar: FC = () => {
             path: `/mainhub/churches/edit/${user?.churchId}`,
             icon: 'store',
             label: 'Mi Iglesia',
-            visible: !isSuperAdmin && user?.churchId && hasPermission('church.update')
+            visible: !isMaster && !isSuperAdmin && user?.churchId && hasPermission('church.update')
         },
         { path: '/mainhub/reports', icon: 'auto_graph', label: 'Estadísticas', permission: 'reports.view' },
         { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'calendar.read' },
