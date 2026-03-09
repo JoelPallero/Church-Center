@@ -41,14 +41,14 @@ export const ThemeProvider: FC<{ children: ReactNode }> = ({ children }) => {
         const newTheme = theme === 'light' ? 'dark' : 'light';
         setThemeState(newTheme);
         if (user) {
-            await AuthService.updateSettings(newTheme, i18n.language);
+            await AuthService.updateSettings({ theme: newTheme, language: i18n.language });
         }
     };
 
     const setTheme = async (newTheme: Theme) => {
         setThemeState(newTheme);
         if (user) {
-            await AuthService.updateSettings(newTheme, i18n.language);
+            await AuthService.updateSettings({ theme: newTheme, language: i18n.language });
         }
     };
 

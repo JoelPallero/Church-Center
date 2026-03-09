@@ -28,21 +28,29 @@ class PeopleController
             $churchId = $member['church_id'] ?? null;
         }
 
+        // Inject churchId back into data so called methods can see it
+        if ($churchId && !isset($data['church_id'])) {
+            $data['church_id'] = $churchId;
+        }
+        if ($churchId && !isset($data['churchId'])) {
+            $data['churchId'] = $churchId;
+        }
+
         if ($method === 'POST') {
             if ($action === 'invite') {
-                PermissionMiddleware::require($memberId, 'users.invite');
+                PermissionMiddleware::require($memberId, 'users.invite', $churchId);
                 $this->invite($memberId, $data);
                 return;
             }
 
             if ($action === 'invite/bulk') {
-                PermissionMiddleware::require($memberId, 'users.invite');
+                PermissionMiddleware::require($memberId, 'users.invite', $churchId);
                 $this->bulkInvite($memberId, $data);
                 return;
             }
 
             if ($action === 'approve') {
-                PermissionMiddleware::require($memberId, 'users.approve');
+                PermissionMiddleware::require($memberId, 'users.approve', $churchId);
                 $this->approve($memberId, $data);
                 return;
             }

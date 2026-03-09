@@ -117,9 +117,11 @@ export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initial
                 ...formData,
                 churchId: effectiveChurchId,
                 category: finalCategory,
-                // If it's special, start_at should be date + 00:00:00 or current time
-                start_at: formData.meeting_type === 'special' ? `${formData.date} ${formData.recurrence.start_time}:00` : null
+                // If it's special, set both start and end dates
+                start_at: formData.meeting_type === 'special' ? `${formData.date} ${formData.recurrence.start_time}:00` : null,
+                end_at: formData.meeting_type === 'special' ? `${formData.date} ${formData.recurrence.end_time}:00` : null
             };
+            console.log('Meeting creation postData:', postData);
             logInteraction('Sending Post Data', { postData });
             const response = await api.post('/calendar', postData);
 

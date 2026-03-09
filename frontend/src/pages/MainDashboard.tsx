@@ -11,12 +11,11 @@ import { ActivityFeed } from '../components/dashboard/ActivityFeed';
 import { MasterDashboard } from '../modules/mainhub/pages/MasterDashboard';
 import { PastorDashboard } from '../modules/mainhub/pages/PastorDashboard';
 import { Playlists } from '../modules/worship/pages/Playlists';
-import { Reports } from '../modules/mainhub/pages/Reports';
 import { useProfileCompletion } from '../hooks/useProfileCompletion';
 
 export const MainDashboard: FC = () => {
     const { t } = useTranslation();
-    const { user } = useAuth();
+    const { user, isMaster, isPastor } = useAuth();
     const navigate = useNavigate();
     useProfileCompletion();
     const [pendingCount, setPendingCount] = useState(0);
@@ -26,9 +25,6 @@ export const MainDashboard: FC = () => {
 
     const isGuest = user?.role?.level === 200;
     const isLeader = (user?.role?.level || 100) <= 50;
-
-    const isMaster = user?.isMaster || user?.role?.name === 'master' || user?.role?.name === 'superadmin';
-    const isPastor = user?.role?.name === 'pastor';
     const isMember = user?.role?.name === 'member' || (!isPastor && !isMaster && !isLeader && !isGuest);
 
     useEffect(() => {
@@ -58,7 +54,7 @@ export const MainDashboard: FC = () => {
 
     // Role-based HOME selection
     if (isMaster) return <MasterDashboard />;
-    if (isPastor) return <Reports />;
+    if (isPastor) return <PastorDashboard />;
     if (isMember) return <Playlists />;
 
     if (isGuest) {

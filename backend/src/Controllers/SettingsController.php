@@ -41,6 +41,13 @@ class SettingsController
                 Response::json(['success' => $success]);
                 return;
             }
+
+            if ($action === 'update-user-settings') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $success = \App\Repositories\UserRepo::updateSettings($memberId, $data);
+                Response::json(['success' => $success]);
+                return;
+            }
         }
 
         Response::error("Recurso no encontrado", 404);

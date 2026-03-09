@@ -27,7 +27,7 @@ export const Button: FC<ButtonProps> = ({ variant = 'primary', label, icon, chil
             {...props}
         >
             {icon && <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{icon}</span>}
-            {children || label}
+            {children || (label && <span className="btn-label">{label}</span>)}
         </button>
     );
 };

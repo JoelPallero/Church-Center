@@ -129,15 +129,27 @@ export const SongList: FC = () => {
     return (
         <div style={{ position: 'relative', display: 'flex', gap: '24px', alignItems: 'start', padding: '24px' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-                <header style={{ marginBottom: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h1 className="text-h1">{t('songs.title')}</h1>
+                <header style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    marginBottom: '24px'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        width: '100%',
+                        gap: '12px'
+                    }}>
+                        <h1 className="text-h1" style={{ margin: 0, fontSize: 'clamp(22px, 4vw, 32px)', lineHeight: 1.2 }}>{t('songs.title')}</h1>
                         {hasPermission('songs.create') && (
                             <Button
                                 variant="primary"
                                 icon="add"
                                 label={t('songs.add')}
                                 onClick={() => navigate('/worship/songs/new' + (finalChurchId ? `?church_id=${finalChurchId}` : ''))}
+                                style={{ height: '38px', padding: '0 16px', flexShrink: 0 }}
                             />
                         )}
                     </div>

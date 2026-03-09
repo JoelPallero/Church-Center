@@ -55,7 +55,7 @@ export const ChurchSelect: FC = () => {
         else if (target === 'areas') path = `/mainhub/setup-areas?church_id=${churchId}`;
         else if (target === 'songs') path = `/worship/songs?church_id=${churchId}`;
         else if (target === 'reports') path = `/mainhub/reports?church_id=${churchId}`;
-        else if (target === 'ushers') path = `/mainhub/ushers?church_id=${churchId}`;
+        else if (target === 'consolidation') path = `/mainhub/consolidation?church_id=${churchId}`;
         else if (target === 'calendar') path = `/worship/calendar?church_id=${churchId}`;
         else if (target === 'playlists') path = `/worship/playlists?church_id=${churchId}`;
 

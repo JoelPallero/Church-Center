@@ -12,6 +12,7 @@ interface AuthContextType {
     services: string[];
     isSuperAdmin: boolean;
     isMaster: boolean;
+    isPastor: boolean;
     isLoading: boolean;
     isAuthenticated: boolean;
     login: (email: string, password: string, recaptchaToken?: string) => Promise<void>;
@@ -187,14 +188,14 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
     }, [isLocalhost, loadBootstrap]);
 
     const hasPermission = useCallback((permission: string) => {
-        if (isSuperAdmin || permissions.includes('*')) return true;
+        if (isSuperAdmin || roles.includes('pastor') || permissions.includes('*')) return true;
         return permissions.includes(permission);
-    }, [isSuperAdmin, permissions]);
+    }, [isSuperAdmin, permissions, roles]);
 
     const hasService = useCallback((serviceKey: string) => {
-        if (isSuperAdmin || permissions.includes('*')) return true;
+        if (isSuperAdmin || roles.includes('pastor') || permissions.includes('*')) return true;
         return services.includes(serviceKey);
-    }, [isSuperAdmin, services, permissions]);
+    }, [isSuperAdmin, services, permissions, roles]);
 
     const hasRole = useCallback((roleName: string) => {
         if (isSuperAdmin && roleName === 'superadmin') return true;
@@ -220,6 +221,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
             services,
             isSuperAdmin,
             isMaster: isSuperAdmin || user?.isMaster || impersonatedRole?.name === 'master',
+            isPastor: roles.includes('pastor') || user?.role?.name === 'pastor' || impersonatedRole?.name === 'pastor',
             isLoading,
             isAuthenticated: !!currentUser,
             login,

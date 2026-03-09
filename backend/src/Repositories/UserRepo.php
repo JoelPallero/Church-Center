@@ -279,7 +279,44 @@ class UserRepo
             self::setUserInstruments($memberId, $data['instruments']);
         }
 
+        // Handle Groups
+        if (isset($data['groups'])) {
+            self::setUserGroups($memberId, $data['groups']);
+        }
+
         return true;
+    }
+
+    public static function setUserGroups($memberId, $groupIds)
+    {
+        $db = Database::getInstance();
+        try {
+            $db->beginTransaction();
+            // Clear current non-leader groups or all? 
+            // Usually editors want full sync.
+            $stmt = $db->prepare("DELETE FROM group_members WHERE member_id = ?");
+            $stmt->execute([$memberId]);
+
+            if (!empty($groupIds)) {
+                $sql = "INSERT INTO group_members (member_id, group_id, role_in_group) VALUES ";
+                $placeholders = [];
+                $params = [];
+                foreach ($groupIds as $id) {
+                    $placeholders[] = "(?, ?, 'member')";
+                    $params[] = (int) $memberId;
+                    $params[] = (int) $id;
+                }
+                $sql .= implode(", ", $placeholders);
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+            }
+            $db->commit();
+            return true;
+        } catch (\Exception $e) {
+            if ($db->inTransaction())
+                $db->rollBack();
+            return false;
+        }
     }
 
     public static function getUserAreas($memberId)
@@ -341,6 +378,36 @@ class UserRepo
         ");
         $stmt->execute([$tokenHash]);
         return $stmt->fetch();
+    }
+
+    public static function updateSettings($memberId, $data)
+    {
+        $db = Database::getInstance();
+        $fields = [];
+        $params = [];
+        if (isset($data['theme'])) {
+            $fields[] = "default_theme = ?";
+            $params[] = $data['theme'];
+        }
+        if (isset($data['language'])) {
+            $fields[] = "default_language = ?";
+            $params[] = $data['language'];
+        }
+        if (isset($data['google_calendar_id'])) {
+            $fields[] = "google_calendar_id = ?";
+            $params[] = $data['google_calendar_id'];
+        }
+        if (isset($data['google_api_key'])) {
+            $fields[] = "google_api_key = ?";
+            $params[] = $data['google_api_key'];
+        }
+
+        if (!empty($fields)) {
+            $params[] = $memberId;
+            $sql = "UPDATE user_accounts SET " . implode(", ", $fields) . " WHERE member_id = ?";
+            return $db->prepare($sql)->execute($params);
+        }
+        return false;
     }
 
     public static function completeInvitation($memberId, $password)

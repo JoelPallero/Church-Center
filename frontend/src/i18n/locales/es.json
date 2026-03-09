@@ -62,7 +62,7 @@
         "churches": "Iglesias",
         "settings": "Panel de Control",
         "privacy": "Privacidad y Soporte",
-        "ushers": "Ujieres"
+        "consolidation": "Consolidación"
     },
     "people": {
         "title": "Personas",
@@ -303,19 +303,20 @@
             "loading": "Cargando actividad...",
             "empty": "Todavía no hay actividad registrada.",
             "actions": {
-                "song_create": "{{user}} ha creado una canción: {{title}}",
-                "song_update": "{{user}} ha editado una canción",
-                "song_key_assign": "{{user}} ha asignado una tonalidad",
-                "user_register": "{{user}} se ha unido a la plataforma",
-                "user_invite": "{{user}} ha enviado una invitación",
-                "user_invite_accept": "{{user}} ha aceptado la invitación",
-                "user_delete": "Se ha eliminado un usuario",
-                "user_status_update": "Se ha actualizado el estado de un usuario",
-                "group_create": "{{user}} ha creado el equipo: {{name}}",
-                "group_join": "{{user}} se ha unido a un equipo",
-                "meeting_create": "{{user}} ha programado una reunión: {{title}}",
-                "playlist_create": "{{user}} ha creado un nuevo listado de canciones",
-                "unknown": "{{user}} realizó una acción: {{action}}"
+                "song_created": "{{user}} dio de alta la canción: {{title}}",
+                "song_updated": "{{user}} actualizó la información de una canción",
+                "song_key_assigned": "{{user}} asignó una tonalidad",
+                "member_registered": "{{user}} se registró en la plataforma",
+                "member_invited": "{{user}} envió una invitación por correo",
+                "member_invite_accepted": "{{user}} aceptó formalmente la invitación",
+                "member_approved": "{{user}} autorizó el ingreso de {{name}}",
+                "member_deleted": "Se dio de baja un perfil de usuario",
+                "member_status_updated": "Cambio de estado en perfil de usuario",
+                "team_created": "{{user}} dio de alta el equipo: {{name}}",
+                "team_joined": "{{user}} se unió a un equipo de trabajo",
+                "meeting_created": "{{user}} programó una nueva reunión: {{title}}",
+                "playlist_created": "{{user}} generó un nuevo listado de canciones",
+                "unknown": "{{user}} realizó la acción: {{action}}"
             }
         },
         "admin": {
@@ -521,6 +522,8 @@
     "churches": {
         "title": "Iglesias",
         "new": "Nueva Iglesia",
+        "select": "Seleccionar Iglesia",
+        "select_church": "Seleccionar Iglesia",
         "search": "Buscar iglesias...",
         "noResults": "No se encontraron iglesias.",
         "filters": {
@@ -572,29 +575,37 @@
         "teamInfo": "Información del Equipo",
         "memberManagement": "Gestión de Miembros"
     },
-    "ushers": {
-        "title": "Ujieres",
-        "description": "Servicio de conteo y consolidación.",
-        "attendance": "Conteo de Personas",
-        "visitors": "Personas Nuevas",
+    "consolidation": {
+        "title": "Consolidación",
+        "description": "Seguimiento y Registro de Visitantes.",
+        "attendance": "Conteo de Asistencia",
+        "visitors": "Visitantes Nuevos",
         "saveCount": "Guardar Conteo",
-        "addVisitor": "Agregar Nueva Persona",
+        "addVisitor": "Registrar Visitante",
         "adults": "Adultos",
         "children": "Niños",
         "total": "Total",
-        "reports": "Reportes de Asistencia",
-        "consolidated": "Consolidado",
-        "noVisitors": "No hay personas nuevas registradas en esta reunión.",
+        "reports": "Reportes de Consolidación",
+        "consolidated": "Consolidado de Seguimiento",
+        "noVisitors": "No hay visitantes nuevos registrados en esta reunión.",
         "weeklyReport": "Reporte Semanal",
         "monthlyReport": "Reporte Mensual",
         "yearlyReport": "Reporte Anual",
         "visitorForm": {
             "firstName": "Nombre",
             "lastName": "Apellido",
-            "phone": "Teléfono",
+            "phone": "WhatsApp",
             "email": "Email",
-            "notes": "Notas / Observaciones",
-            "isFirstTime": "Es primera vez"
+            "notes": "Observaciones / Motivos de Oración",
+            "isFirstTime": "Primera vez"
+        },
+        "followUp": {
+            "title": "Seguimiento",
+            "addLog": "Nuevo Contacto",
+            "date": "Fecha de Contacto",
+            "method": "Método",
+            "comments": "Comentarios",
+            "noLogs": "No hay registros de contacto todavía."
         }
     }
 }

@@ -40,6 +40,8 @@ export interface User {
     areas?: { id: number; name: string }[];
     services?: UserService[]; // Multi-hub support
     isMaster?: boolean; // Convenience flag
+    google_calendar_id?: string;
+    google_api_key?: string;
 }
 
 export interface Church {

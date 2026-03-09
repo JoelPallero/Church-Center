@@ -40,9 +40,10 @@ class ActivityRepo
         try {
             $db = Database::getInstance();
             $sql = "
-                SELECT al.*, m.name as member_name, m.surname as member_surname
+                SELECT al.*, m.name as member_name, m.surname as member_surname, c.name as church_name
                 FROM activity_log al
                 JOIN member m ON al.member_id = m.id
+                LEFT JOIN church c ON al.church_id = c.id
             ";
             $params = [];
 
@@ -58,13 +59,24 @@ class ActivityRepo
             $stmt->execute($params);
             $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Decode details
+            // Process for frontend
             foreach ($activities as &$activity) {
-                $activity['details'] = json_decode($activity['details'], true);
+                $activity['details'] = json_decode($activity['details'], true) ?? [];
+                $activity['new_values'] = $activity['details'];
                 $activity['user_name'] = $activity['member_name'] . ($activity['member_surname'] ? ' ' . $activity['member_surname'] : '');
 
-                // Format for frontend (ActivityStream expects message, time, icon)
-                $activity['message'] = self::formatMessage($activity);
+                // Store raw action for formatting
+                $rawAction = $activity['action'];
+
+                // Prepare translation key for frontend (preserving entity prefix)
+                $action = $activity['action'];
+                if (strpos($action, '.') === false && strpos($action, '_') === false) {
+                    $map = ['create' => 'created', 'invite' => 'invited', 'update' => 'updated'];
+                    $action = $map[$action] ?? $action;
+                    $activity['action'] = $activity['entity_type'] . '_' . $action;
+                }
+
+                $activity['message'] = self::formatMessage($activity, $rawAction);
                 $activity['time'] = $activity['created_at'];
                 $activity['icon'] = self::getIcon($activity['entity_type']);
             }
@@ -84,9 +96,10 @@ class ActivityRepo
         try {
             $db = Database::getInstance();
             $sql = "
-                SELECT al.*, m.name as member_name, m.surname as member_surname
+                SELECT al.*, m.name as member_name, m.surname as member_surname, c.name as church_name
                 FROM activity_log al
                 JOIN member m ON al.member_id = m.id
+                LEFT JOIN church c ON al.church_id = c.id
                 WHERE al.id > ?
             ";
             $params = [(int) $lastId];
@@ -103,9 +116,22 @@ class ActivityRepo
             $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($activities as &$activity) {
+                $activity['details'] = json_decode($activity['details'], true) ?? [];
+                $activity['new_values'] = $activity['details'];
                 $activity['user_name'] = $activity['member_name'] . ($activity['member_surname'] ? ' ' . $activity['member_surname'] : '');
-                $activity['details'] = json_decode($activity['details'], true);
-                $activity['message'] = self::formatMessage($activity);
+
+                // Store raw action for formatting
+                $rawAction = $activity['action'];
+
+                // Prepare translation key for frontend
+                $action = $activity['action'];
+                if (strpos($action, '.') === false && strpos($action, '_') === false) {
+                    $map = ['create' => 'created', 'invite' => 'invited', 'update' => 'updated'];
+                    $action = $map[$action] ?? $action;
+                    $activity['action'] = $activity['entity_type'] . '_' . $action;
+                }
+
+                $activity['message'] = self::formatMessage($activity, $rawAction);
             }
 
             return $activities;
@@ -115,40 +141,60 @@ class ActivityRepo
         }
     }
 
-    private static function formatMessage($activity)
+    private static function formatMessage($activity, $overrideAction = null)
     {
-        $actor = $activity['user_name'];
+        $actor = $activity['user_name'] ?? 'Usuario';
+        $church = $activity['church_name'] ?? '';
         $details = $activity['details'] ?? [];
-        $name = $details['name'] ?? 'el elemento';
+        $name = $details['name'] ?? $details['title'] ?? 'el elemento';
 
-        switch ($activity['action']) {
+        $action = $overrideAction ?? $activity['action'];
+
+        // Strip entity prefix if present (e.g., team_created -> created)
+        if (strpos($action, '_') !== false) {
+            $parts = explode('_', $action);
+            $action = end($parts);
+        }
+
+        $churchSuffix = $church ? " en ($church)" : "";
+
+        switch ($action) {
+            case 'create':
             case 'created':
-                return "$actor creó " . self::translateEntity($activity['entity_type']) . ": $name";
+                return "Usuario: $actor | Acción: Alta de " . self::translateEntity($activity['entity_type'], false) . ": $name" . $churchSuffix;
+            case 'invite':
             case 'invited':
-                return "$actor invitó a un nuevo integrante: $name";
+                return "Usuario: $actor | Acción: Invitación a: $name" . $churchSuffix;
             case 'approved':
-                return "$actor autorizó a $name";
+                return "Usuario: $actor | Acción: Autorizó a $name" . $churchSuffix;
             case 'assigned':
-                return "$actor asignó a " . ($details['target_name'] ?? 'un integrante') . " en " . ($details['meeting_title'] ?? 'una reunión');
+                $target = $details['target_name'] ?? 'un integrante';
+                $meeting = $details['meeting_title'] ?? 'una reunión';
+                return "Usuario: $actor | Acción: Asignó a $target en reunión: $meeting" . $churchSuffix;
+            case 'update':
             case 'updated':
-                return "$actor actualizó " . self::translateEntity($activity['entity_type']) . ": $name";
+                return "Usuario: $actor | Acción: Actualización de " . self::translateEntity($activity['entity_type'], false) . ": $name" . $churchSuffix;
+            case 'delete':
+            case 'deleted':
+                return "Usuario: $actor | Acción: Baja de " . self::translateEntity($activity['entity_type'], false) . ": $name" . $churchSuffix;
             default:
-                return "$actor realizó una acción en " . self::translateEntity($activity['entity_type']);
+                return "Usuario: $actor | Acción: Realizó $action en " . self::translateEntity($activity['entity_type'], false) . $churchSuffix;
         }
     }
 
-    private static function translateEntity($type)
+    private static function translateEntity($type, $withArticle = true)
     {
         $map = [
-            'area' => 'el área',
-            'team' => 'el equipo',
-            'member' => 'el miembro',
-            'meeting' => 'la reunión',
-            'playlist' => 'el listado',
-            'instrument' => 'los instrumentos',
-            'song' => 'la canción',
-            'invitation' => 'la invitación',
-            'template' => 'la plantilla'
+            'area' => $withArticle ? 'el área' : 'Área',
+            'team' => $withArticle ? 'el equipo' : 'Equipo',
+            'group' => $withArticle ? 'el equipo' : 'Equipo',
+            'member' => $withArticle ? 'el miembro' : 'Miembro',
+            'meeting' => $withArticle ? 'la reunión' : 'Reunión',
+            'playlist' => $withArticle ? 'el listado' : 'Listado',
+            'instrument' => $withArticle ? 'el instrumento' : 'Instrumento',
+            'song' => $withArticle ? 'la canción' : 'Canción',
+            'invitation' => $withArticle ? 'la invitación' : 'Invitación',
+            'template' => $withArticle ? 'la plantilla' : 'Plantilla'
         ];
         return $map[$type] ?? $type;
     }

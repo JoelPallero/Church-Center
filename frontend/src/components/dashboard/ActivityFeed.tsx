@@ -9,6 +9,7 @@ interface Activity {
     id: number;
     user_id: number;
     user_name: string;
+    church_name?: string;
     action: string;
     entity_type: string;
     entity_id: number;
@@ -23,6 +24,7 @@ export const ActivityFeed: FC = () => {
     const [activities, setActivities] = useState<Activity[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const isAuthorized = hasPermission('users.view');
+    const isSuperAdmin = user?.role?.name === 'master' || user?.role?.name === 'pastor';
 
     useEffect(() => {
         const fetchInitial = async () => {
@@ -153,7 +155,7 @@ export const ActivityFeed: FC = () => {
             <h3 className="text-h2" style={{ marginBottom: '16px' }}>{t('dashboard.activity.title')}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {visibleActivities.map(activity => (
-                    <Card key={activity.id} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <Card key={activity.id} style={{ padding: '16px', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                         <div style={{
                             width: '40px',
                             height: '40px',
@@ -162,15 +164,40 @@ export const ActivityFeed: FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: 'var(--color-brand-blue)'
+                            color: 'var(--color-brand-blue)',
+                            flexShrink: 0
                         }}>
                             <span className="material-symbols-outlined">{getActionIcon(activity.action)}</span>
                         </div>
                         <div style={{ flex: 1 }}>
-                            <p className="text-body" style={{ fontWeight: 500, margin: 0 }}>{formatAction(activity)}</p>
-                            <p className="text-overline" style={{ color: 'gray', marginTop: '2px' }}>
-                                {new Date(activity.created_at).toLocaleString()}
+                            <p className="text-body" style={{ fontWeight: 600, margin: 0, color: 'var(--color-text-primary)' }}>
+                                {formatAction(activity)}
                             </p>
+
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                gap: '8px',
+                                marginTop: '8px',
+                                borderTop: '1px solid var(--color-ui-border)',
+                                paddingTop: '8px'
+                            }}>
+                                <p className="text-overline" style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ opacity: 0.7 }}>Usuario:</span> <span style={{ fontWeight: 500 }}>{activity.user_name}</span>
+                                </p>
+
+                                {isSuperAdmin && activity.church_name && (
+                                    <p className="text-overline" style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+                                        <span style={{ opacity: 0.7 }}>Iglesia:</span> <span style={{ fontWeight: 500 }}>{activity.church_name}</span>
+                                    </p>
+                                )}
+
+                                <p className="text-overline" style={{ margin: 0, color: 'var(--color-text-secondary)' }}>
+                                    <span style={{ opacity: 0.7 }}>Fecha:</span> <span style={{ fontWeight: 500 }}>
+                                        {new Date(activity.created_at).toLocaleDateString()} {new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                </p>
+                            </div>
                         </div>
                     </Card>
                 ))}

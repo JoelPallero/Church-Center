@@ -152,9 +152,19 @@ export const peopleService = {
     getRoles: async (): Promise<any[]> => {
         try {
             const response = await api.get('/roles');
-            return response.data.roles || [];
+            return response.data.success ? (response.data.roles || []) : [];
         } catch (error) {
             console.error('Failed to fetch roles', error);
+            return [];
+        }
+    },
+
+    getChurches: async (): Promise<any[]> => {
+        try {
+            const response = await api.get('/churches');
+            return response.data.churches || [];
+        } catch (error) {
+            console.error('Failed to fetch churches', error);
             return [];
         }
     },

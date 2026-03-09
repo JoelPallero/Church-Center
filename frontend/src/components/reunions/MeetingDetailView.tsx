@@ -64,7 +64,9 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                         <p className="text-overline" style={{ color: 'var(--color-brand-blue)' }}>
-                            {new Date(details.instance_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                            {details.meeting_type === 'recurrent'
+                                ? `Recurrente - Cada ${['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][details.day_of_week] || 'semana'}`
+                                : (details.instance_date ? new Date(details.instance_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Fecha no definida')}
                         </p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                             <h2 className="text-h2" style={{ margin: '4px 0' }}>{details.title}</h2>
@@ -83,9 +85,9 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                             )}
                         </div>
                         <p className="text-body" style={{ color: '#6B7280' }}>
-                            {new Date(details.start_datetime_utc).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                            {' - '}
-                            {new Date(details.end_datetime_utc).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                            {details.meeting_type === 'recurrent'
+                                ? `${details.start_time.substring(0, 5)} - ${details.end_time.substring(0, 5)}`
+                                : (details.start_datetime_utc ? `${new Date(details.start_datetime_utc).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${new Date(details.end_datetime_utc).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : '')}
                         </p>
                     </div>
                 </div>

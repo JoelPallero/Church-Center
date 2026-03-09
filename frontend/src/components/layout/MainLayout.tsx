@@ -50,8 +50,8 @@ export const MainLayout: FC = () => {
         if (location.pathname.startsWith('/mainhub/pastor')) {
             return t('common.pastoralHub');
         }
-        if (location.pathname.startsWith('/mainhub/ushers')) {
-            return t('common.diaconosHub');
+        if (location.pathname.startsWith('/mainhub/consolidation')) {
+            return t('consolidation.title');
         }
         if (location.pathname.startsWith('/mainhub')) {
             return t('common.churchCenter');

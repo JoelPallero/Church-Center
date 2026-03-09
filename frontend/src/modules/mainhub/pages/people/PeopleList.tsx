@@ -14,7 +14,7 @@ import { PeopleTable } from '../../../../components/people/PeopleTable';
 export const PeopleList: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { user, hasPermission } = useAuth();
+    const { user, hasPermission, isMaster } = useAuth();
     const { addToast } = useToast();
     const [searchParams] = useSearchParams();
     const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
@@ -29,7 +29,7 @@ export const PeopleList: FC = () => {
     const [activeMenu, setActiveMenu] = useState<number | null>(null);
 
     const isPlainMember = user?.role && user.role.level > 30;
-    const isMaster = user?.role?.name === 'master';
+
 
     useEffect(() => {
         loadUsers();
@@ -165,16 +165,28 @@ export const PeopleList: FC = () => {
                     }}
                 />
             )}
-            <header style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h1 className="text-h1">{t('people.title')}</h1>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+            <header style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                marginBottom: '24px'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                    gap: '12px'
+                }}>
+                    <h1 className="text-h1" style={{ margin: 0, fontSize: 'clamp(22px, 4vw, 32px)', lineHeight: 1.2 }}>{t('people.title')}</h1>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         {(hasPermission('users.approve') || !isPlainMember) && (
                             <Button
                                 variant="secondary"
                                 onClick={() => navigate(`/mainhub/people/approvals${churchId ? `?church_id=${churchId}` : ''}`)}
                                 icon="how_to_reg"
                                 label={t('people.approvals')}
+                                style={{ height: '38px', padding: '0 12px', flexShrink: 0 }}
                             />
                         )}
                         {hasPermission('users.invite') && (
@@ -183,6 +195,7 @@ export const PeopleList: FC = () => {
                                 onClick={() => navigate(`/mainhub/people/invite${churchId ? `?church_id=${churchId}` : ''}`)}
                                 icon="person_add"
                                 label={t('people.invite')}
+                                style={{ height: '38px', padding: '0 12px', flexShrink: 0 }}
                             />
                         )}
                     </div>

@@ -7,23 +7,33 @@ use PDO;
 
 class CalendarRepo
 {
-    public static function getMeetingsByChurch($churchId, $start = null, $end = null)
+    public static function getMeetingsByChurch($churchId = null, $start = null, $end = null)
     {
         $db = Database::getInstance();
+
         $sql = "SELECT m.*, c.name as calendar_name 
                 FROM meetings m
-                JOIN calendars c ON m.calendar_id = c.id
-                WHERE c.church_id = ?";
+                LEFT JOIN calendars c ON m.calendar_id = c.id";
 
-        $params = [$churchId];
+        $params = [];
+        $where = [];
+
+        if ($churchId) {
+            $where[] = "c.church_id = ?";
+            $params[] = (int) $churchId;
+        }
 
         if ($start) {
-            $sql .= " AND (m.start_at >= ? OR m.meeting_type = 'recurrent')";
+            $where[] = "(m.start_at >= ? OR m.meeting_type = 'recurrent')";
             $params[] = $start;
         }
         if ($end) {
-            $sql .= " AND (m.start_at <= ? OR m.meeting_type = 'recurrent')";
+            $where[] = "(m.start_at <= ? OR m.meeting_type = 'recurrent')";
             $params[] = $end;
+        }
+
+        if (!empty($where)) {
+            $sql .= " WHERE " . implode(" AND ", $where);
         }
 
         $sql .= " ORDER BY m.start_at ASC, m.start_time ASC";
@@ -34,19 +44,24 @@ class CalendarRepo
 
         // Map fields for frontend compatibility
         foreach ($results as &$meeting) {
-            // Provide a stable date for recurrent meetings if start_at is null
-            if ($meeting['meeting_type'] === 'recurrent' && !$meeting['start_at']) {
-                // If we are in a month view, we might want to return multiple instances
-                // but for now we just return the master record and frontend can handle repeating it
-                $meeting['instance_date'] = null; // Let frontend handle recurrence
+            // ISO8601 formatting for FullCalendar (YYYY-MM-DDTHH:MM:SS)
+            if ($meeting['start_at']) {
+                $dt = new \DateTime($meeting['start_at']);
+                $meeting['instance_date'] = $dt->format('Y-m-d');
+                $meeting['start_datetime_utc'] = $dt->format('Y-m-d\TH:i:s');
             } else {
-                $meeting['instance_date'] = date('Y-m-d', strtotime($meeting['start_at']));
+                $meeting['instance_date'] = null;
+                $meeting['start_datetime_utc'] = null;
             }
 
-            $meeting['start_datetime_utc'] = $meeting['start_at'];
-            $meeting['end_datetime_utc'] = $meeting['end_at'];
+            if ($meeting['end_at']) {
+                $dtEnd = new \DateTime($meeting['end_at']);
+                $meeting['end_datetime_utc'] = $dtEnd->format('Y-m-d\TH:i:s');
+            } else {
+                $meeting['end_datetime_utc'] = null;
+            }
 
-            // Ensure meeting_type is present (default to special if missing in DB)
+            // Ensure meeting_type is present
             $meeting['meeting_type'] = $meeting['meeting_type'] ?? 'special';
         }
 

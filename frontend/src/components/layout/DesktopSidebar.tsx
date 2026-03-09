@@ -7,7 +7,7 @@ export const DesktopSidebar: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
-    const { hasPermission, logout, user, isSuperAdmin, isMaster } = useAuth();
+    const { hasPermission, logout, user, isSuperAdmin, isMaster, isPastor } = useAuth();
 
     const menuItems = [
         { path: '/dashboard', icon: 'dashboard', label: t('nav.home'), permission: null },
@@ -29,7 +29,8 @@ export const DesktopSidebar: FC = () => {
         { path: '/worship/songs', icon: 'library_music', label: t('nav.songs'), permission: 'song.read' },
         { path: '/mainhub/areas', icon: 'layers', label: t('nav.areas'), permission: 'church.update' },
         { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'team.read' },
-        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), permission: 'church.update' },
+        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), visible: isSuperAdmin || isMaster || isPastor || hasPermission('church.update') },
+        { path: '/mainhub/consolidation', icon: 'how_to_reg', label: t('nav.consolidation'), visible: isSuperAdmin || isMaster || isPastor || hasPermission('reunions.view') },
     ];
 
 

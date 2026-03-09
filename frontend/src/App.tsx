@@ -48,8 +48,9 @@ const AreaList = lazy(() => import('./modules/mainhub/pages/people/AreaList').th
 const AreaSetup = lazy(() => import('./modules/mainhub/pages/people/AreaSetup').then(m => ({ default: m.AreaSetup })));
 const TeamSetup = lazy(() => import('./modules/mainhub/pages/people/TeamSetup').then(m => ({ default: m.TeamSetup })));
 const ChurchSelect = lazy(() => import('./modules/mainhub/pages/people/ChurchSelect').then(m => ({ default: m.ChurchSelect })));
-const UshersDashboard = lazy(() => import('./modules/mainhub/pages/ushers/UshersDashboard').then(m => ({ default: m.UshersDashboard })));
-const AttendanceEntry = lazy(() => import('./modules/mainhub/pages/ushers/AttendanceEntry').then(m => ({ default: m.AttendanceEntry })));
+const ConsolidationDashboard = lazy(() => import('./modules/mainhub/pages/consolidation/ConsolidationDashboard').then(m => ({ default: m.ConsolidationDashboard })));
+const AttendanceEntry = lazy(() => import('./modules/mainhub/pages/consolidation/AttendanceEntry').then(m => ({ default: m.AttendanceEntry })));
+const VisitorProfile = lazy(() => import('./modules/mainhub/pages/consolidation/VisitorProfile').then(m => ({ default: m.VisitorProfile })));
 const PermissionsManager = lazy(() => import('./pages/admin/PermissionsManager').then(m => ({ default: m.PermissionsManager })));
 
 // Social Module
@@ -120,8 +121,9 @@ const App: FC = () => {
                       <Route path="reports" element={<Reports />} />
                       <Route path="master" element={<MasterDashboard />} />
                       <Route path="pastor" element={<PastorDashboard />} />
-                      <Route path="ushers" element={<UshersDashboard />} />
-                      <Route path="ushers/attendance/:meetingId" element={<AttendanceEntry />} />
+                      <Route path="consolidation" element={<ConsolidationDashboard />} />
+                      <Route path="consolidation/attendance/:meetingId" element={<AttendanceEntry />} />
+                      <Route path="consolidation/visitor/:visitorId" element={<VisitorProfile />} />
                       <Route path="churches" element={<ChurchList />} />
                       <Route path="churches/new" element={<ChurchEditor />} />
                       <Route path="churches/edit/:id" element={<ChurchEditor />} />
@@ -141,6 +143,7 @@ const App: FC = () => {
                     <Route path="people/*" element={<Navigate to="/mainhub/people" replace />} />
                     <Route path="teams/*" element={<Navigate to="/mainhub/teams" replace />} />
                     <Route path="reports/*" element={<Navigate to="/mainhub/reports" replace />} />
+                    <Route path="ushers/*" element={<Navigate to="/mainhub/consolidation" replace />} />
                   </Route>
                 </Route>
 

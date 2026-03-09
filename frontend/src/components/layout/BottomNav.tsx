@@ -1,12 +1,14 @@
 import type { FC } from 'react';
 import { NavLink } from 'react-router-dom';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 import '../../index.css';
 
 export const BottomNav: FC = () => {
-    const { isSuperAdmin, isMaster, hasPermission, user } = useAuth();
-    const effectiveIsSuperAdmin = isSuperAdmin || isMaster;
+    const { t } = useTranslation();
+    const { isSuperAdmin, isMaster, isPastor, hasPermission, user } = useAuth();
+    const effectiveIsSuperAdmin = isSuperAdmin || isMaster || isPastor;
 
     interface NavItem {
         path: string;
@@ -20,16 +22,17 @@ export const BottomNav: FC = () => {
 
     // Unified Nav Items logic based on permissions
     const allPossibleItems: NavItem[] = [
-        { path: '/dashboard', icon: 'dashboard', label: 'Dashboard', permission: null },
-        { path: '/mainhub/churches', icon: 'church', label: 'Iglesias', visible: isSuperAdmin },
+        { path: '/dashboard', icon: 'dashboard', label: t('nav.dashboard'), permission: null },
+        { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), visible: isSuperAdmin },
         { path: `/mainhub/churches/edit/${user?.churchId}`, icon: 'church', label: 'Mi Iglesia', visible: !isSuperAdmin && !isMaster && !!user?.churchId && hasPermission('church.update') },
-        { path: '/mainhub/pastor', icon: 'auto_graph', label: 'Areas', permission: 'church.update' },
-        { path: '/mainhub/reports', icon: 'analytics', label: 'Reportes', permission: 'reports.view' },
-        { path: '/worship/calendar', icon: 'event', label: 'Calendario', permission: 'calendar.read' },
-        { path: '/worship/playlists', icon: 'queue_music', label: 'Listas', permission: 'calendar.read' },
-        { path: '/worship/songs', icon: 'library_music', label: 'Canciones', permission: 'song.read' },
-        { path: '/mainhub/teams', icon: 'groups', label: 'Equipos', permission: 'team.read' },
-        { path: '/mainhub/people', icon: 'person_search', label: 'Personas', permission: 'church.update' },
+        { path: '/mainhub/pastor', icon: 'auto_graph', label: t('nav.areas'), permission: 'church.update' },
+        { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports'), permission: 'reports.view' },
+        { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'calendar.read' },
+        { path: '/worship/playlists', icon: 'queue_music', label: t('nav.playlists'), permission: 'calendar.read' },
+        { path: '/worship/songs', icon: 'library_music', label: t('nav.songs'), permission: 'song.read' },
+        { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'team.read' },
+        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), visible: isSuperAdmin || isMaster || isPastor || hasPermission('church.update') },
+        { path: '/mainhub/consolidation', icon: 'how_to_reg', label: t('nav.consolidation'), visible: isSuperAdmin || isMaster || isPastor || hasPermission('reunions.view') },
     ];
 
     // Filter items based on user permissions

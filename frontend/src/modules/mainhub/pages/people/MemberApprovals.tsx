@@ -97,14 +97,23 @@ export const MemberApprovals: FC = () => {
         const sel = selections[userId];
         if (!sel) return;
 
-        if (sel.areaIds.length === 0) {
+        const selectedRole = roles.find(r => r.id == sel.roleId);
+        const selectedRoleName = (selectedRole?.name || '').toLowerCase();
+        const isAdminRole = ['pastor', 'admin', 'master', 'superadmin'].includes(selectedRoleName);
+
+        if (!isAdminRole && sel.areaIds.length === 0) {
             alert(t('people.mandatoryArea'));
             return;
         }
 
         setProcessingId(userId);
         try {
-            const success = await peopleService.approveUser(userId, sel.roleId, sel.teamIds, sel.areaIds);
+            const success = await peopleService.approveUser(
+                userId,
+                sel.roleId,
+                isAdminRole ? [] : sel.teamIds,
+                isAdminRole ? [] : sel.areaIds
+            );
             if (success) {
                 setPendingUsers(prev => prev.filter(u => u.id !== userId));
             } else {
@@ -131,104 +140,114 @@ export const MemberApprovals: FC = () => {
                 </Card>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {pendingUsers.map(u => (
-                        <Card key={u.id} style={{ padding: '20px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                                <div>
-                                    <h3 className="text-card-title" style={{ fontSize: '18px' }}>{u.name}</h3>
-                                    <p className="text-body-secondary" style={{ fontSize: '14px' }}>{u.email}</p>
-                                </div>
-                                <Button
-                                    variant="primary"
-                                    label={processingId === u.id ? t('people.approving') : t('people.moderation.approve')}
-                                    disabled={processingId !== null}
-                                    onClick={() => handleApprove(u.id)}
-                                />
-                            </div>
+                    {pendingUsers.map(u => {
+                        const selectedRole = roles.find(r => r.id == (selections[u.id]?.roleId));
+                        const selectedRoleName = (selectedRole?.name || '').toLowerCase();
+                        const isAdminRole = ['pastor', 'admin', 'master', 'superadmin'].includes(selectedRoleName);
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                                <div>
-                                    <label className="text-overline" style={{ display: 'block', marginBottom: '8px' }}>
-                                        {t('people.moderation.selectRole')}
-                                    </label>
-                                    <select
-                                        value={selections[u.id]?.roleId}
-                                        onChange={e => handleRoleChange(u.id, parseInt(e.target.value))}
-                                        className="w-full"
-                                    >
-                                        {roles.map(r => (
-                                            <option key={r.id} value={r.id}>{r.displayName}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-overline" style={{ display: 'block', marginBottom: '8px' }}>
-                                        {t('people.moderation.selectTeams')}
-                                    </label>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                        {groups.map(g => (
-                                            <button
-                                                key={g.id}
-                                                onClick={() => toggleTeam(u.id, g.id)}
-                                                style={{
-                                                    padding: '8px 16px',
-                                                    borderRadius: '20px',
-                                                    fontSize: '11px',
-                                                    fontWeight: 600,
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s',
-                                                    border: '1px solid var(--color-border-subtle)',
-                                                    backgroundColor: selections[u.id]?.teamIds.includes(g.id)
-                                                        ? 'var(--color-brand-blue)'
-                                                        : 'var(--color-ui-bg)',
-                                                    color: selections[u.id]?.teamIds.includes(g.id)
-                                                        ? 'white'
-                                                        : 'var(--color-ui-text)'
-                                                }}
-                                            >
-                                                {g.name}
-                                            </button>
-                                        ))}
+                        return (
+                            <Card key={u.id} style={{ padding: '20px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                                    <div>
+                                        <h3 className="text-card-title" style={{ fontSize: '18px' }}>{u.name}</h3>
+                                        <p className="text-body-secondary" style={{ fontSize: '14px' }}>{u.email}</p>
                                     </div>
+                                    <Button
+                                        variant="primary"
+                                        label={processingId === u.id ? t('people.approving') : t('people.moderation.approve')}
+                                        disabled={processingId !== null}
+                                        onClick={() => handleApprove(u.id)}
+                                    />
                                 </div>
-                            </div>
 
-                            <div style={{ marginTop: '20px' }}>
-                                <label className="text-overline" style={{ display: 'block', marginBottom: '8px' }}>
-                                    {t('people.mandatoryAreaLabel')}
-                                </label>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                    {areas.map((area) => {
-                                        const areaId = area.id;
-                                        const isSelected = selections[u.id]?.areaIds.includes(areaId);
-                                        return (
-                                            <button
-                                                key={areaId}
-                                                onClick={() => toggleArea(u.id, areaId)}
-                                                style={{
-                                                    padding: '8px 16px',
-                                                    borderRadius: '20px',
-                                                    fontSize: '12px',
-                                                    fontWeight: 600,
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s',
-                                                    border: '1px solid var(--color-border-subtle)',
-                                                    backgroundColor: isSelected
-                                                        ? '#10B981'
-                                                        : 'var(--color-ui-bg)',
-                                                    color: isSelected
-                                                        ? 'white'
-                                                        : 'var(--color-ui-text)'
-                                                }}
-                                            >
-                                                {area.name}
-                                            </button>
-                                        );
-                                    })}
+                                <div style={{ display: 'grid', gridTemplateColumns: isAdminRole ? '1fr' : '1fr 1fr', gap: '24px' }}>
+                                    <div>
+                                        <label className="text-overline" style={{ display: 'block', marginBottom: '8px' }}>
+                                            {t('people.moderation.selectRole')}
+                                        </label>
+                                        <select
+                                            value={selections[u.id]?.roleId}
+                                            onChange={e => handleRoleChange(u.id, parseInt(e.target.value))}
+                                            className="w-full"
+                                        >
+                                            {roles.map(r => (
+                                                <option key={r.id} value={r.id}>{r.displayName}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    {!isAdminRole && (
+                                        <div>
+                                            <label className="text-overline" style={{ display: 'block', marginBottom: '8px' }}>
+                                                {t('people.moderation.selectTeams')}
+                                            </label>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                {groups.map(g => (
+                                                    <button
+                                                        key={g.id}
+                                                        onClick={() => toggleTeam(u.id, g.id)}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            borderRadius: '20px',
+                                                            fontSize: '11px',
+                                                            fontWeight: 600,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                            border: '1px solid var(--color-border-subtle)',
+                                                            backgroundColor: selections[u.id]?.teamIds.includes(g.id)
+                                                                ? 'var(--color-brand-blue)'
+                                                                : 'var(--color-ui-bg)',
+                                                            color: selections[u.id]?.teamIds.includes(g.id)
+                                                                ? 'white'
+                                                                : 'var(--color-ui-text)'
+                                                        }}
+                                                    >
+                                                        {g.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        </Card>
-                    ))}
+
+                                {!isAdminRole && (
+                                    <div style={{ marginTop: '20px' }}>
+                                        <label className="text-overline" style={{ display: 'block', marginBottom: '8px' }}>
+                                            {t('people.mandatoryAreaLabel')}
+                                        </label>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                            {areas.map((area) => {
+                                                const areaId = area.id;
+                                                const isSelected = selections[u.id]?.areaIds.includes(areaId);
+                                                return (
+                                                    <button
+                                                        key={areaId}
+                                                        onClick={() => toggleArea(u.id, areaId)}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            borderRadius: '20px',
+                                                            fontSize: '12px',
+                                                            fontWeight: 600,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                            border: '1px solid var(--color-border-subtle)',
+                                                            backgroundColor: isSelected
+                                                                ? '#10B981'
+                                                                : 'var(--color-ui-bg)',
+                                                            color: isSelected
+                                                                ? 'white'
+                                                                : 'var(--color-ui-text)'
+                                                        }}
+                                                    >
+                                                        {area.name}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+                            </Card>
+                        );
+                    })}
                 </div>
             )}
         </div>

@@ -30,8 +30,8 @@ export const AuthService = {
         return response.data;
     },
 
-    async updateSettings(theme: string, language: string): Promise<any> {
-        const response = await api.post('/auth/update_settings', { theme, language });
+    async updateSettings(data: any): Promise<any> {
+        const response = await api.post('/settings/update-user-settings', data);
         return response.data;
     },
 

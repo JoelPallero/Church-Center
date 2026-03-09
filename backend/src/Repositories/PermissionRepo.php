@@ -25,6 +25,18 @@ class PermissionRepo
             return $stmt->fetchAll(PDO::FETCH_COLUMN);
         }
 
+        // 1.1 Check if pastor (church-level admin)
+        $stmt = $db->prepare("
+            SELECT 1 FROM user_service_roles usr
+            JOIN roles r ON usr.role_id = r.id
+            WHERE usr.member_id = ? AND r.name = 'pastor'
+        ");
+        $stmt->execute([$memberId]);
+        if ($stmt->fetch()) {
+            $stmt = $db->query("SELECT name FROM permissions");
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        }
+
         // 2. Regular permissions from service roles
         $sql = "
             SELECT DISTINCT p.name 

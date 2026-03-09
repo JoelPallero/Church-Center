@@ -24,7 +24,7 @@ export const Settings: FC = () => {
         try {
             await i18n.changeLanguage(lang);
             if (user) {
-                await AuthService.updateSettings(theme, lang);
+                await AuthService.updateSettings({ language: lang });
             }
         } finally {
             setIsSaving(false);
@@ -36,7 +36,7 @@ export const Settings: FC = () => {
         try {
             setTheme(newTheme);
             if (user) {
-                await AuthService.updateSettings(newTheme, i18n.language);
+                await AuthService.updateSettings({ theme: newTheme });
             }
         } finally {
             setIsSaving(false);
@@ -172,6 +172,7 @@ export const Settings: FC = () => {
                             onClick={() => addToast('Próximamente: Configuración de notificaciones push y email.', 'info')}
                         />
                     </section>
+
                 </div>
 
                 {/* Column 2: Management & Help */}

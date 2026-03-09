@@ -29,6 +29,14 @@ class BootstrapController
 
         $serviceKeys = array_values(array_unique(array_map(fn($r) => $r['service_key'], $serviceRoles)));
 
+        // Pastors should have access to all services by default
+        if (in_array('pastor', $roles)) {
+            $serviceKeys[] = 'worship';
+            $serviceKeys[] = 'social';
+            // Add other modules as they are created
+        }
+        $serviceKeys = array_values(array_unique($serviceKeys));
+
         return Response::json([
             'success' => true,
             'data' => [

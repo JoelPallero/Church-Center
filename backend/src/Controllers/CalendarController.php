@@ -66,8 +66,11 @@ class CalendarController
             $churchId = $member['church_id'] ?? null;
         }
 
-        if (!$churchId) {
-            Response::error("Church ID required", 400);
+        $isSuperAdmin = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+
+        if (!$churchId && !$isSuperAdmin) {
+            Response::json(['success' => true, 'instances' => [], 'message' => 'No church selected']);
+            return;
         }
 
         $start = $_GET['start'] ?? null;
@@ -82,8 +85,17 @@ class CalendarController
 
         $meetings = CalendarRepo::getMeetingsByChurch($churchId, $start, $end);
 
-        // Frontend expects 'instances' array for calendar
-        Response::json(['success' => true, 'instances' => $meetings]);
+        Response::json([
+            'success' => true,
+            'instances' => $meetings,
+            'debug' => [
+                'churchId' => $churchId,
+                'isSuperAdmin' => $isSuperAdmin,
+                'memberId' => $memberId,
+                'count' => count($meetings),
+                'filters' => ['start' => $start, 'end' => $end]
+            ]
+        ]);
     }
 
     private function showEvent($id)
