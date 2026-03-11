@@ -142,6 +142,10 @@
     "songs": {
         "title": "Canciones",
         "description": "Gestiona el repertorio.",
+        "basicInfo": "Información Básica",
+        "technical": "Detalles Técnicos",
+        "multimedia": "Recursos Multimedia",
+        "backToLibrary": "Volver a la Biblioteca",
         "search": "Buscar canción...",
         "key": "Tono",
         "transpose": "Transponer",

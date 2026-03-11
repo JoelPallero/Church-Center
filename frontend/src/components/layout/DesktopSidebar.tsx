@@ -7,10 +7,10 @@ import { useAuth } from '../../hooks/useAuth';
 export const DesktopSidebar: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { canAccess, logout, user, isSuperAdmin } = useAuth();
-    const isPastor = user?.role?.name?.toLowerCase() === 'pastor';
-    const isLeader = user?.role?.name?.toLowerCase() === 'leader' || user?.role?.name?.toLowerCase() === 'coordinator';
-    const isMember = user?.role?.name?.toLowerCase() === 'member';
+    const { canAccess, logout, isSuperAdmin, hasRole } = useAuth();
+    const isPastor = hasRole('pastor');
+    const isLeader = hasRole('leader') || hasRole('coordinator');
+    const isMember = hasRole('member');
 
     const menuItems = [
         { path: '/dashboard', icon: 'dashboard', label: (isPastor || isSuperAdmin || isLeader) ? 'Dashboard' : t('nav.home') },

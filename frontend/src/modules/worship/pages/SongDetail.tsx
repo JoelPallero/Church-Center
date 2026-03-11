@@ -31,11 +31,14 @@ export const SongDetail: FC = () => {
         const hasSeenFullTour = localStorage.getItem('tutorial_seen_worship_master');
         if (hasSeenFullTour === 'true') return;
 
+        if (hasRole('master')) return;
+
         const isLeader = hasRole('leader');
         const isCoordinator = hasRole('coordinator');
+        const isPastor = hasRole('pastor');
         const isPraiseMember = hasService('worship');
 
-        if (isLeader || isCoordinator || isPraiseMember) {
+        if (isLeader || isCoordinator || isPastor || isPraiseMember) {
             // Stage 2: Detail
             localStorage.setItem('worship_tour_stage', 'detail');
             startTutorial('worship_detail');
@@ -309,20 +312,23 @@ export const SongDetail: FC = () => {
                 {/* Column 2: The Sheet */}
                 <Card className="sheet-container" style={{ padding: isMobile ? '16px' : '32px', minHeight: '600px', borderRadius: '24px', position: 'relative' }}>
                     {isMobile && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '12px',
-                            right: '12px',
-                            zIndex: 10,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            backgroundColor: 'var(--color-ui-surface)',
-                            padding: '4px',
-                            borderRadius: '12px',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                            border: '1px solid var(--color-border-subtle)'
-                        }}>
+                        <div 
+                            id="song-fontsize-controls"
+                            style={{
+                                position: 'absolute',
+                                top: '12px',
+                                right: '12px',
+                                zIndex: 10,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                backgroundColor: 'var(--color-ui-surface)',
+                                padding: '4px',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                border: '1px solid var(--color-border-subtle)'
+                            }}
+                        >
                             <Button variant="ghost" onClick={() => setFontSize(s => Math.max(10, s - 2))} style={{ width: '30px', height: '30px', minWidth: 'auto', padding: 0 }} icon="remove" />
                             <span style={{ fontSize: '11px', fontWeight: 800, width: '20px', textAlign: 'center' }}>{fontSize}</span>
                             <Button variant="ghost" onClick={() => setFontSize(s => Math.min(30, s + 2))} style={{ width: '30px', height: '30px', minWidth: 'auto', padding: 0 }} icon="add" />

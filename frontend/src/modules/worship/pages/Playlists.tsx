@@ -25,8 +25,8 @@ export const Playlists: FC = () => {
     const [loading, setLoading] = useState(true);
 
     const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
-    const isPastor = user?.role?.name === 'pastor' || hasRole('pastor');
-    const isLeader = user?.role?.name === 'leader' || hasRole('leader') || user?.role?.name === 'coordinator' || hasRole('coordinator');
+    const isPastor = hasRole('pastor');
+    const isLeader = hasRole('leader') || hasRole('coordinator');
     const profileChurchId = user?.churchId;
     const finalChurchId = churchId || profileChurchId;
 

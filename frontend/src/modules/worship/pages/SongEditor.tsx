@@ -54,11 +54,14 @@ export const SongEditor: FC = () => {
         const hasSeenFullTour = localStorage.getItem('tutorial_seen_worship_master');
         if (hasSeenFullTour === 'true') return;
 
+        if (isMaster) return;
+
         const isLeader = hasRole('leader');
         const isCoordinator = hasRole('coordinator');
+        const isPastor = hasRole('pastor');
         const isPraiseMember = hasService('worship');
 
-        if (isLeader || isCoordinator || isPraiseMember) {
+        if (isLeader || isCoordinator || isPastor || isPraiseMember) {
             // Stage 3: Editor
             localStorage.setItem('worship_tour_stage', 'editor');
             startTutorial('worship_editor');
@@ -73,7 +76,7 @@ export const SongEditor: FC = () => {
     const [previewViewMode] = useState<'american' | 'spanish'>('american');
 
     const churchIdFromUrl = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
-    const isPastor = user?.role?.name === 'pastor';
+    const isPastor = hasRole('pastor');
     const finalChurchId = churchIdFromUrl || user?.churchId;
 
     useEffect(() => {
@@ -252,12 +255,12 @@ export const SongEditor: FC = () => {
                     }
                 }
             `}</style>
-            <header style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
+            <header style={{ marginBottom: '32px' }}>
+                <div style={{ marginBottom: '16px' }}>
                     <Button variant="ghost" icon="arrow_back" label={t('common.back') || 'Volver'} onClick={() => navigate(-1)} style={{ marginBottom: '8px', padding: 0 }} />
                     <h1 className="text-h1">{isEditing ? t('songs.edit') : t('songs.add')}</h1>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
                     <Button variant="secondary" label="Cancelar" onClick={() => navigate('/worship/songs')} />
                     <Button id="btn-save-song" variant="primary" label={loading ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Crear Canción')} onClick={handleSave} disabled={loading} />
                 </div>

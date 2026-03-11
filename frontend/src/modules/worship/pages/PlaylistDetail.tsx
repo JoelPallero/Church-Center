@@ -16,7 +16,7 @@ export const PlaylistDetail: FC = () => {
     const { id } = useParams<{ id: string }>();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { user, isMaster } = useAuth();
+    const { user, isMaster, hasRole } = useAuth();
     const { addToast } = useToast();
     const [playlist, setPlaylist] = useState<Playlist | null>(null);
     const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export const PlaylistDetail: FC = () => {
     };
 
     const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
-    const isPastor = user?.role?.name === 'pastor';
+    const isPastor = hasRole('pastor');
     const finalChurchId = churchId || user?.churchId;
 
     const reloadPlaylist = async () => {

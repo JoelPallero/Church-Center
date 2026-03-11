@@ -34,15 +34,17 @@ export const SongList: FC = () => {
         const hasSeenFullTour = localStorage.getItem('tutorial_seen_worship_master');
         if (hasSeenFullTour === 'true') return;
 
-        // Roles: Leader, Coordinator, or Anyone in Praise
+        // Excluir Super Admin
+        if (hasRole('master')) return;
+
         const isLeader = hasRole('leader');
         const isCoordinator = hasRole('coordinator');
+        const isPastor = hasRole('pastor');
         const isPraiseMember = hasService('worship');
 
-        if (isLeader || isCoordinator || isPraiseMember) {
+        if (isLeader || isCoordinator || isPastor || isPraiseMember) {
             const stage = localStorage.getItem('worship_tour_stage') || 'list';
             if (stage === 'list') {
-                // We are in the library, start part 1
                 startTutorial('worship_list');
             }
         }

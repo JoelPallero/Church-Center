@@ -192,9 +192,11 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
     }, [isLocalhost, loadBootstrap]);
 
     const canAccess = useCallback((identifier: string) => {
-        const primaryRole = impersonatedRole?.name || roles[0];
-        return canAccessGlobal(primaryRole, identifier);
-    }, [roles, impersonatedRole]);
+        if (isSuperAdmin) return true;
+        if (impersonatedRole) return canAccessGlobal(impersonatedRole.name, identifier);
+        // Multi-role support: if any of the user's roles has access, return true
+        return roles.some(role => canAccessGlobal(role, identifier));
+    }, [roles, impersonatedRole, isSuperAdmin]);
 
     const hasPermission = useCallback((permission: string) => {
         if (isSuperAdmin) return true;

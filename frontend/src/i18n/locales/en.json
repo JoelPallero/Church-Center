@@ -142,6 +142,10 @@
     "songs": {
         "title": "Songs",
         "description": "Manage the repertoire.",
+        "basicInfo": "Basic Information",
+        "technical": "Technical Details",
+        "multimedia": "Multimedia Resources",
+        "backToLibrary": "Back to Library",
         "search": "Search song...",
         "key": "Key",
         "transpose": "Transpose",

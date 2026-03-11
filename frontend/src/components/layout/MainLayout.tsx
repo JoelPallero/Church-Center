@@ -9,12 +9,12 @@ import { DesktopSidebar } from './DesktopSidebar';
 
 export const MainLayout: FC = () => {
     const { t } = useTranslation();
-    const { logout, user, hasPermission, isSuperAdmin, isMaster, canAccess } = useAuth();
+    const { logout, user, hasPermission, isSuperAdmin, isMaster, canAccess, hasRole } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const isPastor = user?.role?.name?.toLowerCase() === 'pastor';
-    const isLeader = user?.role?.name?.toLowerCase() === 'leader' || user?.role?.name?.toLowerCase() === 'coordinator';
-    const isMember = user?.role?.name?.toLowerCase() === 'member';
+    const isPastor = hasRole('pastor');
+    const isLeader = hasRole('leader') || hasRole('coordinator');
+    const isMember = hasRole('member');
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
 
