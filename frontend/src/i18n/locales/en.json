@@ -1,34 +1,32 @@
 {
     "common": {
-        "loading": "Loading...",
-        "error": "An error occurred",
-        "save": "Save",
+        "login": "Sign In",
+        "register": "Register",
         "cancel": "Cancel",
-        "back": "Back",
-        "add": "Add",
-        "delete": "Delete",
-        "edit": "Edit",
-        "confirm": "Confirm",
-        "actions": "Actions",
-        "deletePermanently": "DELETE PERMANENTLY",
-        "deactivate": "deactivate",
+        "save": "Save",
         "ok": "OK",
         "yes": "Yes",
         "no": "No",
-        "pastoralHub": "Pastoral Hub",
-        "ministryHub": "Ministry Hub",
-        "soundHub": "Sound Hub",
-        "multimediaHub": "Multimedia Hub",
-        "diaconosHub": "Diaconos Hub",
-        "socialMediaHub": "Social Media",
-        "churchCenter": "Church Center",
+        "edit": "Edit",
+        "deletePermanently": "DELETE PERMANENTLY",
+        "deactivate": "deactivate",
+        "delete": "Delete",
+        "back": "Back",
+        "add": "Add",
+        "confirm": "Confirm",
+        "actions": "Actions",
+        "loading": "Loading...",
+        "reset": "Reset",
+        "preview": "Preview",
+        "church": "Church",
+        "all": "All",
+        "general": "General",
+        "privacy": "Privacy",
         "individual": "Individual",
         "bulk": "Bulk",
         "sending": "Sending...",
         "failed": "Operation failed",
         "error_unexpected": "Unexpected error",
-        "general": "General",
-        "all": "All",
         "saveChanges": "Save Changes",
         "configure": "Configure",
         "connectionError": "Connection error.",
@@ -36,7 +34,15 @@
         "lastName": "Last Name",
         "sex": "Sex",
         "male": "Male",
-        "female": "Female"
+        "female": "Female",
+        "pastoralHub": "Pastoral Hub",
+        "ministryHub": "Ministry Hub",
+        "soundHub": "Sound Hub",
+        "multimediaHub": "Multimedia Hub",
+        "diaconosHub": "Deacons Hub",
+        "socialMediaHub": "Social Media",
+        "churchCenter": "Service Manager",
+        "selectChurch": "Select a church"
     },
     "worship": {
         "welcome": "Welcome to the worship center."
@@ -54,22 +60,30 @@
         "playlists": "Setlists",
         "areas": "Areas",
         "churches": "Churches",
-        "settings": "Settings",
-        "privacy": "Privacy & Support"
+        "settings": "Control Panel",
+        "privacy": "Privacy & Support",
+        "consolidation": "Consolidation"
     },
     "people": {
         "title": "People",
-        "description": "Manage your team members list.",
+        "description": "List of your team members.",
+        "invite_success": "Invitation sent successfully.",
+        "invite_error": "Error sending invitation.",
+        "invite_error_no_church": "Please, select a church.",
+        "invite_description": "Send an email invitation to join the team.",
+        "invite_error_no_emails": "Please, enter at least one valid email.",
+        "invite_bulk_success": "Sent {{count}} invitations successfully.",
+        "invite_bulk_error": "Could not send any invitations.",
+        "bulk_invite_notice": "Bulk invitations will be sent with the \"Member\" role by default.",
         "search": "Search people...",
         "searchPlaceholder": "Search members...",
         "role": "Role",
-        "status": "Status",
+        "status": {
+            "pending": "Pending",
+            "accepted": "Accepted (Unassigned)",
+            "active": "Active (Assigned)"
+        },
         "invite": "Invite",
-        "pending": "Pending",
-        "approved": "Approved",
-        "active": "Active",
-        "inactive": "Inactive",
-        "filter": "Filter by role",
         "approvals": "Requests",
         "worshipTeamDesc": "Worship team members.",
         "generalMembersDesc": "General list of members and users.",
@@ -87,10 +101,15 @@
         "selectTeam": "Select Team",
         "noRole": "No Role",
         "guest": "Guest",
+        "mandatoryArea": "You must select at least one area.",
+        "approvalError": "Error approving user.",
+        "approving": "Approving...",
         "mandatoryAreaLabel": "Areas (Required)",
         "teamBasedOnArea": "Team (Based on main area)",
         "instruments": "Instruments",
         "confirmDeleteProfile": "Are you sure you want to PERMANENTLY DELETE this profile?\n\nThis action will delete all associated records and cannot be undone.",
+        "inactive": "Inactive",
+        "filter": "Filter by role",
         "roles": {
             "master": "Master",
             "pastor": "Pastor",
@@ -100,27 +119,19 @@
             "multimedia": "Multimedia"
         },
         "moderation": {
-            "title": "Membership Requests",
-            "desc": "Approve or reject requests to join your church.",
-            "empty": "No pending requests.",
-            "approve": "Approve",
-            "reject": "Reject",
-            "proposedBy": "Proposed by: {{name}} • {{date}}",
-            "currentVersion": "Current Version",
-            "proposedVersion": "Proposal",
-            "keyChange": "Key Change: {{from}} → {{to}}",
-            "tempoChange": "Tempo Change: {{from}} → {{to}} BPM",
-            "rejectionReason": "Enter rejection reason:",
-            "approveConfirm": "Are you sure you want to approve these changes? They will be applied immediately.",
+            "title": "Member Approval",
+            "subtitle": "Authorize new members to access the system.",
+            "empty": "No pending approval requests.",
+            "approve": "Approve Member",
             "selectRole": "Assign Role",
             "selectTeams": "Assign Teams (Optional)",
             "success": "User approved successfully.",
-            "pendingApproval": "Your membership request is pending approval from the church administrator.",
+            "pendingApproval": "Your account is pending approval by an administrator.",
             "invite_description": "Send an email invitation to join the team.",
             "invite_success": "Invitation sent successfully.",
             "invite_error": "Error sending invitation.",
-            "invite_error_no_emails": "Please enter at least one valid email.",
-            "invite_bulk_success": "{{count}} invitations sent successfully.",
+            "invite_error_no_emails": "Please, enter at least one valid email.",
+            "invite_bulk_success": "Sent {{count}} invitations successfully.",
             "invite_bulk_error": "Could not send any invitations.",
             "bulk_invite_notice": "Bulk invitations will be sent with the \"Member\" role by default.",
             "confirmDeleteInvitation": "Are you sure you want to delete the invitation for {{name}}?",
@@ -131,7 +142,7 @@
     "songs": {
         "title": "Songs",
         "description": "Manage the repertoire.",
-        "search": "Search songs...",
+        "search": "Search song...",
         "key": "Key",
         "transpose": "Transpose",
         "add": "New Song",
@@ -143,7 +154,7 @@
         "original": "Original",
         "singer": "Singer / Leader",
         "tempo": "TEMPO",
-        "time": "TIME",
+        "time": "TIME SIGNATURE",
         "titleLabel": "Song Title",
         "artistLabel": "Artist",
         "titlePlaceholder": "e.g. Amazing Grace",
@@ -158,23 +169,23 @@
         "contentPlaceholder": "[G]Amazing [D]Grace, how [G]sweet...",
         "previewPlaceholder": "Preview will appear here...",
         "saveSuccess": "Changes saved successfully.",
-        "submitApprovalSuccess": "Your changes have been submitted for review by a leader.",
+        "submitApprovalSuccess": "Your changes have been submitted for review by a Leader.",
         "moderation": {
             "title": "Change Moderation",
             "subtitle": "Review and authorize proposed edits from contributors.",
-            "empty": "No pending edits for review.",
+            "empty": "No items pending review.",
             "approve": "Approve Changes",
             "reject": "Reject",
             "proposedBy": "Proposed by: {{name}} • {{date}}",
             "currentVersion": "Current Version",
-            "proposedVersion": "Proposal",
+            "proposedVersion": "Proposed",
             "keyChange": "Key Change: {{from}} → {{to}}",
             "tempoChange": "Tempo Change: {{from}} → {{to}} BPM",
             "rejectionReason": "Enter rejection reason:",
             "approveConfirm": "Are you sure you want to approve these changes? They will be applied immediately."
         },
         "dashboard": {
-            "pendingEdits": "You have {{count}} pending edits"
+            "pendingEdits": "You have {{count}} pending changes"
         }
     },
     "reunions": {
@@ -189,9 +200,16 @@
         "service_order": "Service Order",
         "viewList": "List",
         "viewCalendar": "Calendar",
+        "viewGrid": "Grid",
+        "viewMonth": "Month",
         "today": "Today",
-        "newMeeting": "New Meeting",
-        "details": "Meeting Details",
+        "filters": "Filters",
+        "allTypes": "All types",
+        "allCategories": "All categories",
+        "dateRange": "Date range",
+        "advanced": "Advanced",
+        "newMeeting": "New Reunion",
+        "details": "Reunion Details",
         "noMeetings": "No scheduled meetings for this period.",
         "form": {
             "title": "Meeting Title",
@@ -209,7 +227,7 @@
                 "recurrent": "Weekly recurrent"
             },
             "placeholders": {
-                "title": "e.g. Band Rehearsal",
+                "title": "e.g. General Rehearsal",
                 "location": "e.g. Main Auditorium"
             }
         },
@@ -217,9 +235,9 @@
             "recurrent": "RECURRENT",
             "special": "SPECIAL",
             "withTeam": "WITH TEAM",
-            "noTeam": "NO TEAM",
+            "noTeam": "WITHOUT TEAM",
             "withSetlist": "WITH SETLIST",
-            "noSetlist": "NO SETLIST"
+            "noSetlist": "WITHOUT SETLIST"
         },
         "assignedMembers": "{{count}} assigned",
         "songCount": "{{count}} songs"
@@ -240,7 +258,7 @@
         "forgotPassword": "Forgot your password?",
         "name": "Full Name",
         "namePlaceholder": "John Doe",
-        "signInTitle": "Church Center",
+        "signInTitle": "Service Manager",
         "signInSubtitle": "Sign in to continue",
         "signInAction": "Sign In",
         "signingIn": "Signing in...",
@@ -261,11 +279,11 @@
         "newPassword": "NEW PASSWORD",
         "confirmPassword": "CONFIRM PASSWORD",
         "updatePassword": "Update Password",
-        "invalidToken": "Invalid Link",
+        "invalidToken": "Invalid link",
         "invalidTokenDesc": "The recovery token is not present.",
         "passwordsDoNotMatch": "Passwords do not match.",
         "resetError": "There was an error updating the password.",
-        "emails": "Email addresses",
+        "emails": "Emails",
         "emailsPlaceholder": "Enter emails separated by comma or one per line..."
     },
     "dashboard": {
@@ -279,24 +297,26 @@
         "newSong": "New Song",
         "addPerson": "Add Person",
         "nextReunion": "Next Reunion",
+        "personalizeExperience": "Personalize your experience on the platform.",
         "activity": {
             "title": "Recent Activity",
             "loading": "Loading activity...",
-            "empty": "No recorded activity yet.",
+            "empty": "No activity recorded yet.",
             "actions": {
-                "song_create": "{{user}} created a song: {{title}}",
-                "song_update": "{{user}} edited a song",
-                "song_key_assign": "{{user}} assigned a key",
-                "user_register": "{{user}} joined the platform",
-                "user_invite": "{{user}} sent an invitation",
-                "user_invite_accept": "{{user}} accepted the invitation",
-                "user_delete": "A user was deleted",
-                "user_status_update": "A user status was updated",
-                "group_create": "{{user}} created the team: {{name}}",
-                "group_join": "{{user}} joined a team",
-                "meeting_create": "{{user}} scheduled a meeting: {{title}}",
-                "playlist_create": "{{user}} created a new setlist",
-                "unknown": "{{user}} performed an action: {{action}}"
+                "song_created": "{{user}} registered a song: {{title}}",
+                "song_updated": "{{user}} updated song information",
+                "song_key_assigned": "{{user}} assigned a key",
+                "member_registered": "{{user}} registered on the platform",
+                "member_invited": "{{user}} sent an email invitation",
+                "member_invite_accepted": "{{user}} accepted the invitation",
+                "member_approved": "{{user}} authorized {{name}} to join",
+                "member_deleted": "A user profile was deleted",
+                "member_status_updated": "User profile status change",
+                "team_created": "{{user}} created the team: {{name}}",
+                "team_joined": "{{user}} joined a working team",
+                "meeting_created": "{{user} scheduled a new meeting: {{title}}",
+                "playlist_created": "{{user}} generated a new setlist",
+                "unknown": "{{user}} performed the action: {{action}}"
             }
         },
         "admin": {
@@ -309,24 +329,24 @@
             "userControl": "User Control",
             "userControlDesc": "Assignment of roles and global permissions",
             "masterLibrary": "Master Library",
-            "masterLibraryDesc": "CRUD of system songs",
+            "masterLibraryDesc": "Manage system songs",
             "globalSchedules": "Global Schedules",
             "globalSchedulesDesc": "Calendar view by church",
             "configurePermissions": "Configure permissions",
-            "configurePermissionsDesc": "Manage actions allowed by role",
-            "systemSettings": "System Configuration",
+            "configurePermissionsDesc": "Manage allowed actions by role",
+            "systemSettings": "System Settings",
             "systemSettingsDesc": "Interface, language and technical tool adjustments"
         },
         "stats": {
             "totalChurches": "Total Churches",
             "globalMembers": "Global Members",
-            "songsInBase": "Songs in Base",
+            "songsInBase": "Songs in Database",
             "activeMeetings": "Active Meetings"
         },
         "requestSent": "Your request has been sent to the team leaders. We'll notify you when you're accepted.",
         "availableTeams": "Available Teams",
         "loadingTeams": "Loading teams...",
-        "requestJoin": "Request Join",
+        "requestJoin": "Request to Join",
         "requesting": "Requesting...",
         "noDescription": "No description",
         "waitingNotice": "While you wait, you can customize your profile and theme.",
@@ -349,9 +369,9 @@
         "dark": "Dark",
         "light": "Light",
         "edit": "Edit Profile",
-        "edit_data": "Edit details",
+        "edit_data": "Edit data",
         "logout": "Logout",
-        "areas_teams": "Areas & Teams",
+        "areas_teams": "Areas and Teams",
         "assigned_areas": "ASSIGNED AREAS",
         "assigned_groups": "TEAMS / GROUPS",
         "no_areas": "No areas assigned",
@@ -378,8 +398,11 @@
         "adminPermissionsSubtitle": "Configure capabilities by role",
         "adminDebug": "Debug Console",
         "adminDebugSubtitle": "Live logs and errors",
-        "adminDiag": "API Diagnostics",
-        "adminDiagSubtitle": "Verify server status"
+        "adminDiag": "API Diagnosis",
+        "adminDiagSubtitle": "Verify server status",
+        "tutorials": "Tutorials & Guides",
+        "tutorialsActive": "Enabled: Interactive guides will be shown.",
+        "tutorialsInactive": "Disabled: Guides are hidden."
     },
     "notifications": {
         "title": "Notifications",
@@ -434,7 +457,7 @@
     "pastor": {
         "loading": "Loading Church Reports...",
         "title": "Pastoral Reports",
-        "subtitle": "General overview of fulfillment and team activity.",
+        "subtitle": "General overview of compliance and team activity.",
         "stats": {
             "activeTeam": "ACTIVE TEAM",
             "activeMembers": "Participating members",
@@ -448,7 +471,7 @@
             "completed": "COMPLETED",
             "due": "Due: {{date}}",
             "noDueDate": "No date",
-            "empty": "No pending tasks recorded."
+            "empty": "No pending tasks registered."
         },
         "nextMeeting": {
             "title": "Next Meeting: Setlist",
@@ -502,11 +525,24 @@
     "churches": {
         "title": "Churches",
         "new": "New Church",
+        "select": "Select Church",
+        "select_church": "Select Church",
         "search": "Search churches...",
         "noResults": "No churches found.",
         "filters": {
             "upcoming": "Coming soon: Advanced filters by region or status."
-        }
+        },
+        "confirmDeactivate": "Are you sure you want to deactivate the church {{name}}? This action will deactivate all associated users and members in cascade.",
+        "confirmHardDelete": "⚠️ ATTENTION! You are about to permanently delete the church {{name}} and ALL its data (users, calendars, meetings, songs, etc). This action CANNOT be undone. Are you COMPLETELY sure?",
+        "deactivateSuccess": "Church deactivated successfully.",
+        "hardDeleteSuccess": "Church permanently deleted with all its data.",
+        "status": {
+            "active": "Active",
+            "inactive": "Deactivated"
+        },
+        "restore": "Reactivate",
+        "deactivate": "Deactivate",
+        "hardDelete": "Delete Permanently"
     },
     "teams": {
         "configTitle": "Configure Team: {{name}}",
@@ -529,6 +565,99 @@
         "leaderLabel": "Leader: {{name}}",
         "noDescription": "No description",
         "viewMembers": "View Members",
-        "deleteError": "Error deleting team."
+        "deleteError": "Error deleting team.",
+        "noTeamsInChurch": "No teams configured for this church.",
+        "createFirst": "Create first team",
+        "addSuccess": "Team created successfully",
+        "deleteSuccess": "Team deleted successfully",
+        "nameLabel": "Team name",
+        "descLabel": "Description",
+        "inviteMembers": "Invite new people",
+        "updateSuccess": "Team updated successfully.",
+        "updateError": "Error updating team.",
+        "teamInfo": "Team Information",
+        "memberManagement": "Member Management",
+        "noTeamAssigned": "No Team Assigned",
+        "noTeamMessage": "You haven't been assigned as a leader of any team yet. Please contact your Pastor or Coordinator to assign you a team so you can manage your members."
+    },
+    "errors": {
+        "403": {
+            "title": "Restricted access",
+            "message": "You do not have the necessary permissions to view this section. Please contact an administrator."
+        },
+        "404": {
+            "title": "Page not found",
+            "message": "Sorry, the link you followed might be broken or the page was removed."
+        },
+        "500": {
+            "title": "Server error",
+            "message": "Something went wrong on our servers. We are working to fix it."
+        },
+        "503": {
+            "title": "Service under maintenance",
+            "message": "We are performing maintenance tasks to improve your experience. We will be back soon."
+        }
+    },
+    "consolidation": {
+        "title": "Consolidation",
+        "description": "Visitor Tracking and Registration.",
+        "attendance": "Attendance Count",
+        "visitors": "New Visitors",
+        "saveCount": "Save Count",
+        "addVisitor": "Register Visitor",
+        "adults": "Adults",
+        "children": "Children",
+        "total": "Total",
+        "reports": "Consolidation Reports",
+        "consolidated": "Tracking Consolidated",
+        "noVisitors": "No new visitors registered in this meeting.",
+        "weeklyReport": "Weekly Report",
+        "monthlyReport": "Monthly Report",
+        "yearlyReport": "Yearly Report",
+        "visitorForm": {
+            "firstName": "First Name",
+            "lastName": "Last Name",
+            "phone": "WhatsApp",
+            "email": "Email",
+            "notes": "Observations / Prayer Motives",
+            "isFirstTime": "First time"
+        },
+        "followUp": {
+            "title": "Follow-up",
+            "addLog": "New Contact",
+            "date": "Contact Date",
+            "method": "Method",
+            "comments": "Comments",
+            "noLogs": "No contact logs yet."
+        }
+    },
+    "tutorials": {
+        "btn": {
+            "done": "Got it",
+            "next": "Next",
+            "prev": "Previous"
+        },
+        "meetings": {
+            "title": "Meeting Management",
+            "desc": "Here you can view and manage all your church meetings.",
+            "newTitle": "New Meeting",
+            "newDesc": "Click here to schedule a new recurring or special meeting.",
+            "tabsTitle": "Meeting List",
+            "tabsDesc": "Switch to this tab for a detailed list and search for specific meetings."
+        },
+        "songs": {
+            "title": "Song Library",
+            "desc": "Explore and manage your congregation's musical repertoire.",
+            "newTitle": "Create Song",
+            "newDesc": "Add new songs with lyrics, chords and reference videos.",
+            "searchTitle": "Smart Search",
+            "searchDesc": "Find songs by title or artist quickly."
+        },
+        "playlists": {
+            "title": "Song Setlists",
+            "desc": "Organize songs for your meetings and events.",
+            "newTitle": "New Setlist",
+            "newDesc": "Create a new selection of songs for a specific date."
+        }
     }
 }

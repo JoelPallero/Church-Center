@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS instruments;
 
 DROP TABLE IF EXISTS meetings;
+DROP TABLE IF EXISTS meeting_categories;
 DROP TABLE IF EXISTS calendars;
 DROP TABLE IF EXISTS group_members;
 DROP TABLE IF EXISTS groups;
@@ -46,7 +47,7 @@ CREATE TABLE IF NOT EXISTS meeting_visitors (
   id INT AUTO_INCREMENT PRIMARY KEY,
   meeting_id INT NOT NULL,
   first_name VARCHAR(100) NOT NULL,
-  last_name VARCHAR(100) NULL,
+  surname VARCHAR(100) NULL,
   phone VARCHAR(40) NULL,
   email VARCHAR(190) NULL,
   is_first_time TINYINT(1) DEFAULT 1,
@@ -60,6 +61,34 @@ CREATE INDEX IF NOT EXISTS idx_visitor_meeting ON meeting_visitors(meeting_id);
 
 
 
+
+CREATE TABLE IF NOT EXISTS visitors (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  church_id INT NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  surname VARCHAR(100) NULL,
+  whatsapp VARCHAR(40) NULL,
+  email VARCHAR(190) NULL,
+  first_meeting_id INT NULL,
+  prayer_requests TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE CASCADE,
+  FOREIGN KEY (first_meeting_id) REFERENCES meetings(id) ON DELETE SET NULL,
+  UNIQUE KEY uq_visitor_email (church_id, email),
+  UNIQUE KEY uq_visitor_phone (church_id, whatsapp)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS visitor_follow_up (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  visitor_id INT NOT NULL,
+  contact_date DATE NOT NULL,
+  contact_method VARCHAR(100) NULL,
+  comments TEXT NULL,
+  created_by_member_id INT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (visitor_id) REFERENCES visitors(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by_member_id) REFERENCES member(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* =========================================================
    1) IGLESIAS
@@ -277,6 +306,18 @@ CREATE TABLE calendars (
 CREATE INDEX idx_calendar_church ON calendars(church_id);
 CREATE INDEX idx_calendar_group ON calendars(group_id);
 
+CREATE TABLE IF NOT EXISTS meeting_categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  church_id INT NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  color VARCHAR(20) DEFAULT '#3d68df',
+  icon VARCHAR(50) DEFAULT 'event',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_church_category (church_id, name),
+  INDEX idx_category_church (church_id),
+  FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE meetings (
   id INT AUTO_INCREMENT PRIMARY KEY,
   calendar_id INT NOT NULL,
@@ -381,7 +422,7 @@ CREATE TABLE IF NOT EXISTS invitation_templates (
     template_index INT NOT NULL, -- 0, 1, 2
     is_active TINYINT(1) DEFAULT 0,
     subject VARCHAR(255) NOT NULL,
-    body TEXT NOT NULL,
+    body_html TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_church_template (church_id, template_index),
@@ -443,7 +484,11 @@ INSERT INTO permissions (name, display_name, module, description) VALUES
   ('song.update', 'Editar canciones', 'song', 'Editar canciones'),
   ('song.delete', 'Borrar canciones', 'song', 'Borrar canciones'),
   ('song.approve', 'Aprobar cambios', 'song', 'Permite moderar ediciones de canciones'),
-  ('reports.view', 'Ver estadísticas', 'reports', 'Permite ver reportes y dashboard')
+  ('users.invite', 'Invitar personas', 'person', 'Permite enviar invitaciones'),
+  ('users.approve', 'Aprobar personas', 'person', 'Permite aprobar solicitudes de acceso'),
+  ('users.delete', 'Eliminar personas', 'person', 'Permite eliminar perfiles'),
+  ('reunions.view', 'Ver estadísticas de reuniones', 'reports', 'Permite ver reportes de asistencia'),
+  ('reports.view', 'Ver estadísticas generales', 'reports', 'Permite ver reportes y dashboard')
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 -- Seeds de Instrumentos
@@ -520,10 +565,10 @@ WHERE r.name='pastor'
     'church.read', 'church.update',
     'area.create', 'area.update',
     'team.read', 'team.create', 'team.update', 'team.manage_members',
-    'person.read',
+    'person.read', 'users.invite', 'users.approve', 'users.delete',
     'calendar.read', 'meeting.create', 'meeting.update',
     'song.read', 'song.create', 'song.update', 'song.delete', 'song.approve',
-    'reports.view'
+    'reunions.view', 'reports.view'
   )
 ON DUPLICATE KEY UPDATE role_id=role_id;
 

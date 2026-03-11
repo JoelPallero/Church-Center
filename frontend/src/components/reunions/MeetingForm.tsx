@@ -5,10 +5,33 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../hooks/useAuth';
 
+interface MeetingCategory {
+    id: number;
+    name: string;
+    color?: string;
+    icon?: string;
+}
+
+interface MeetingData {
+    id?: number;
+    title: string;
+    description?: string;
+    meeting_type: 'special' | 'recurrent';
+    location?: string;
+    category?: string;
+    church_id?: number;
+    start_at?: string;
+    end_at?: string;
+    day_of_week?: number;
+    start_time?: string;
+    end_time?: string;
+}
+
 interface MeetingFormProps {
     onSuccess: () => void;
     onCancel: () => void;
     initialChurchId?: number | null;
+    initialData?: MeetingData | null;
 }
 
 interface Church {
@@ -16,41 +39,35 @@ interface Church {
     name: string;
 }
 
-export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initialChurchId }) => {
+export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initialChurchId, initialData }) => {
     const { t } = useTranslation();
     const { isMaster, user } = useAuth();
     const [churches, setChurches] = useState<Church[]>([]);
-    const [customTags, setCustomTags] = useState<string[]>([]);
-    const PREDEFINED_CATEGORIES = [
-        "Reuniones ocasionales",
-        "Cambios de horario",
-        "Reuniones especiales",
-        "Reuniones de equipos",
-        "Ensayos",
-        "Reuniones que no cambian",
-        "Reunión de jóvenes",
-        "Reunión de adolescentes",
-        "Reunión de preadolescentes",
-        "Reunión de mujeres",
-        "Reunión de hombres",
-        "Evento",
-        "Congreso",
-        "Taller"
-    ];
+    const [categories, setCategories] = useState<MeetingCategory[]>([]);
+    const [isAddingTag, setIsAddingTag] = useState(false);
+
+    const isInvalidDate = (dateStr: string | null | undefined) => {
+        if (!dateStr || dateStr.startsWith('0000-00-00')) return true;
+        return isNaN(new Date(dateStr).getTime());
+    };
+
+    const initialDate = (initialData?.start_at && !isInvalidDate(initialData.start_at))
+        ? initialData.start_at.split(' ')[0]
+        : new Date().toISOString().split('T')[0];
 
     const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        meeting_type: 'special' as 'special' | 'recurrent',
-        location: '',
-        category: '',
-        custom_category: '', // Temporary field for "Other"
-        church_id: initialChurchId || undefined as number | undefined,
-        date: new Date().toISOString().split('T')[0], // For special meetings
+        title: initialData?.title || '',
+        description: initialData?.description || '',
+        meeting_type: (initialData?.meeting_type || 'special') as 'special' | 'recurrent',
+        location: initialData?.location || '',
+        category: initialData?.category || '',
+        custom_category: '',
+        church_id: initialData?.church_id || initialChurchId || undefined as number | undefined,
+        date: initialDate,
         recurrence: {
-            day_of_week: 0,
-            start_time: '19:00',
-            end_time: '21:00',
+            day_of_week: initialData?.day_of_week || 0,
+            start_time: initialData?.start_time ? initialData.start_time.substring(0, 5) : '19:00',
+            end_time: initialData?.end_time ? initialData.end_time.substring(0, 5) : '21:00',
             timezone: 'America/Argentina/Buenos_Aires'
         }
     });
@@ -73,7 +90,8 @@ export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initial
         if (isMaster) {
             fetchChurches();
         }
-    }, [isMaster]);
+        fetchCategories();
+    }, [isMaster, formData.church_id, initialChurchId, user?.churchId]);
 
     const fetchChurches = async () => {
         try {
@@ -84,12 +102,54 @@ export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initial
             if (response.data.success) {
                 logInteraction('Churches Fetched Successfully', { count: response.data.churches.length });
                 setChurches(response.data.churches);
-            } else {
-                logInteraction('Error Fetching Churches (Success=false)', { message: response.data.message });
             }
         } catch (err) {
-            logInteraction('Exception Fetching Churches', { error: err });
             console.error('Error fetching churches:', err);
+        }
+    };
+
+    const fetchCategories = async () => {
+        const effectiveChurchId = formData.church_id || initialChurchId || user?.churchId;
+        if (!effectiveChurchId) return;
+
+        try {
+            const response = await api.get('/calendar/categories', {
+                params: { church_id: effectiveChurchId }
+            });
+            if (response.data.success) {
+                setCategories(response.data.categories);
+            }
+        } catch (err) {
+            console.error('Error fetching categories:', err);
+        }
+    };
+
+    const handleAddCategory = async () => {
+        const effectiveChurchId = formData.church_id || initialChurchId || user?.churchId;
+        if (!effectiveChurchId || !formData.custom_category.trim()) return;
+
+        setIsAddingTag(true);
+        try {
+            const response = await api.post('/calendar/categories', {
+                church_id: effectiveChurchId,
+                name: formData.custom_category.trim()
+            });
+
+            if (response.data.success) {
+                const newTag = formData.custom_category.trim();
+                setFormData(prev => ({
+                    ...prev,
+                    category: newTag,
+                    custom_category: ''
+                }));
+                // Re-fetch categories to get the full object (with ID/Color)
+                fetchCategories();
+            }
+        } catch (err) {
+            console.error('Error adding category:', err);
+            alert('Error al guardar el nuevo tag');
+        } finally {
+            setIsAddingTag(false);
         }
     };
 
@@ -111,34 +171,63 @@ export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initial
 
         const finalCategory = formData.category === 'Otros' ? formData.custom_category : formData.category;
 
+        // Ensure times are valid and in 24h format HH:mm
+        const startTime = formData.recurrence.start_time || '19:00';
+        const endTime = formData.recurrence.end_time || '21:00';
+
         setIsSubmitting(true);
         try {
+            // For recurrent meetings, we calculate the next upcoming occurrence 
+            // of the selected day of the week to set as the start_at date.
+            let baseDate = formData.date;
+            if (formData.meeting_type === 'recurrent') {
+                const targetDay = formData.recurrence.day_of_week; // 0-6
+                const now = new Date();
+                const currentDay = now.getDay(); // 0-6
+
+                // Calculate days until next occurrence
+                let daysTill = targetDay - currentDay;
+                if (daysTill < 0) daysTill += 7;
+
+                const nextOccurence = new Date();
+                nextOccurence.setDate(now.getDate() + daysTill);
+                baseDate = nextOccurence.toISOString().split('T')[0];
+            }
+
             const postData = {
                 ...formData,
                 churchId: effectiveChurchId,
                 category: finalCategory,
-                // If it's special, set both start and end dates
-                start_at: formData.meeting_type === 'special' ? `${formData.date} ${formData.recurrence.start_time}:00` : null,
-                end_at: formData.meeting_type === 'special' ? `${formData.date} ${formData.recurrence.end_time}:00` : null
+                start_at: `${baseDate} ${startTime}:00`,
+                end_at: `${baseDate} ${endTime}:00`,
+                // Ensure recurrence times are also correctly set in HH:mm
+                recurrence: {
+                    ...formData.recurrence,
+                    start_time: startTime,
+                    end_time: endTime
+                }
             };
-            console.log('Meeting creation postData:', postData);
-            logInteraction('Sending Post Data', { postData });
-            const response = await api.post('/calendar', postData);
+            console.log('Meeting submission postData:', postData);
+            logInteraction('Sending Submission Data', { postData });
+
+            const response = initialData?.id
+                ? await api.put(`/calendar/${initialData.id}`, postData)
+                : await api.post('/calendar', postData);
 
             if (response.data.success) {
-                logInteraction('Meeting Created Successfully', { response: response.data });
+                logInteraction('Meeting Saved Successfully', { response: response.data });
                 onSuccess();
             } else {
-                logInteraction('Meeting Creation Failed (Success=false)', { response: response.data });
-                alert(response.data.message || 'Error al crear la reunión');
+                logInteraction('Meeting Save Failed (Success=false)', { response: response.data });
+                alert(response.data.message || 'Error al guardar la reunión');
             }
         } catch (err: any) {
-            logInteraction('Exception Creating Meeting', {
+            logInteraction('Exception Saving Meeting', {
                 error: err.message,
                 response: err.response?.data
             });
-            console.error('Error creating meeting:', err);
-            alert(err.response?.data?.message || 'Error de conexión');
+            console.error('Error saving meeting:', err);
+            alert(err.response?.data?.error || err.response?.data?.message || 'Error de conexión');
         } finally {
             setIsSubmitting(false);
         }
@@ -205,13 +294,10 @@ export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initial
                             style={{ flex: 1 }}
                         >
                             <option value="">Sin categoría</option>
-                            {PREDEFINED_CATEGORIES.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
+                            {categories.map(cat => (
+                                <option key={cat.id || cat.name} value={cat.name}>{cat.name}</option>
                             ))}
-                            {customTags.map(tag => (
-                                <option key={tag} value={tag}>{tag}</option>
-                            ))}
-                            <option value="Otros">+ Añadir nuevo tag...</option>
+                            <option value="Otros">+ Añadir nuevo tag permanente...</option>
                         </select>
                     </div>
                     {formData.category === 'Otros' && (
@@ -227,18 +313,10 @@ export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initial
                             />
                             <Button
                                 variant="secondary"
-                                label="Añadir"
-                                onClick={() => {
-                                    if (formData.custom_category.trim()) {
-                                        setCustomTags(prev => [...prev, formData.custom_category.trim()]);
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            category: formData.custom_category.trim(),
-                                            custom_category: ''
-                                        }));
-                                    }
-                                }}
+                                label={isAddingTag ? "Guardando..." : "Guardar Tag"}
+                                onClick={handleAddCategory}
                                 type="button"
+                                disabled={isAddingTag}
                                 style={{ height: '36px' }}
                             />
                         </div>
@@ -332,7 +410,7 @@ export const MeetingForm: FC<MeetingFormProps> = ({ onSuccess, onCancel, initial
             <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                 <Button label={t('common.cancel')} variant="secondary" onClick={onCancel} style={{ flex: 1 }} type="button" />
                 <Button
-                    label={isSubmitting ? t('reunions.form.creating') : t('reunions.form.create')}
+                    label={isSubmitting ? t('reunions.form.creating') : (initialData?.id ? t('common.save') : t('reunions.form.create'))}
                     variant="primary"
                     style={{ flex: 1 }}
                     type="submit"

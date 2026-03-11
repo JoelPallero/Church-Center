@@ -3,6 +3,7 @@ import type { FC, PropsWithChildren } from 'react';
 import { AuthService } from '../services/authService';
 import type { User, Church } from '../types/domain';
 import { MOCK_PROFILES, MOCK_CHURCH } from '../utils/mockData';
+import { canAccess as canAccessGlobal } from '../config/permissionsConfig';
 
 interface AuthContextType {
     user: User | null;
@@ -24,7 +25,10 @@ interface AuthContextType {
     isMockMode: boolean;
     hasPermission: (permission: string) => boolean;
     hasService: (serviceKey: string) => boolean;
+    canAccess: (identifier: string) => boolean;
     hasRole: (roleName: string) => boolean;
+    canManageSongs: boolean;
+    canManagePlaylists: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -187,19 +191,27 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         });
     }, [isLocalhost, loadBootstrap]);
 
+    const canAccess = useCallback((identifier: string) => {
+        const primaryRole = impersonatedRole?.name || roles[0];
+        return canAccessGlobal(primaryRole, identifier);
+    }, [roles, impersonatedRole]);
+
     const hasPermission = useCallback((permission: string) => {
-        if (isSuperAdmin || roles.includes('pastor') || permissions.includes('*')) return true;
-        return permissions.includes(permission);
-    }, [isSuperAdmin, permissions, roles]);
+        if (isSuperAdmin) return true;
+        // Check both matrix AND permission list (for multi-level security)
+        return canAccess(`action.${permission}`) || permissions.includes(permission);
+    }, [isSuperAdmin, permissions, canAccess]);
 
     const hasService = useCallback((serviceKey: string) => {
-        if (isSuperAdmin || roles.includes('pastor') || permissions.includes('*')) return true;
-        return services.includes(serviceKey);
-    }, [isSuperAdmin, services, permissions, roles]);
+        if (isSuperAdmin) return true;
+        // For services, we check the module root in matrix
+        return canAccess(`/${serviceKey}`) || services.includes(serviceKey);
+    }, [isSuperAdmin, services, canAccess]);
 
     const hasRole = useCallback((roleName: string) => {
-        if (isSuperAdmin && roleName === 'superadmin') return true;
-        return roles.includes(roleName);
+        const lowerRole = roleName.toLowerCase();
+        if (isSuperAdmin && lowerRole === 'superadmin') return true;
+        return roles.map(r => r.toLowerCase()).includes(lowerRole);
     }, [isSuperAdmin, roles]);
 
     const currentUser = useMemo((): User | null => {
@@ -211,6 +223,14 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
             isMaster: impersonatedRole.name === 'master' || impersonatedRole.name === 'superadmin'
         };
     }, [user, impersonatedRole]);
+
+    const canManageSongs = useMemo(() => {
+        return canAccess('/worship/songs/edit');
+    }, [canAccess]);
+
+    const canManagePlaylists = useMemo(() => {
+        return canAccess('action.playlist.manage');
+    }, [canAccess]);
 
     return (
         <AuthContext.Provider value={{
@@ -233,7 +253,10 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
             isMockMode,
             hasPermission,
             hasService,
-            hasRole
+            canAccess,
+            hasRole,
+            canManageSongs,
+            canManagePlaylists
         }}>
             {children}
         </AuthContext.Provider>

@@ -9,9 +9,12 @@ import { DesktopSidebar } from './DesktopSidebar';
 
 export const MainLayout: FC = () => {
     const { t } = useTranslation();
-    const { logout, user, hasPermission, isSuperAdmin, isMaster } = useAuth();
+    const { logout, user, hasPermission, isSuperAdmin, isMaster, canAccess } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const isPastor = user?.role?.name?.toLowerCase() === 'pastor';
+    const isLeader = user?.role?.name?.toLowerCase() === 'leader' || user?.role?.name?.toLowerCase() === 'coordinator';
+    const isMember = user?.role?.name?.toLowerCase() === 'member';
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -52,6 +55,12 @@ export const MainLayout: FC = () => {
         }
         if (location.pathname.startsWith('/mainhub/consolidation')) {
             return t('consolidation.title');
+        }
+        if (location.pathname.startsWith('/mainhub/teams')) {
+            return t('nav.teams');
+        }
+        if (location.pathname.startsWith('/mainhub/my-team')) {
+            return 'Mi Equipo';
         }
         if (location.pathname.startsWith('/mainhub')) {
             return t('common.churchCenter');
@@ -199,51 +208,63 @@ export const MainLayout: FC = () => {
                                 <div onClick={() => { navigate('/settings'); setUserMenuOpen(false); }} className="dropdown-item">
                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>settings</span>
                                     <span>Configuraciones</span>
-                                </div>
+                                 </div>
+                                 <div className="dropdown-divider" />
+                                 <div style={{ padding: '8px 16px', fontSize: '11px', fontWeight: 700, color: 'var(--color-ui-text-soft)', textTransform: 'uppercase' }}>
+                                     Navegación
+                                 </div>
+                                 <div onClick={() => { navigate('/dashboard'); setUserMenuOpen(false); }} className="dropdown-item">
+                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>dashboard</span>
+                                     <span>{t('nav.home')}</span>
+                                 </div>
+                                 {[
+                                     { path: '/dashboard', icon: 'dashboard', label: isPastor ? 'Dashboard' : t('nav.home') },
+                                     { path: '/mainhub/reports', icon: 'auto_graph', label: isPastor ? 'Reportes' : 'Estadísticas' },
+                                     { path: '/mainhub/churches', icon: 'church', label: isPastor ? 'Mi Iglesia' : t('nav.churches') },
+                                     { path: '/mainhub/areas', icon: 'layers', label: isPastor ? 'Areas' : t('nav.areas') },
+                                     { path: '/worship/calendar', icon: 'event', label: isPastor ? 'Calendario' : t('nav.calendar') },
+                                      { path: '/worship/playlists', icon: 'queue_music', label: (isPastor || isLeader || isMember) ? 'Listados' : t('nav.playlists') },
+                                      { path: '/worship/songs', icon: 'library_music', label: (isPastor || isSuperAdmin || isLeader || isMember) ? 'Biblioteca' : (isLeader ? 'Canciones' : t('nav.songs')) },
+                                     { path: '/mainhub/teams', icon: 'groups', label: isPastor ? 'Equipos' : t('nav.teams') },
+                                     { path: '/mainhub/people', icon: 'person_search', label: isPastor ? 'Personas' : t('nav.people') },
+                                     { path: '/mainhub/my-team', icon: 'diversity_3', label: 'Mi Equipo' },
+                                     { path: '/mainhub/consolidation', icon: 'how_to_reg', label: t('nav.consolidation') },
+                                 ].filter(item => {
+                                     const allowed = canAccess(item.path);
+                                     if (!allowed) return false;
+                                     
+                                     // For Pastor/Superadmin/Leader, exclude items that are already in the footer
+                                     if (isSuperAdmin) {
+                                         const superadminFooterPaths = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/settings'];
+                                         return !superadminFooterPaths.includes(item.path);
+                                     }
+                                     if (isPastor) {
+                                         const pastorFooterPaths = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/mainhub/areas', '/settings'];
+                                         return !pastorFooterPaths.includes(item.path);
+                                     }
+                                     if (isLeader) {
+                                         const leaderFooterPaths = ['/worship/calendar', '/mainhub/my-team', '/worship/playlists', '/worship/songs', '/settings'];
+                                         return !leaderFooterPaths.includes(item.path);
+                                     }
+                                     
+                                     return true;
+                                 }).map(item => (
+                                     <div key={item.path} onClick={() => { navigate(item.path); setUserMenuOpen(false); }} className="dropdown-item">
+                                         <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{item.icon}</span>
+                                         <span>{item.label}</span>
+                                     </div>
+                                 ))}
 
-                                {(isSuperAdmin || isMaster) && (
-                                    <>
-                                        <div className="dropdown-divider" />
-                                        <div style={{ padding: '8px 16px', fontSize: '11px', fontWeight: 700, color: 'var(--color-ui-text-soft)', textTransform: 'uppercase' }}>
-                                            Navegación
-                                        </div>
-                                        <div onClick={() => { navigate('/worship/calendar'); setUserMenuOpen(false); }} className="dropdown-item">
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>event</span>
-                                            <span>{t('nav.calendar')}</span>
-                                        </div>
-                                        <div onClick={() => { navigate('/worship/playlists'); setUserMenuOpen(false); }} className="dropdown-item">
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>queue_music</span>
-                                            <span>Listados</span>
-                                        </div>
-                                        <div onClick={() => { navigate('/worship/songs'); setUserMenuOpen(false); }} className="dropdown-item">
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>library_music</span>
-                                            <span>{t('songs.title')}</span>
-                                        </div>
-                                        <div onClick={() => { navigate('/mainhub/areas'); setUserMenuOpen(false); }} className="dropdown-item">
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>layers</span>
-                                            <span>{t('nav.areas')}</span>
-                                        </div>
-                                        <div onClick={() => { navigate('/mainhub/teams'); setUserMenuOpen(false); }} className="dropdown-item">
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>groups</span>
-                                            <span>{t('nav.teams')}</span>
-                                        </div>
-                                        <div onClick={() => { navigate('/mainhub/people'); setUserMenuOpen(false); }} className="dropdown-item">
-                                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person_search</span>
-                                            <span>{t('nav.people')}</span>
-                                        </div>
-                                    </>
-                                )}
-
-                                <div className="dropdown-divider" />
-                                <div onClick={() => { handleLogout(); setUserMenuOpen(false); }} className="dropdown-item" style={{ color: 'var(--color-danger-red)', fontWeight: 600 }}>
-                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>logout</span>
-                                    <span>Cerrar Sesión</span>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
-            </div>
+                                 <div className="dropdown-divider" />
+                                 <div onClick={() => { handleLogout(); setUserMenuOpen(false); }} className="dropdown-item" style={{ color: 'var(--color-danger-red)', fontWeight: 600 }}>
+                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>logout</span>
+                                     <span>Cerrar Sesión</span>
+                                 </div>
+                             </div>
+                         )}
+                     </>
+                 )}
+             </div>
 
             <div style={{
                 flex: 1,
@@ -273,7 +294,7 @@ export const MainLayout: FC = () => {
                         }}>
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-ui-text-soft)', fontSize: '12px', marginBottom: '4px' }}>
-                                    <span style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Inico</span>
+                                    <span style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>Inicio</span>
                                     {location.pathname.split('/').filter(Boolean).map((part, i, arr) => (
                                         <span key={part} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>chevron_right</span>

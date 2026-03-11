@@ -297,9 +297,9 @@ export const TeamsList: FC = () => {
         <div>
             <header style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h1 className="text-h1">{isLeader ? t('teams.myTeam') : t('nav.teams')}</h1>
+                    <h1 className="text-h1">{t('nav.teams')}</h1>
                     <p className="text-body" style={{ color: 'gray' }}>
-                        {churchName ? `Iglesia: ${churchName}` : (isLeader ? t('teams.manageMyTeam') : t('teams.manageAllTeams'))}
+                        {churchName ? `Iglesia: ${churchName}` : t('teams.manageAllTeams')}
                     </p>
                 </div>
                 {hasPermission('teams.create') && isAdmin && (

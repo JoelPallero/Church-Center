@@ -36,8 +36,65 @@ class PlaylistController
             }
         } elseif ($method === 'POST') {
             PermissionMiddleware::requireAnyRole($memberId, ['pastor', 'leader', 'coordinator'], $churchId);
-            $this->create($memberId, $churchId, $data);
+            if ($action === 'add-song') {
+                $this->addSong($data);
+            } elseif ($action === 'remove-song') {
+                $this->removeSong($data);
+            } elseif ($action === 'duplicate') {
+                $this->duplicate($data, $memberId);
+            } else {
+                $this->create($memberId, $churchId, $data);
+            }
+        } elseif ($method === 'PUT') {
+            PermissionMiddleware::requireAnyRole($memberId, ['pastor', 'leader', 'coordinator'], $churchId);
+            if (is_numeric($action)) {
+                $this->update($action, $data);
+            }
+        } elseif ($method === 'DELETE') {
+            PermissionMiddleware::requireAnyRole($memberId, ['pastor', 'leader', 'coordinator'], $churchId);
+            if (is_numeric($action)) {
+                $this->delete($action);
+            }
         }
+    }
+
+    private function update($id, $data)
+    {
+        $success = PlaylistRepo::update($id, $data);
+        Response::json(['success' => $success, 'message' => $success ? 'Playlist updated' : 'Failed to update playlist']);
+    }
+
+    private function delete($id)
+    {
+        $success = PlaylistRepo::delete($id);
+        Response::json(['success' => $success, 'message' => $success ? 'Playlist deleted' : 'Failed to delete playlist']);
+    }
+
+    private function addSong($data)
+    {
+        $playlistId = $data['playlistId'] ?? $data['playlist_id'] ?? null;
+        $songId = $data['songId'] ?? $data['song_id'] ?? null;
+        $order = $data['order'] ?? 0;
+
+        if (!$playlistId || !$songId) {
+            Response::error("Playlist ID and Song ID required", 400);
+        }
+
+        $success = PlaylistRepo::addSong($playlistId, $songId, $order);
+        Response::json(['success' => $success]);
+    }
+
+    private function removeSong($data)
+    {
+        $playlistId = $data['playlistId'] ?? $data['playlist_id'] ?? null;
+        $songId = $data['songId'] ?? $data['song_id'] ?? null;
+
+        if (!$playlistId || !$songId) {
+            Response::error("Playlist ID and Song ID required", 400);
+        }
+
+        $success = PlaylistRepo::removeSong($playlistId, $songId);
+        Response::json(['success' => $success]);
     }
 
     private function list($memberId, $churchId = null)
@@ -111,24 +168,72 @@ class PlaylistController
             Response::error("Name and Church ID required", 400);
         }
 
-        $id = PlaylistRepo::create(
-            $churchId,
-            $name,
-            $memberId,
-            $data['description'] ?? '',
-            $data['groupId'] ?? $data['group_id'] ?? null
-        );
+        $meetingIds = $data['meetingIds'] ?? $data['meeting_ids'] ?? [];
+        if (!is_array($meetingIds)) $meetingIds = [$meetingIds];
+        $meetingIds = array_filter($meetingIds);
 
-        if ($id && isset($data['songs']) && is_array($data['songs'])) {
-            foreach ($data['songs'] as $index => $songId) {
-                PlaylistRepo::addSong($id, $songId, $index);
+        $createdIds = [];
+
+        if (empty($meetingIds)) {
+            // Simple creation
+            $id = PlaylistRepo::create($churchId, $name, $memberId, $data['description'] ?? '', $data['groupId'] ?? null);
+            if ($id) {
+                $createdIds[] = $id;
+                $this->addSongsToPlaylist($id, $data['songs'] ?? []);
+            }
+        } else {
+            // Creation for each meeting (with automatic names if provided in data, or mapping logic)
+            foreach ($meetingIds as $mId) {
+                $meetingName = $data['meetingNames'][$mId] ?? $name;
+                $pId = PlaylistRepo::create($churchId, $meetingName, $memberId, $data['description'] ?? '', $data['groupId'] ?? null);
+                if ($pId) {
+                    $createdIds[] = $pId;
+                    $this->addSongsToPlaylist($pId, $data['songs'] ?? []);
+                    PlaylistRepo::assignToMeeting($mId, $pId, $memberId);
+                }
             }
         }
 
-        if ($id) {
-            \App\Repositories\ActivityRepo::log($churchId, $memberId, 'created', 'playlist', $id, ['name' => $name]);
+        if (!empty($createdIds)) {
+            \App\Repositories\ActivityRepo::log($churchId, $memberId, 'created', 'playlist', $createdIds[0], ['count' => count($createdIds)]);
         }
 
-        Response::json(['success' => !!$id, 'id' => $id, 'message' => 'Playlist created']);
+        Response::json(['success' => !empty($createdIds), 'ids' => $createdIds, 'message' => 'Playlist(s) created']);
+    }
+
+    private function addSongsToPlaylist($playlistId, $songs) {
+        if (!is_array($songs)) return;
+        foreach ($songs as $index => $songId) {
+            PlaylistRepo::addSong($playlistId, $songId, $index);
+        }
+    }
+
+    private function duplicate($data, $memberId) {
+        $playlistId = $data['playlistId'] ?? null;
+        $newName = $data['name'] ?? null;
+        $customSongs = $data['songs'] ?? null;
+
+        if (!$playlistId || !$newName) {
+            Response::error("Playlist ID and Name required", 400);
+        }
+
+        $newId = PlaylistRepo::duplicate($playlistId, $newName, $memberId);
+        
+        if ($newId) {
+            // If custom songs provided, replace the ones copied by duplicate()
+            if (is_array($customSongs) && !empty($customSongs)) {
+                // Clear copied songs
+                $db = \App\Database::getInstance('music');
+                $db->prepare("DELETE FROM playlist_songs WHERE playlist_id = ?")->execute([$newId]);
+                // Add new ones
+                $this->addSongsToPlaylist($newId, $customSongs);
+            }
+
+            if (isset($data['meetingId'])) {
+                PlaylistRepo::assignToMeeting($data['meetingId'], $newId, $memberId);
+            }
+        }
+
+        Response::json(['success' => !!$newId, 'id' => $newId]);
     }
 }

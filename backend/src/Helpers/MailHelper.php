@@ -90,4 +90,75 @@ class MailHelper
             return false;
         }
     }
+
+    public static function sendSetlistNotification($leaderName, $meetingData, $songs, $recipients, $churchName = 'Tu Iglesia')
+    {
+        self::init();
+
+        $templatePath = APP_ROOT . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR . 'setlist_assignment.html';
+        if (!file_exists($templatePath)) {
+            Logger::error("MailHelper: Template not found at $templatePath");
+            return false;
+        }
+
+        $baseHtml = file_get_contents($templatePath);
+        $baseUrl = self::$config['APP_URL'] ?? 'https://musicservicemanager.net';
+
+        // Format songs HTML
+        $songsHtml = '';
+        foreach ($songs as $song) {
+            $songsHtml .= '
+            <div class="song-item">
+                <span class="song-key">' . ($song['original_key'] ?? 'N/A') . '</span>
+                <div class="song-title">' . $song['title'] . '</div>
+                <div class="song-artist">' . $song['artist'] . '</div>
+            </div>';
+        }
+
+        // Parse date
+        $date = $meetingData['start_at'] ?? $meetingData['instance_date'] ?? 'N/A';
+        $formattedDate = 'N/A';
+        if ($date !== 'N/A') {
+            try {
+                $dt = new \DateTime($date);
+                $formattedDate = $dt->format('d/m/Y');
+            } catch (\Exception $e) {}
+        }
+
+        $replacements = [
+            '{{CHURCH_NAME}}' => $churchName,
+            '{{LEADER_NAME}}' => $leaderName,
+            '{{MEETING_TITLE}}' => $meetingData['title'] ?? 'Reunión',
+            '{{MEETING_DATE}}' => $formattedDate,
+            '{{MEETING_TIME}}' => $meetingData['start_time'] ?? 'N/A',
+            '{{MEETING_LOCATION}}' => $meetingData['location'] ?? 'Auditorio Principal',
+            '{{SONGS_HTML}}' => $songsHtml,
+            '{{APP_URL}}' => rtrim($baseUrl, '/'),
+            '{{YEAR}}' => date('Y')
+        ];
+
+        $html = $baseHtml;
+        foreach ($replacements as $key => $value) {
+            $html = str_replace($key, $value, $html);
+        }
+
+        $subject = "Nuevo Listado: " . ($meetingData['title'] ?? 'Reunión');
+        $from = self::$config['SMTP_USER'] ?? 'no-replay@musicservicemanager.net';
+
+        $headers = "MIME-Version: 1.0" . "\r\n";
+        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+        $headers .= "From: Church Management <" . $from . ">" . "\r\n";
+
+        $successCount = 0;
+        foreach ($recipients as $recipient) {
+            if (empty($recipient['email'])) continue;
+            
+            if (@mail($recipient['email'], $subject, $html, $headers)) {
+                $successCount++;
+            }
+        }
+
+        Logger::info("MailHelper: Sent $successCount notifications for new setlist.");
+        return $successCount > 0;
+    }
 }

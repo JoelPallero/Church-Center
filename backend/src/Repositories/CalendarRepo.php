@@ -45,13 +45,32 @@ class CalendarRepo
         // Map fields for frontend compatibility
         foreach ($results as &$meeting) {
             // ISO8601 formatting for FullCalendar (YYYY-MM-DDTHH:MM:SS)
-            if ($meeting['start_at']) {
-                $dt = new \DateTime($meeting['start_at']);
-                $meeting['instance_date'] = $dt->format('Y-m-d');
-                $meeting['start_datetime_utc'] = $dt->format('Y-m-d\TH:i:s');
+            // Use a more robust check for valid datetime strings
+            $hasStartAt = !empty($meeting['start_at']) && $meeting['start_at'] !== '0000-00-00 00:00:00' && $meeting['start_at'] !== '0000-00-00';
+
+            if ($hasStartAt && $meeting['meeting_type'] !== 'recurrent') {
+                try {
+                    $dt = new \DateTime($meeting['start_at']);
+                    $meeting['instance_date'] = $dt->format('Y-m-d');
+                    $meeting['start_datetime_utc'] = $dt->format('Y-m-d\TH:i:s');
+                } catch (\Exception $e) {
+                    $meeting['instance_date'] = null;
+                    $meeting['start_datetime_utc'] = null;
+                }
             } else {
                 $meeting['instance_date'] = null;
-                $meeting['start_datetime_utc'] = null;
+                // For recurring meetings, we still keep the start_at in start_datetime_utc 
+                // but instance_date is what the list view uses for the icon.
+                if ($hasStartAt) {
+                    try {
+                        $dt = new \DateTime($meeting['start_at']);
+                        $meeting['start_datetime_utc'] = $dt->format('Y-m-d\TH:i:s');
+                    } catch (\Exception $e) {
+                        $meeting['start_datetime_utc'] = null;
+                    }
+                } else {
+                    $meeting['start_datetime_utc'] = null;
+                }
             }
 
             if ($meeting['end_at']) {
@@ -116,10 +135,12 @@ class CalendarRepo
         $stmt->execute([$meetingId]);
         $setlists = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // We might need to fetch playlist names from Music DB
-        // For now return raw IDs and assigned by info
+        // Fetch playlist names from Music DB
+        $musicDb = Database::getInstance('music');
         foreach ($setlists as &$sl) {
-            $sl['playlist_name'] = "Setlist #" . $sl['playlist_id']; // Placeholder until music DB join
+            $stmtP = $musicDb->prepare("SELECT name FROM playlists WHERE id = ?");
+            $stmtP->execute([$sl['playlist_id']]);
+            $sl['playlist_name'] = $stmtP->fetchColumn() ?: ("Setlist #" . $sl['playlist_id']);
         }
 
         return $setlists;
@@ -164,6 +185,31 @@ class CalendarRepo
         return $stmt->execute([$id]);
     }
 
+    public static function updateMeeting($id, $data)
+    {
+        $db = Database::getInstance();
+        $sql = "UPDATE meetings SET 
+                    title = ?, description = ?, start_at = ?, end_at = ?, 
+                    location = ?, category = ?, meeting_type = ?, 
+                    day_of_week = ?, start_time = ?, end_time = ?
+                WHERE id = ?";
+
+        $stmt = $db->prepare($sql);
+        return $stmt->execute([
+            $data['title'],
+            $data['description'] ?? null,
+            $data['start_at'] ?? null,
+            $data['end_at'] ?? null,
+            $data['location'] ?? null,
+            $data['category'] ?? null,
+            $data['meeting_type'] ?? 'special',
+            $data['day_of_week'] ?? null,
+            $data['start_time'] ?? null,
+            $data['end_time'] ?? null,
+            $id
+        ]);
+    }
+
     public static function assignMember($meetingId, $memberId, $role, $instrumentId = null)
     {
         $db = Database::getInstance();
@@ -188,5 +234,21 @@ class CalendarRepo
             $id = $db->lastInsertId();
         }
         return $id;
+    }
+
+    public static function getCategories($churchId)
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("SELECT * FROM meeting_categories WHERE church_id = ? ORDER BY name ASC");
+        $stmt->execute([$churchId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function createCategory($churchId, $name, $color = '#3d68df', $icon = 'event')
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("INSERT IGNORE INTO meeting_categories (church_id, name, color, icon) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$churchId, $name, $color, $icon]);
+        return $db->lastInsertId() ?: true;
     }
 }

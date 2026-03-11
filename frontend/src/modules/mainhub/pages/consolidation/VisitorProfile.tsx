@@ -22,7 +22,7 @@ export const VisitorProfile: FC = () => {
     const [visitor, setVisitor] = useState<any>(null);
     const [logs, setLogs] = useState<FollowUp[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isModaling, setIsModaling] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [newLog, setNewLog] = useState({
         date: new Date().toISOString().split('T')[0],
         method: 'WhatsApp',
@@ -45,7 +45,7 @@ export const VisitorProfile: FC = () => {
                 setLogs(response.data.logs);
                 // In a real scenario, the backend would return visitor details too
                 // For now we'll mock it if not present
-                setVisitor(response.data.visitor || { first_name: 'Visitante', last_name: '' });
+                setVisitor(response.data.visitor || { first_name: 'Visitante', surname: '' });
             }
         } catch (err) {
             console.error('Error fetching follow-ups:', err);
@@ -62,7 +62,7 @@ export const VisitorProfile: FC = () => {
                 ...newLog
             });
             if (response.data.success) {
-                setIsModaling(false);
+                setIsModalOpen(false);
                 setNewLog({ date: new Date().toISOString().split('T')[0], method: 'WhatsApp', comments: '' });
                 fetchData();
             }
@@ -78,7 +78,7 @@ export const VisitorProfile: FC = () => {
             <Button label={t('common.back')} icon="arrow_back" variant="ghost" onClick={() => navigate(-1)} style={{ marginBottom: '16px' }} />
 
             <Card style={{ padding: '24px', marginBottom: '24px', background: 'linear-gradient(135deg, var(--color-brand-blue-deep), var(--color-brand-blue))', color: 'white' }}>
-                <h1 className="text-h1" style={{ color: 'white', marginBottom: '8px' }}>{visitor?.first_name} {visitor?.last_name}</h1>
+                <h1 className="text-h1" style={{ color: 'white', marginBottom: '8px' }}>{visitor?.first_name} {visitor?.surname}</h1>
                 <div style={{ display: 'flex', gap: '20px', opacity: 0.9 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>call</span>
@@ -101,7 +101,7 @@ export const VisitorProfile: FC = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h2 className="text-h2">{t('consolidation.followUp.title')}</h2>
-                <Button label={t('consolidation.followUp.addLog')} icon="add_comment" variant="secondary" onClick={() => setIsModaling(true)} />
+                <Button label={t('consolidation.followUp.addLog')} icon="add_comment" variant="secondary" onClick={() => setIsModalOpen(true)} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -132,7 +132,7 @@ export const VisitorProfile: FC = () => {
                 )}
             </div>
 
-            <Modal isOpen={isModaling} onClose={() => setIsModaling(false)} title={t('consolidation.followUp.addLog')}>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={t('consolidation.followUp.addLog')}>
                 <form onSubmit={handleAddLog} style={{ display: 'grid', gap: '16px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                         <div className="input-group">
@@ -155,7 +155,7 @@ export const VisitorProfile: FC = () => {
                         <textarea value={newLog.comments} onChange={e => setNewLog({ ...newLog, comments: e.target.value })} rows={4} required placeholder="Describe el resultado del contacto..." style={{ width: '100%', borderRadius: '8px', border: '1px solid var(--color-border-subtle)', background: 'transparent', color: 'inherit', padding: '8px' }} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
-                        <Button label={t('common.cancel')} variant="ghost" onClick={() => setIsModaling(false)} />
+                        <Button label={t('common.cancel')} variant="ghost" onClick={() => setIsModalOpen(false)} />
                         <Button label={t('common.save')} variant="primary" type="submit" />
                     </div>
                 </form>

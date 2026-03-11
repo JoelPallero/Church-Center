@@ -15,7 +15,7 @@ class Database
     private function __construct($configKey = 'main')
     {
         if (self::$cachedEnv === null) {
-            $configPath = APP_ROOT . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'database.env';
+            $configPath = \APP_ROOT . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'database.env';
 
             if (!file_exists($configPath)) {
                 Logger::error("Database Configuration file not found at: " . $configPath);

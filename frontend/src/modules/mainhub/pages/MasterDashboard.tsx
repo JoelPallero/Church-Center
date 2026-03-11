@@ -77,18 +77,13 @@ export const MasterDashboard: FC = () => {
             <ServerStatus />
 
             {/* Stats Grid */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                gap: '12px',
-                marginBottom: '40px'
-            }}>
+            <div className="dashboard-stats-grid">
                 {stats.map(stat => (
-                    <Card key={stat.label} style={{ padding: '24px', textAlign: 'center' }}>
+                    <Card key={stat.label} className="stat-card" style={{ textAlign: 'center' }}>
                         <span className="material-symbols-outlined" style={{ color: stat.color, fontSize: '32px', marginBottom: '12px' }}>
                             {stat.icon}
                         </span>
-                        <h4 className="text-h1" style={{ margin: '0' }}>{stat.value}</h4>
+                        <h4 className="text-h1" style={{ margin: '0', fontSize: 'inherit' }}>{stat.value}</h4>
                         <p className="text-overline" style={{ color: '#6B7280', marginTop: '4px' }}>{stat.label}</p>
                     </Card>
                 ))}

@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Database;
 use PDO;
+use App\Helpers\Logger;
 
 class UserRepo
 {
@@ -115,7 +116,7 @@ class UserRepo
     {
         $db = Database::getInstance();
         $sql = "
-            SELECT m.id, m.church_id, m.name, m.surname, m.email, m.phone, m.status, r.name as role_name, r.display_name as role_display, c.name as church_name
+            SELECT m.id, m.church_id, m.name, m.surname, m.email, m.phone, m.status, usr.role_id, r.name as role_name, r.display_name as role_display, c.name as church_name
             FROM member m
             LEFT JOIN church c ON m.church_id = c.id
             LEFT JOIN services s ON s.key = 'mainhub'
@@ -140,7 +141,7 @@ class UserRepo
             // Standardize role display
             if (isset($u['role_display'])) {
                 $u['role'] = [
-                    'id' => $u['role_id'] ?? null,
+                    'id' => (int)($u['role_id'] ?? 0),
                     'name' => $u['role_name'],
                     'displayName' => $u['role_display']
                 ];
@@ -203,7 +204,23 @@ class UserRepo
         $member = self::getMemberData($memberId);
         if (!$member)
             return false;
-        return self::assignRole($memberId, $member['church_id'], $roleId, 'mainhub');
+
+        $churchId = $member['church_id'] ?? null;
+        if ($churchId === null) {
+            // Check if it's a global role like 'superadmin'
+            $db = Database::getInstance();
+            $stmt = $db->prepare("SELECT name FROM roles WHERE id = ?");
+            $stmt->execute([(int)$roleId]);
+            $roleName = $stmt->fetchColumn();
+            if ($roleName === 'superadmin') {
+                return $db->prepare("INSERT INTO user_global_roles (member_id, role_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE role_id = role_id")
+                    ->execute([$memberId, $roleId]);
+            }
+            Logger::warning("UserRepo::updateMemberRole - Cannot assign church-level role without church_id for MemberID: $memberId");
+            return false;
+        }
+
+        return self::assignRole($memberId, $churchId, $roleId, 'mainhub');
     }
 
     public static function hardDelete($memberId)
@@ -236,6 +253,8 @@ class UserRepo
         $fields = [];
         $params = [];
 
+        Logger::info("UserRepo::updateProfile starting for MemberID: $memberId", ['data' => $data]);
+
         if (isset($data['name'])) {
             $fields[] = "name = ?";
             $params[] = $data['name'];
@@ -245,7 +264,6 @@ class UserRepo
             $params[] = $data['surname'];
         }
         if (isset($data['lastName'])) {
-            // Handle case where frontend sends lastName
             $fields[] = "surname = ?";
             $params[] = $data['lastName'];
         }
@@ -257,34 +275,77 @@ class UserRepo
             $fields[] = "sex = ?";
             $params[] = $data['sex'];
         }
-
-        if (!empty($fields)) {
-            $params[] = $memberId;
-            $sql = "UPDATE member SET " . implode(", ", $fields) . " WHERE id = ?";
-            $db->prepare($sql)->execute($params);
+        
+        $newChurchId = null;
+        if (isset($data['churchId']) || isset($data['church_id'])) {
+            $newChurchId = $data['churchId'] ?? $data['church_id'];
+            $fields[] = "church_id = ?";
+            $params[] = $newChurchId ? (int)$newChurchId : null;
         }
 
-        // Handle Role
-        if (isset($data['roleId'])) {
-            self::updateMemberRole($memberId, (int) $data['roleId']);
-        }
+        try {
+            $db->beginTransaction();
 
-        // Handle Areas
-        if (isset($data['areaIds'])) {
-            self::setUserAreas($memberId, $data['areaIds']);
-        }
+            if (!empty($fields)) {
+                $params[] = $memberId;
+                $sql = "UPDATE member SET " . implode(", ", $fields) . " WHERE id = ?";
+                Logger::info("UserRepo::updateProfile - Executing query: $sql with params: " . json_encode($params));
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+                
+                if ($stmt->rowCount() === 0) {
+                    Logger::warning("UserRepo::updateProfile - No rows affected by the UPDATE member query. MemberID: $memberId");
+                }
+            }
 
-        // Handle Instruments
-        if (isset($data['instruments'])) {
-            self::setUserInstruments($memberId, $data['instruments']);
-        }
+            // Handle Role
+            if (isset($data['roleId'])) {
+                $roleId = (int) $data['roleId'];
+                // Use newChurchId if provided, otherwise fetch current
+                $targetChurchId = $newChurchId;
+                if ($targetChurchId === null) {
+                    $mStmt = $db->prepare("SELECT church_id FROM member WHERE id = ?");
+                    $mStmt->execute([$memberId]);
+                    $targetChurchId = $mStmt->fetchColumn();
+                }
 
-        // Handle Groups
-        if (isset($data['groups'])) {
-            self::setUserGroups($memberId, $data['groups']);
-        }
+                if ($targetChurchId !== null && $targetChurchId !== false) {
+                    Logger::info("UserRepo::updateProfile - Assigning Role $roleId for Church $targetChurchId");
+                    self::assignRole($memberId, (int)$targetChurchId, $roleId, 'mainhub');
+                } else {
+                    Logger::warning("UserRepo::updateProfile - Could not determine church_id for role assignment. MemberID: $memberId");
+                    // If it's a superadmin role, maybe assign globally?
+                    $rStmt = $db->prepare("SELECT name FROM roles WHERE id = ?");
+                    $rStmt->execute([$roleId]);
+                    if ($rStmt->fetchColumn() === 'superadmin') {
+                        $db->prepare("INSERT INTO user_global_roles (member_id, role_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE role_id=role_id")->execute([$memberId, $roleId]);
+                    }
+                }
+            }
 
-        return true;
+            // Handle Areas
+            if (isset($data['areaIds'])) {
+                self::setUserAreas($memberId, $data['areaIds']);
+            }
+
+            // Handle Instruments
+            if (isset($data['instruments'])) {
+                self::setUserInstruments($memberId, $data['instruments']);
+            }
+
+            // Handle Groups
+            if (isset($data['groups'])) {
+                self::setUserGroups($memberId, $data['groups']);
+            }
+
+            $db->commit();
+            Logger::info("UserRepo::updateProfile successfully completed for MemberID: $memberId");
+            return true;
+        } catch (\Exception $e) {
+            if ($db->inTransaction()) $db->rollBack();
+            Logger::error("UserRepo::updateProfile failed for MemberID: $memberId. Error: " . $e->getMessage());
+            return false;
+        }
     }
 
     public static function setUserGroups($memberId, $groupIds)

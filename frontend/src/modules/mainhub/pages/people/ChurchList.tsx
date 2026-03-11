@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card } from '../../../../components/ui/Card';
 import { Button } from '../../../../components/ui/Button';
+import api from '../../../../services/api';
 import { useAuth } from '../../../../hooks/useAuth';
 import { useToast } from '../../../../context/ToastContext';
 
@@ -24,17 +25,15 @@ export const ChurchList: FC = () => {
     }, []);
 
     const fetchChurches = async () => {
+        setIsLoading(true);
         try {
-            const token = localStorage.getItem('auth_token');
-            const response = await fetch('/api/churches', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const result = await response.json();
-            if (result.success) {
-                setChurches(result.churches || []);
+            const response = await api.get('/churches');
+            if (response.data.success) {
+                setChurches(response.data.churches);
             }
-        } catch (err) {
-            console.error('Error fetching churches:', err);
+        } catch (error) {
+            console.error('Error fetching churches:', error);
+            // showToast(t('common.error'), 'error');
         } finally {
             setIsLoading(false);
         }

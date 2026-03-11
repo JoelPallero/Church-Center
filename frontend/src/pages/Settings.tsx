@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import { AuthService } from '../services/authService';
+import { useTutorials } from '../context/TutorialContext';
 import { Card } from '../components/ui/Card';
 import { useToast } from '../context/ToastContext';
 
@@ -14,6 +15,7 @@ export const Settings: FC = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const { hasRole } = useAuth();
+    const { showTutorials, setShowTutorials } = useTutorials();
     const [isSaving, setIsSaving] = useState(false);
 
     const isMaster = user?.role?.name === 'master';
@@ -140,6 +142,39 @@ export const Settings: FC = () => {
                         />
 
                         <SettingRow
+                            icon="school"
+                            title={t('profile.tutorials')}
+                            subtitle={showTutorials ? t('profile.tutorialsActive') : t('profile.tutorialsInactive')}
+                            rightElement={
+                                <div 
+                                    onClick={() => setShowTutorials(!showTutorials)}
+                                    style={{ 
+                                        width: '44px', 
+                                        height: '24px', 
+                                        borderRadius: '12px', 
+                                        backgroundColor: showTutorials ? 'var(--color-brand-blue)' : 'var(--color-ui-bg)',
+                                        position: 'relative',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease',
+                                        border: '1px solid var(--color-border-subtle)'
+                                    }}
+                                >
+                                    <div style={{
+                                        width: '18px',
+                                        height: '18px',
+                                        borderRadius: '50%',
+                                        backgroundColor: 'white',
+                                        position: 'absolute',
+                                        top: '2px',
+                                        left: showTutorials ? '22px' : '2px',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                    }} />
+                                </div>
+                            }
+                        />
+
+                        <SettingRow
                             icon="translate"
                             title={t('profile.language')}
                             subtitle={t('profile.languageSubtitle')}
@@ -235,7 +270,7 @@ export const Settings: FC = () => {
                     </section>
 
                     <section style={{ textAlign: 'center', marginTop: '16px', opacity: 0.5 }}>
-                        <p className="text-overline" style={{ fontSize: '10px' }}>Church Center v2.0.0-alpha</p>
+                        <p className="text-overline" style={{ fontSize: '10px' }}>Service Manager v1.0.0</p>
                     </section>
                 </div>
             </div>

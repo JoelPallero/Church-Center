@@ -19,7 +19,10 @@ export const ChordSheetRenderer: FC<ChordSheetRendererProps> = ({
     songKey,
     fontSize = 16
 }) => {
-    // 1. Parse explicitly as ChordPro
+    // 1. Parse explicitly as ChordPro with safety check
+    if (!content) {
+        return <div style={{ padding: '20px', textAlign: 'center', opacity: 0.5, fontStyle: 'italic' }}>Sin contenido de letra o acordes.</div>;
+    }
     const parser = new ChordProParser();
     const song = parser.parse(content);
 

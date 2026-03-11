@@ -42,5 +42,32 @@ export const playlistService = {
             console.error('Failed to delete playlist', error);
             return false;
         }
+    },
+    addSong: async (playlistId: number, songId: number, order?: number): Promise<boolean> => {
+        try {
+            const response = await api.post('/playlists/add-song', { playlistId, songId, order });
+            return response.data.success;
+        } catch (error) {
+            console.error('Failed to add song to playlist', error);
+            return false;
+        }
+    },
+    removeSong: async (playlistId: number, songId: number): Promise<boolean> => {
+        try {
+            const response = await api.post('/playlists/remove-song', { playlistId, songId });
+            return response.data.success;
+        } catch (error) {
+            console.error('Failed to remove song from playlist', error);
+            return false;
+        }
+    },
+    duplicate: async (playlistId: number, name: string, meetingId?: number, songs?: number[]): Promise<any> => {
+        try {
+            const response = await api.post('/playlists/duplicate', { playlistId, name, meetingId, songs });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to duplicate playlist', error);
+            return { success: false };
+        }
     }
 };

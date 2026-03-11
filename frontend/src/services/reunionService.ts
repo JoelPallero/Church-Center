@@ -1,20 +1,32 @@
+import api from './api';
+
 export interface Reunion {
-    id: string;
+    id: number;
     title: string;
     date: string;
     time: string;
-    teamId?: string;
+    meetingType: string;
 }
 
-const MOCK_REUNIONS: Reunion[] = [
-    { id: '1', title: 'Sunday Service', date: '2026-02-15', time: '10:00', teamId: 'worship-team-1' },
-    { id: '2', title: 'Midweek Prayer', date: '2026-02-18', time: '19:00', teamId: 'prayer-team' },
-    { id: '3', title: 'Youth Meeting', date: '2026-02-20', time: '20:00', teamId: 'youth-lead' },
-];
-
 export const reunionService = {
-    getUpcoming: async (): Promise<Reunion[]> => {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        return MOCK_REUNIONS;
+    getUpcoming: async (churchId?: number): Promise<Reunion[]> => {
+        try {
+            const now = new Date().toISOString().split('T')[0];
+            const response = await api.get(`/calendar/events?start=${now}&church_id=${churchId || ''}`);
+            const data = response.data;
+            if (data.success && Array.isArray(data.instances)) {
+                return data.instances.map((m: any) => ({
+                    id: m.id,
+                    title: m.title,
+                    date: m.start_at?.split(' ')[0] || '',
+                    time: m.start_at?.split(' ')[1]?.substring(0, 5) || m.start_time?.substring(0, 5) || '',
+                    meetingType: m.meeting_type
+                }));
+            }
+            return [];
+        } catch (error) {
+            console.error('Failed to fetch upcoming reunions', error);
+            return [];
+        }
     }
 };

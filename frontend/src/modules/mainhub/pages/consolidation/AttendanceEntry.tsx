@@ -11,7 +11,7 @@ import api from '../../../../services/api';
 interface Visitor {
     id?: number;
     first_name: string;
-    last_name: string;
+    surname: string;
     phone: string;
     email: string;
     is_first_time: boolean;
@@ -26,9 +26,9 @@ export const AttendanceEntry: FC = () => {
     const [children, setChildren] = useState(0);
     const [visitors, setVisitors] = useState<Visitor[]>([]);
     const [isSavingCount, setIsSavingCount] = useState(false);
-    const [isModaling, setIsModaling] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [newVisitor, setNewVisitor] = useState<Visitor>({
-        first_name: '', last_name: '', phone: '', email: '', is_first_time: true, notes: ''
+        first_name: '', surname: '', phone: '', email: '', is_first_time: true, notes: ''
     });
     const { isPastor, isSuperAdmin, isMaster } = useAuth();
 
@@ -42,7 +42,7 @@ export const AttendanceEntry: FC = () => {
 
     const fetchData = async () => {
         try {
-            const response = await api.get('/attendance', { params: { meeting_id: meetingId } });
+            const response = await api.get('/consolidation', { params: { meeting_id: meetingId } });
             if (response.data.success) {
                 if (response.data.count) {
                     setAdults(response.data.count.adults);
@@ -58,7 +58,7 @@ export const AttendanceEntry: FC = () => {
     const handleSaveCount = async () => {
         setIsSavingCount(true);
         try {
-            await api.post(`/attendance/count?meeting_id=${meetingId}`, { adults, children });
+            await api.post(`/consolidation/count?meeting_id=${meetingId}`, { adults, children });
         } catch (err) {
             console.error('Error saving count:', err);
         } finally {
@@ -69,10 +69,10 @@ export const AttendanceEntry: FC = () => {
     const handleAddVisitor = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await api.post(`/attendance/visitor?meeting_id=${meetingId}`, newVisitor);
+            const response = await api.post(`/consolidation/visitor?meeting_id=${meetingId}`, newVisitor);
             if (response.data.success) {
-                setIsModaling(false);
-                setNewVisitor({ first_name: '', last_name: '', phone: '', email: '', is_first_time: true, notes: '' });
+                setIsModalOpen(false);
+                setNewVisitor({ first_name: '', surname: '', phone: '', email: '', is_first_time: true, notes: '' });
                 fetchData();
             }
         } catch (err) {
@@ -83,7 +83,7 @@ export const AttendanceEntry: FC = () => {
     const handleDeleteVisitor = async (id: number) => {
         if (!confirm(t('common.confirmDelete'))) return;
         try {
-            await api.delete(`/attendance/visitor?id=${id}`);
+            await api.delete(`/consolidation/visitor`, { params: { id } });
             fetchData();
         } catch (err) {
             console.error('Error deleting visitor:', err);
@@ -123,10 +123,10 @@ export const AttendanceEntry: FC = () => {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h2 className="text-h2">{t('consolidation.visitors')}</h2>
-                <Button label={t('consolidation.addVisitor')} icon="person_add" variant="secondary" onClick={() => setIsModaling(true)} />
+                <Button label={t('consolidation.addVisitor')} icon="person_add" variant="secondary" onClick={() => setIsModalOpen(true)} />
             </div>
 
-            <Card style={{ overflow: 'hidden' }}>
+            <Card style={{ overflow: 'visible' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
                         <tr>
@@ -139,7 +139,7 @@ export const AttendanceEntry: FC = () => {
                     <tbody>
                         {visitors.map(v => (
                             <tr key={v.id} style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
-                                <td style={{ padding: '12px' }} className="text-body">{v.first_name} {v.last_name}</td>
+                                <td style={{ padding: '12px' }} className="text-body">{v.first_name} {v.surname}</td>
                                 <td style={{ padding: '12px' }} className="text-body">{v.phone}</td>
                                 <td style={{ padding: '12px' }} className="text-body">{v.email}</td>
                                 <td style={{ padding: '12px', textAlign: 'right' }}>
@@ -156,7 +156,7 @@ export const AttendanceEntry: FC = () => {
                 </table>
             </Card>
 
-            <Modal isOpen={isModaling} onClose={() => setIsModaling(false)} title={t('consolidation.addVisitor')}>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={t('consolidation.addVisitor')}>
                 <form onSubmit={handleAddVisitor} style={{ display: 'grid', gap: '16px' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                         <div className="input-group">
@@ -165,7 +165,7 @@ export const AttendanceEntry: FC = () => {
                         </div>
                         <div className="input-group">
                             <label>{t('consolidation.visitorForm.lastName')}</label>
-                            <input type="text" value={newVisitor.last_name} onChange={e => setNewVisitor({ ...newVisitor, last_name: e.target.value })} />
+                            <input type="text" value={newVisitor.surname} onChange={e => setNewVisitor({ ...newVisitor, surname: e.target.value })} />
                         </div>
                     </div>
                     <div className="input-group">
@@ -181,7 +181,7 @@ export const AttendanceEntry: FC = () => {
                         <textarea value={newVisitor.notes} onChange={e => setNewVisitor({ ...newVisitor, notes: e.target.value })} rows={3} style={{ width: '100%', borderRadius: '8px', border: '1px solid var(--color-border-subtle)', background: 'transparent', color: 'inherit', padding: '8px' }} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '12px' }}>
-                        <Button label={t('common.cancel')} variant="ghost" onClick={() => setIsModaling(false)} />
+                        <Button label={t('common.cancel')} variant="ghost" onClick={() => setIsModalOpen(false)} />
                         <Button label={t('common.add')} variant="primary" type="submit" />
                     </div>
                 </form>

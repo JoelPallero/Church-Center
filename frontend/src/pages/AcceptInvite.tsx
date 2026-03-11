@@ -181,7 +181,7 @@ export const AcceptInvite: FC = () => {
 
                 <footer style={{ marginTop: '32px', textAlign: 'center' }}>
                     <p className="text-overline" style={{ color: '#4B5563' }}>
-                        © {new Date().getFullYear()} Church Center<br />
+                        © {new Date().getFullYear()} Service Manager<br />
                         Plataforma de Gestión para la Iglesia
                     </p>
                 </footer>

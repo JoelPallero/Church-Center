@@ -98,12 +98,34 @@ export const musicUtils = {
         const translate = (n: string) => {
             const root = n.match(/^([A-G][#b]?)/)?.[1] || '';
             const rest = n.slice(root.length);
-            return (solfegeMap[root] || root) + rest;
+            let result = (solfegeMap[root] || root);
+            if (rest === 'm') result += ' menor';
+            else if (rest) result += rest;
+            return result;
         };
 
         if (note.includes('/')) {
             return note.split('/').map(translate).join('/');
         }
         return translate(note);
+    },
+
+    formatKey: (key: string, mode: 'spanish' | 'american' = 'spanish'): string => {
+        if (!key) return '';
+        const isMinor = key.endsWith('m');
+        const root = isMinor ? key.slice(0, -1) : key;
+
+        let displayRoot = root;
+        if (mode === 'spanish') {
+            const solfegeMap: Record<string, string> = {
+                'C': 'Do', 'C#': 'Do#', 'Db': 'Reb', 'D': 'Re', 'D#': 'Re#', 'Eb': 'Mib',
+                'E': 'Mi', 'F': 'Fa', 'F#': 'Fa#', 'Gb': 'Solb', 'G': 'Sol', 'G#': 'Sol#',
+                'Ab': 'Lab', 'A': 'La', 'A#': 'La#', 'Bb': 'Sib', 'B': 'Si'
+            };
+            displayRoot = solfegeMap[root] || root;
+        }
+
+        const suffix = isMinor ? (mode === 'spanish' ? ' Menor' : ' Minor') : (mode === 'spanish' ? ' Mayor' : ' Major');
+        return displayRoot + suffix;
     }
 };

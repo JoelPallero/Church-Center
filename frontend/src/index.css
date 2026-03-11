@@ -162,6 +162,59 @@ option {
   width: 100%;
 }
 
+/* Dashboard Grids */
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .dashboard-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+}
+
+/* Stat Card Overrides */
+.stat-card {
+  padding: 16px !important;
+}
+
+@media (min-width: 768px) {
+  .stat-card {
+    padding: 24px !important;
+  }
+}
+
+.stat-card h3 {
+  font-size: 24px !important;
+  margin-bottom: 4px !important;
+}
+
+@media (min-width: 768px) {
+  .stat-card h3 {
+    font-size: 32px !important;
+  }
+}
+
+.stat-card .text-overline {
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .stat-card .text-overline {
+    font-size: 10px;
+    white-space: normal;
+  }
+}
+
 /* Button Base */
 .btn-base {
   display: flex;

@@ -1,29 +1,29 @@
 import type { FC } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { getDefaultHome } from '../../config/permissionsConfig';
 
 interface ModuleGuardProps {
     moduleKey: string;
 }
 
 export const ModuleGuard: FC<ModuleGuardProps> = ({ moduleKey }) => {
-    const { services, isAuthenticated, isSuperAdmin, isLoading, hasService } = useAuth();
+    const { isAuthenticated, isLoading, canAccess, user } = useAuth();
+    const location = useLocation();
 
     if (isLoading) {
         return <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
     }
 
     if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
+        const redirectPath = encodeURIComponent(location.pathname + location.search);
+        return <Navigate to={`/login?redirect=${redirectPath}`} replace />;
     }
 
-    // Master/Superadmin has access to everything
-    if (isSuperAdmin || hasService(moduleKey)) {
+    // Check if the user can access this module root
+    if (canAccess(`/${moduleKey}`)) {
         return <Outlet />;
     }
 
-    // Redirect to their first available module, or profile if none
-    const firstModule = services.length > 0 ? services[0] : undefined;
-
-    return <Navigate to={firstModule ? `/${firstModule}` : "/profile"} replace />;
+    return <Navigate to={getDefaultHome(user?.role?.name)} replace />;
 };

@@ -19,9 +19,10 @@ export const Login: FC = () => {
 
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/dashboard', { replace: true });
+            const redirectPath = searchParams.get('redirect') || '/dashboard';
+            navigate(redirectPath, { replace: true });
         }
-    }, [isAuthenticated, navigate]);
+    }, [isAuthenticated, navigate, searchParams]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -80,7 +81,7 @@ export const Login: FC = () => {
                         letterSpacing: '0.05em',
                         lineHeight: 1
                     }}>
-                        Beta
+                        v1.0
                     </span>
                 </div>
                 <p className="text-body" style={{ color: '#6B7280' }}>{t('auth.signInSubtitle')}</p>

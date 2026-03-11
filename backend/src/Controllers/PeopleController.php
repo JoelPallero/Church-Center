@@ -85,7 +85,7 @@ class PeopleController
         }
 
         if ($method === 'GET') {
-            PermissionMiddleware::require($memberId, 'church.update', $churchId);
+            \App\Middleware\PermissionMiddleware::requireAny($memberId, ['person.read', 'song.read'], $churchId);
 
             $pathParts = explode('/', $action);
             $targetId = is_numeric($pathParts[0]) ? (int) $pathParts[0] : null;
@@ -107,11 +107,58 @@ class PeopleController
                 return;
             }
 
+            if ($action === 'team_members') {
+                $this->getTeamMembers($memberId);
+                return;
+            }
+
             // churchId is already defined at line 62
             $users = \App\Repositories\UserRepo::getAllWithChurch($churchId);
 
             Response::json(['success' => true, 'users' => $users]);
         }
+    }
+
+    private function getTeamMembers($memberId)
+    {
+        $db = \App\Database::getInstance();
+        // 1. Find teams led by this member
+        $teams = \App\Repositories\TeamRepo::getTeamsByLeader($memberId);
+        
+        if (empty($teams)) {
+            Response::json(['success' => true, 'users' => [], 'message' => 'No teams found for this leader']);
+            return;
+        }
+
+        $teamIds = array_map(fn($t) => $t['id'], $teams);
+        $placeholders = implode(',', array_fill(0, count($teamIds), '?'));
+
+        // 2. Find all members of these teams
+        $sql = "
+            SELECT DISTINCT m.id, m.name, m.surname, m.email, m.phone, m.status, r.name as role_name, r.display_name as role_display
+            FROM member m
+            JOIN group_members gm ON m.id = gm.member_id
+            LEFT JOIN services s ON s.key = 'mainhub'
+            LEFT JOIN user_service_roles usr ON m.id = usr.member_id AND usr.service_id = s.id
+            LEFT JOIN roles r ON usr.role_id = r.id
+            WHERE gm.group_id IN ($placeholders) AND m.status != 'deleted'
+        ";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($teamIds);
+        $users = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Standardize role format for frontend
+        foreach ($users as &$u) {
+            if (isset($u['role_display'])) {
+                $u['role'] = [
+                    'name' => $u['role_name'],
+                    'displayName' => $u['role_display']
+                ];
+            }
+        }
+
+        Response::json(['success' => true, 'users' => $users]);
     }
 
     private function bulkInvite($memberId, $data = [])
@@ -257,12 +304,9 @@ class PeopleController
             Response::error("Member not found", 404);
         }
 
-        // 1. Update status to active and set role
+        // 1. Update status to active and set role (this also assigns the 'mainhub' service role)
         \App\Repositories\UserRepo::updateStatus($targetMemberId, 'active');
         \App\Repositories\UserRepo::updateMemberRole($targetMemberId, $roleId);
-
-        // 2. Assign service role for Church Center
-        \App\Repositories\UserRepo::assignRole($targetMemberId, $member['church_id'], $roleId, 'mainhub');
 
         \App\Repositories\ActivityRepo::log($member['church_id'], $memberId, 'approved', 'member', $targetMemberId, ['name' => $member['name']]);
 
@@ -294,9 +338,30 @@ class PeopleController
 
     private function updateProfile($memberId, $targetId, $data = [])
     {
-        // Security: only self or admin
+        // Security: only self or admin/pastor with permission
         $isSuper = \App\Repositories\PermissionRepo::isSuperAdmin($memberId);
+        $hasPermission = false;
+        
         if (!$isSuper && $memberId != $targetId) {
+            // Check if user has permission to approve/edit users
+            // We need churchId for permission check
+            $churchId = $data['church_id'] ?? $data['churchId'] ?? null;
+            if (!$churchId) {
+                $member = \App\Repositories\UserRepo::getMemberData($memberId);
+                $churchId = $member['church_id'] ?? null;
+            }
+            
+            try {
+                \App\Middleware\PermissionMiddleware::require($memberId, 'users.approve', $churchId);
+                $hasPermission = true;
+            } catch (\Exception $e) {
+                Response::error("Unauthorized", 403);
+            }
+        } else {
+            $hasPermission = true;
+        }
+
+        if (!$hasPermission) {
             Response::error("Unauthorized", 403);
         }
 

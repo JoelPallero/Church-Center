@@ -155,7 +155,7 @@ export const ConsolidationDashboard: FC = () => {
                             {visitors.map(v => (
                                 <tr key={v.id} style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
                                     <td style={{ padding: '12px' }}>
-                                        <div className="text-body" style={{ fontWeight: 600 }}>{v.first_name} {v.last_name}</div>
+                                        <div className="text-body" style={{ fontWeight: 600 }}>{v.first_name} {v.surname}</div>
                                         <div className="text-overline" style={{ fontSize: '10px', color: '#6B7280' }}>{v.email}</div>
                                     </td>
                                     <td style={{ padding: '12px' }} className="text-body">{v.whatsapp || v.phone}</td>

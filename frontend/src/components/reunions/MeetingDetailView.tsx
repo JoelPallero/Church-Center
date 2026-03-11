@@ -1,23 +1,36 @@
-import type { FC } from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FC } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import api from '../../services/api';
 import { AssignmentForm } from './AssignmentForm';
 import { SetlistAssignmentForm } from './SetlistAssignmentForm';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../context/ToastContext';
 
 interface MeetingDetailViewProps {
     instanceId: number;
     onClose: () => void;
+    onEdit?: (details: any) => void;
+    onDelete?: (id: number) => void;
 }
 
-export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onClose }) => {
+export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onClose, onEdit, onDelete }) => {
+    const navigate = useNavigate();
     const { isMaster, user, hasRole } = useAuth();
+    const { addToast } = useToast();
     const [details, setDetails] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [assignmentData, setAssignmentData] = useState<any>(null);
     const [activeModal, setActiveModal] = useState<'none' | 'team' | 'setlist'>('none');
+
+    const handleShare = () => {
+        // Now accurately deep links to this meeting
+        const shareUrl = `${window.location.origin}/worship/calendar?church_id=${details.church_id}&meeting_id=${instanceId}`;
+        navigator.clipboard.writeText(shareUrl);
+        addToast('Enlace de reunión copiado al portapapeles', 'success');
+    };
 
     const isPastor = user?.role?.name === 'pastor' || hasRole('pastor');
     const isLeader = user?.role?.name === 'leader' || hasRole('leader');
@@ -66,7 +79,9 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                         <p className="text-overline" style={{ color: 'var(--color-brand-blue)' }}>
                             {details.meeting_type === 'recurrent'
                                 ? `Recurrente - Cada ${['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][details.day_of_week] || 'semana'}`
-                                : (details.instance_date ? new Date(details.instance_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Fecha no definida')}
+                                : (details.instance_date && !isNaN(new Date(details.instance_date).getTime())
+                                    ? new Date(details.instance_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+                                    : 'Recurrente')}
                         </p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                             <h2 className="text-h2" style={{ margin: '4px 0' }}>{details.title}</h2>
@@ -86,9 +101,51 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                         </div>
                         <p className="text-body" style={{ color: '#6B7280' }}>
                             {details.meeting_type === 'recurrent'
-                                ? `${details.start_time.substring(0, 5)} - ${details.end_time.substring(0, 5)}`
-                                : (details.start_datetime_utc ? `${new Date(details.start_datetime_utc).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${new Date(details.end_datetime_utc).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : '')}
+                                ? `${details.start_time?.substring(0, 5) || ''} - ${details.end_time?.substring(0, 5) || ''}`
+                                : (details.start_datetime_utc && !isNaN(new Date(details.start_datetime_utc).getTime())
+                                    ? `${new Date(details.start_datetime_utc).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${new Date(details.end_datetime_utc).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })}`
+                                    : (details.start_time ? `${details.start_time?.substring(0, 5) || ''} - ${details.end_time?.substring(0, 5) || ''}` : ''))}
                         </p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <Button
+                            variant="secondary"
+                            icon="ios_share"
+                            onClick={handleShare}
+                            style={{ padding: '8px' }}
+                            title="Compartir"
+                        />
+                        {(isMaster || isPastor) && (
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    icon="edit"
+                                    onClick={() => onEdit?.(details)}
+                                    style={{ padding: '8px' }}
+                                />
+                                <Button
+                                    variant="secondary"
+                                    icon="delete"
+                                    disabled={isDeleting}
+                                    onClick={async () => {
+                                        if (window.confirm('¿Estás seguro de que deseas eliminar esta reunión?')) {
+                                            setIsDeleting(true);
+                                            try {
+                                                const response = await api.delete(`/calendar/${instanceId}`);
+                                                if (response.data.success) {
+                                                    onDelete?.(instanceId);
+                                                }
+                                            } catch (err) {
+                                                console.error('Error deleting:', err);
+                                            } finally {
+                                                setIsDeleting(false);
+                                            }
+                                        }
+                                    }}
+                                    style={{ padding: '8px', color: 'var(--color-danger-red)' }}
+                                />
+                            </>
+                        )}
                     </div>
                 </div>
                 {details.description && (
@@ -163,19 +220,28 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                     </header>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {details.setlists.length > 0 ? details.setlists.map((sl: any) => (
-                            <div key={sl.id} style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                padding: '12px',
-                                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                                borderRadius: '12px'
-                            }}>
+                            <div 
+                                key={sl.id} 
+                                onClick={() => navigate(`/worship/playlists/${sl.playlist_id}`)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '12px',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                                    borderRadius: '12px',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s',
+                                    border: '1px solid rgba(59, 130, 246, 0.1)'
+                                }}
+                                className="list-item-hover"
+                            >
                                 <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)' }}>queue_music</span>
                                 <div style={{ flex: 1 }}>
                                     <p className="text-body" style={{ fontWeight: 600, margin: 0 }}>{sl.playlist_name}</p>
                                     <p className="text-overline" style={{ color: 'gray' }}>Asignado por {sl.assigned_by_name || 'Líder'}</p>
                                 </div>
+                                <span className="material-symbols-outlined" style={{ fontSize: '18px', opacity: 0.5 }}>navigate_next</span>
                             </div>
                         )) : (
                             <p className="text-body" style={{ fontSize: '12px', color: '#9CA3AF', textAlign: 'center', padding: '12px', border: '1px dashed rgba(255, 255, 255, 0.1)', borderRadius: '12px' }}>

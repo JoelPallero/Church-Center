@@ -32,13 +32,13 @@ class ConsolidationRepo
 
         // 1. Add to meeting_visitors (local meeting log)
         $stmt1 = $db->prepare("
-            INSERT INTO meeting_visitors (meeting_id, first_name, last_name, phone, email, is_first_time, notes)
+            INSERT INTO meeting_visitors (meeting_id, first_name, surname, phone, email, is_first_time, notes)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt1->execute([
             $meetingId,
             $data['first_name'],
-            $data['last_name'] ?? null,
+            $data['surname'] ?? null,
             $data['phone'] ?? null,
             $data['email'] ?? null,
             $data['is_first_time'] ?? 1,
@@ -58,14 +58,17 @@ class ConsolidationRepo
 
             if ($churchId) {
                 $stmt2 = $db->prepare("
-                    INSERT INTO visitors (church_id, first_name, last_name, whatsapp, email, first_meeting_id, prayer_requests)
+                    INSERT INTO visitors (church_id, first_name, surname, whatsapp, email, first_meeting_id, prayer_requests)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ON DUPLICATE KEY UPDATE first_meeting_id = IFNULL(first_meeting_id, VALUES(first_meeting_id))
+                ON DUPLICATE KEY UPDATE 
+                    surname = VALUES(surname),
+                    first_meeting_id = IFNULL(first_meeting_id, VALUES(first_meeting_id)),
+                    prayer_requests = IFNULL(prayer_requests, VALUES(prayer_requests))
                 ");
                 $stmt2->execute([
                     $churchId,
                     $data['first_name'],
-                    $data['last_name'] ?? null,
+                    $data['surname'] ?? null,
                     $data['phone'] ?? null,
                     $data['email'] ?? null,
                     $meetingId,

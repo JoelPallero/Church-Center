@@ -8,10 +8,19 @@ import { songService } from '../../../services/songService';
 import type { Song, MemberKey, User } from '../../../types/domain';
 import { useAuth } from '../../../hooks/useAuth';
 import { useToast } from '../../../context/ToastContext';
+import { ChordSheetRenderer } from '../../../components/music/ChordSheetRenderer';
 
 import { peopleService } from '../../../services/peopleService';
 
-const MUSICAL_KEYS = ['C', 'C#', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+import { musicUtils } from '../../../utils/musicUtils';
+import { Metronome } from '../../../components/music/Metronome';
+
+import { useTutorials } from '../../../context/TutorialContext';
+
+const MUSICAL_KEYS = [
+    'C', 'Cm', 'C#', 'C#m', 'Db', 'Dbm', 'D', 'Dm', 'Eb', 'Ebm', 'E', 'Em',
+    'F', 'Fm', 'F#', 'F#m', 'Gb', 'Gbm', 'G', 'Gm', 'Ab', 'Abm', 'A', 'Am', 'Bb', 'Bbm', 'B', 'Bm'
+];
 
 export const SongEditor: FC = () => {
     const { t } = useTranslation();
@@ -35,15 +44,45 @@ export const SongEditor: FC = () => {
     });
 
     const [loading, setLoading] = useState(false);
-    const { user, isMaster } = useAuth();
+    const { user, isMaster, canManageSongs, hasRole, hasService } = useAuth();
+    const { startTutorial, showTutorials } = useTutorials();
     const { addToast } = useToast();
+
+    useEffect(() => {
+        if (!showTutorials || !user || loading) return;
+
+        const hasSeenFullTour = localStorage.getItem('tutorial_seen_worship_master');
+        if (hasSeenFullTour === 'true') return;
+
+        const isLeader = hasRole('leader');
+        const isCoordinator = hasRole('coordinator');
+        const isPraiseMember = hasService('worship');
+
+        if (isLeader || isCoordinator || isPraiseMember) {
+            // Stage 3: Editor
+            localStorage.setItem('worship_tour_stage', 'editor');
+            startTutorial('worship_editor');
+            localStorage.setItem('tutorial_seen_worship_master', 'true');
+        }
+    }, [user, showTutorials, loading, hasRole, hasService, startTutorial]);
     const [singers, setSingers] = useState<User[]>([]);
+
+    // Preview state
+    const [previewTranspose, setPreviewTranspose] = useState(0);
+    const [previewFontSize, setPreviewFontSize] = useState(13);
+    const [previewViewMode] = useState<'american' | 'spanish'>('american');
 
     const churchIdFromUrl = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
     const isPastor = user?.role?.name === 'pastor';
     const finalChurchId = churchIdFromUrl || user?.churchId;
 
     useEffect(() => {
+        // Redirect if no permission to ABM songs
+        if (!loading && !canManageSongs) {
+            navigate('/worship/songs');
+            return;
+        }
+
         // Redirect if no church context and NOT a Master user (who can create global songs)
         if (!finalChurchId && !isMaster && isPastor) {
             navigate('/mainhub/select-church/songs');
@@ -112,14 +151,48 @@ export const SongEditor: FC = () => {
         setForm({ ...form, memberKeys: updated });
     };
 
+
+    const addSection = (tag: string) => {
+        const textarea = document.getElementById('song-content-area') as HTMLTextAreaElement;
+        if (!textarea) return;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = form.content;
+        const before = text.substring(0, start);
+        const after = text.substring(end);
+
+        // Lógica de saltos de línea
+        let prefix = "";
+        if (start > 0) {
+            if (before.endsWith('\n\n')) prefix = "";
+            else if (before.endsWith('\n')) prefix = "\n";
+            else prefix = "\n\n";
+        }
+
+        let suffix = "\n";
+        if (after.length > 0) {
+            if (!after.startsWith('\n')) suffix = "\n\n";
+            else if (!after.startsWith('\n\n')) suffix = "\n";
+        }
+
+        const fullTag = `${prefix}[${tag}]\n${suffix}`;
+        const newContent = before + fullTag + after.trimStart();
+        setForm({ ...form, content: newContent });
+
+        setTimeout(() => {
+            textarea.focus();
+            const cursorFixed = start + fullTag.length;
+            textarea.setSelectionRange(cursorFixed, cursorFixed);
+        }, 10);
+    };
+
     const handleSave = async () => {
         if (!user) return;
         setLoading(true);
 
         try {
-            // Direct edit bypass for Master, Pastor, Leader
-            const isAuthorizedToDirectEdit =
-                (user.role?.level !== undefined && user.role.level <= 30);
+            // Direct edit authorization logic updated based on global permission
+            const isAuthorizedToDirectEdit = canManageSongs;
 
             if (isEditing) {
                 if (isAuthorizedToDirectEdit) {
@@ -138,7 +211,7 @@ export const SongEditor: FC = () => {
                         proposedTimeSignature: form.timeSignature,
                         proposedBpmType: form.bpmType
                     });
-                    addToast(t('songs.submitApprovalSuccess') || 'Tus cambios han sido enviados para revisión por un líder.', 'success');
+                    addToast(t('songs.submitApprovalSuccess') || 'Tus cambios han sido enviados para revisión por un Líder.', 'success');
                 }
             } else {
                 // New songs likewise: leaders add directly, members submit?
@@ -160,7 +233,7 @@ export const SongEditor: FC = () => {
     };
 
     return (
-        <div style={{ width: '100%', padding: '24px', minWidth: 0 }}>
+        <div style={{ width: '100%', minWidth: 0 }}>
             <style>{`
                 .editor-grid {
                     display: grid;
@@ -184,9 +257,9 @@ export const SongEditor: FC = () => {
                     <Button variant="ghost" icon="arrow_back" label={t('common.back') || 'Volver'} onClick={() => navigate(-1)} style={{ marginBottom: '8px', padding: 0 }} />
                     <h1 className="text-h1">{isEditing ? t('songs.edit') : t('songs.add')}</h1>
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                    <Button variant="secondary" label={t('common.cancel')} onClick={() => navigate(-1)} />
-                    <Button variant="primary" label={loading ? t('common.save') + '...' : t('common.save')} onClick={handleSave} disabled={loading} />
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                    <Button variant="secondary" label="Cancelar" onClick={() => navigate('/worship/songs')} />
+                    <Button id="btn-save-song" variant="primary" label={loading ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Crear Canción')} onClick={handleSave} disabled={loading} />
                 </div>
             </header>
 
@@ -195,10 +268,10 @@ export const SongEditor: FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <Card style={{ padding: '24px' }}>
                         <h3 className="text-card-title" style={{ marginBottom: '16px' }}>{t('songs.basicInfo') || 'Información Básica'}</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div id="song-editor-basic-info" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             <div>
                                 <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>{t('songs.title') || 'Título'}</label>
-                                <input className="text-body" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} style={inputStyle} placeholder={t('songs.titlePlaceholder') || 'Nombre de la canción'} />
+                                <input id="song-editor-name" className="text-body" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} style={inputStyle} placeholder={t('songs.titlePlaceholder') || 'Nombre de la canción'} />
                             </div>
                             <div>
                                 <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>{t('songs.artist') || 'Artista'}</label>
@@ -213,8 +286,8 @@ export const SongEditor: FC = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <div>
                                     <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>{t('songs.key') || 'Tonalidad'}</label>
-                                    <select className="text-body" value={form.originalKey} onChange={e => setForm({ ...form, originalKey: e.target.value })} style={inputStyle}>
-                                        {MUSICAL_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
+                                    <select id="song-editor-key" className="text-body" value={form.originalKey} onChange={e => setForm({ ...form, originalKey: e.target.value })} style={inputStyle}>
+                                        {MUSICAL_KEYS.map(k => <option key={k} value={k}>{musicUtils.formatKey(k)}</option>)}
                                     </select>
                                 </div>
                                 <div>
@@ -228,7 +301,7 @@ export const SongEditor: FC = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <div>
                                     <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>BPM</label>
-                                    <input type="number" className="text-body" value={form.tempo} onChange={e => setForm({ ...form, tempo: parseInt(e.target.value) })} style={inputStyle} />
+                                    <input id="song-editor-bpm" type="number" className="text-body" value={form.tempo} onChange={e => setForm({ ...form, tempo: parseInt(e.target.value) })} style={inputStyle} />
                                 </div>
                                 <div>
                                     <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>{t('songs.time') || 'Compás'}</label>
@@ -263,9 +336,12 @@ export const SongEditor: FC = () => {
 
                 {/* Column 2: Singer Assignments & Editor */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    <Card style={{ padding: '24px' }}>
+                    <Card title="Tonalidades por Cantante" id="song-singer-assignments" style={{ padding: '24px' }}>
+                        <p className="text-body-small" style={{ marginBottom: '16px' }}>
+                            Define una tonalidad específica para los integrantes del equipo.
+                        </p>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <h3 className="text-card-title" style={{ fontSize: '14px' }}>{t('songs.singerAssignments') || 'Líder de Alabanza'}</h3>
+                            <h3 className="text-card-title" style={{ fontSize: '14px', margin: 0 }}>{t('songs.singerAssignments') || 'Asignar diferentes tonalidades:'}</h3>
                             <Button variant="ghost" icon="add" onClick={addMemberKey} style={{ padding: '4px', minWidth: 'auto' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -275,7 +351,7 @@ export const SongEditor: FC = () => {
                                         {singers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </select>
                                     <select className="text-body" value={mk.preferredKey} onChange={e => updateMemberKey(idx, 'preferredKey', e.target.value)} style={{ ...inputStyle, flex: 1, padding: '4px 4px', fontSize: '12px' }}>
-                                        {MUSICAL_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
+                                        {MUSICAL_KEYS.map(k => <option key={k} value={k}>{musicUtils.formatKey(k)}</option>)}
                                     </select>
                                     <button onClick={() => removeMemberKey(idx)} style={{ background: 'none', border: 'none', color: 'var(--color-danger-red)', cursor: 'pointer', padding: '2px' }}>
                                         <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
@@ -291,37 +367,19 @@ export const SongEditor: FC = () => {
                     <Card style={{ padding: '24px', minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
                             <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', margin: 0 }}>{t('songs.contentLabel')}</label>
-                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                            <div id="song-section-buttons" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                 {[
-                                    { n: 'Intro', c: '#6B7280' },
-                                    { n: 'Estrofa', c: '#3B82F6' },
-                                    { n: 'Coro', c: '#10B981' },
-                                    { n: 'Puente', c: '#F59E0B' },
-                                    { n: 'Outro', c: '#EF4444' }
+                                    { n: 'Intro', c: '#6B7280', tag: 'INTRO' },
+                                    { n: 'Estrofa', c: '#3B82F6', tag: 'VERSO' },
+                                    { n: 'Pre-Coro', c: '#8B5CF6', tag: 'PRE-CORO' },
+                                    { n: 'Coro', c: '#10B981', tag: 'CORO' },
+                                    { n: 'Puente', c: '#F59E0B', tag: 'PUENTE' },
+                                    { n: 'Solo', c: '#EC4899', tag: 'SOLO' },
+                                    { n: 'Outro', c: '#EF4444', tag: 'FINAL' }
                                 ].map(s => (
                                     <button
                                         key={s.n}
-                                        onClick={() => {
-                                            const textarea = document.getElementById('song-content-area') as HTMLTextAreaElement;
-                                            if (!textarea) return;
-                                            const start = textarea.selectionStart;
-                                            const end = textarea.selectionEnd;
-                                            const text = form.content;
-
-                                            // Check if we are at start or need a prefix newline
-                                            const needsPrefix = start > 0 && text[start - 1] !== '\n';
-                                            const tag = `${needsPrefix ? '\n' : ''}[${s.n}]\n`;
-
-                                            const before = text.substring(0, start);
-                                            const after = text.substring(end);
-                                            setForm({ ...form, content: before + tag + after });
-
-                                            setTimeout(() => {
-                                                textarea.focus();
-                                                const cursorFixed = start + tag.length;
-                                                textarea.setSelectionRange(cursorFixed, cursorFixed);
-                                            }, 10);
-                                        }}
+                                        onClick={() => addSection(s.tag)}
                                         type="button"
                                         style={{
                                             border: 'none',
@@ -361,34 +419,64 @@ export const SongEditor: FC = () => {
 
                 {/* Column 3: Preview */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                    <Card style={{ padding: '24px' }}>
-                        <h3 className="text-card-title" style={{ marginBottom: '16px' }}>{t('common.preview')}</h3>
+                    <Card style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                            <h3 className="text-card-title" style={{ margin: 0 }}>{t('common.preview')}</h3>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                {/* Transpose Controls */}
+                                <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--color-ui-surface)', borderRadius: '20px', padding: '2px 4px', border: '1px solid var(--color-border-subtle)' }}>
+                                    <Button variant="ghost" icon="remove" onClick={() => setPreviewTranspose(p => p - 1)} style={{ width: '28px', height: '28px', minWidth: 'auto', padding: 0 }} />
+                                    <span
+                                        onClick={() => setPreviewTranspose(0)}
+                                        style={{
+                                            padding: '0 8px',
+                                            fontSize: '11px',
+                                            fontWeight: 800,
+                                            color: 'var(--color-brand-blue)',
+                                            cursor: 'pointer',
+                                            minWidth: '60px',
+                                            textAlign: 'center'
+                                        }}
+                                    >
+                                        {musicUtils.formatKey(musicUtils.transposeNote(form.originalKey, previewTranspose), 'spanish')}
+                                    </span>
+                                    <Button variant="ghost" icon="add" onClick={() => setPreviewTranspose(p => p + 1)} style={{ width: '28px', height: '28px', minWidth: 'auto', padding: 0 }} />
+                                </div>
+
+                                {/* Font Size Controls */}
+                                <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--color-ui-surface)', borderRadius: '20px', padding: '2px 4px', border: '1px solid var(--color-border-subtle)' }}>
+                                    <Button variant="ghost" icon="text_decrease" onClick={() => setPreviewFontSize(s => Math.max(8, s - 1))} style={{ width: '28px', height: '28px', minWidth: 'auto', padding: 0 }} />
+                                    <span style={{ padding: '0 6px', fontSize: '11px', fontWeight: 800, width: '20px', textAlign: 'center' }}>{previewFontSize}</span>
+                                    <Button variant="ghost" icon="text_increase" onClick={() => setPreviewFontSize(s => Math.min(30, s + 1))} style={{ width: '28px', height: '28px', minWidth: 'auto', padding: 0 }} />
+                                </div>
+
+                                {/* BPM Tag */}
+                                {Number(form.tempo || 0) > 0 && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-ui-surface)', padding: '4px 12px', borderRadius: '20px', border: '1px solid var(--color-border-subtle)' }}>
+                                        <span style={{ fontSize: '11px', fontWeight: 800 }}>{form.tempo} BPM</span>
+                                        <Metronome bpm={Number(form.tempo)} variant="card" />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         <div style={{
-                            fontFamily: 'monospace',
-                            whiteSpace: 'pre-wrap',
-                            lineHeight: '1.8',
-                            color: 'var(--color-ui-text)',
-                            fontSize: '11px',
-                            maxHeight: '800px',
-                            overflowY: 'auto',
                             backgroundColor: 'var(--color-ui-bg)',
                             padding: '16px',
                             borderRadius: '12px',
-                            border: '1px solid var(--color-border-subtle)'
+                            border: '1px solid var(--color-border-subtle)',
+                            maxHeight: '800px',
+                            overflowY: 'auto',
+                            minHeight: '400px'
                         }}>
-                            {form.content ? form.content.split('\n').map((line, i) => (
-                                <p key={i} style={{ margin: 0 }}>
-                                    {line.split(/(\[[^\]]+\])/).map((part, j) => (
-                                        part.startsWith('[') ? (
-                                            <span key={j} style={{ position: 'relative', display: 'inline-flex', width: 0, overflow: 'visible' }}>
-                                                <strong style={{ position: 'absolute', bottom: '100%', left: 0, color: 'var(--color-brand-blue)', whiteSpace: 'nowrap', transform: 'translateY(10%)' }}>
-                                                    {part.slice(1, -1)}
-                                                </strong>
-                                            </span>
-                                        ) : part
-                                    ))}
-                                </p>
-                            )) : <span style={{ color: 'var(--color-ui-text-soft)' }}>{t('songs.previewPlaceholder')}</span>}
+                            <ChordSheetRenderer
+                                content={form.content}
+                                songKey={form.originalKey}
+                                transpose={previewTranspose}
+                                fontSize={previewFontSize}
+                                viewMode={previewViewMode}
+                            />
                         </div>
                     </Card>
                 </div>

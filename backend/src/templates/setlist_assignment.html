@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 40px 20px;
+            color: #374151;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .icon-circle {
+            width: 64px;
+            height: 64px;
+            background: #fdf2f2;
+            border-radius: 50%;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .church-icon {
+            color: #ef4444;
+            font-size: 32px;
+        }
+
+        .church-name {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .message {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #4b5563;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+
+        .info-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: left;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-item {
+            margin-bottom: 12px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .songs-list {
+            text-align: left;
+            margin-top: 24px;
+        }
+
+        .song-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .song-title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 16px;
+        }
+
+        .song-artist {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .song-key {
+            float: right;
+            background: #eff6ff;
+            color: #2563eb;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .button {
+            display: inline-block;
+            background: #2563eb;
+            color: white !important;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 700;
+            margin: 32px 0;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+
+        .footer-text {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 24px;
+        }
+
+        .divider {
+            border-top: 1px solid #e5e7eb;
+            margin: 32px 0 24px;
+        }
+
+        .copyright {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="icon-circle">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 18V5L21 3V16" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="6" cy="18" r="3" stroke="#ef4444" stroke-width="2"/>
+                <circle cx="18" cy="16" r="3" stroke="#ef4444" stroke-width="2"/>
+            </svg>
+        </div>
+        <div class="church-name">{{CHURCH_NAME}}</div>
+        <h1>Nuevo Listado Asignado</h1>
+        
+        <div class="greeting">Hola integrante del equipo,</div>
+        
+        <div class="message">
+            El líder <strong>{{LEADER_NAME}}</strong> ha asignado un nuevo listado de canciones para la próxima reunión.
+        </div>
+
+        <div class="info-box">
+            <div class="info-item">
+                <div class="info-label">Reunión</div>
+                <div class="info-value">{{MEETING_TITLE}}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Fecha y Hora</div>
+                <div class="info-value">{{MEETING_DATE}} - {{MEETING_TIME}} hs.</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Lugar</div>
+                <div class="info-value">{{MEETING_LOCATION}}</div>
+            </div>
+        </div>
+
+        <div class="songs-list">
+            <div class="info-label" style="margin-bottom: 8px;">Canciones del Listado</div>
+            {{SONGS_HTML}}
+        </div>
+
+        <a href="{{APP_URL}}/worship/calendar" class="button">Ver en el Calendario &nbsp; ↗</a>
+
+        <div class="divider"></div>
+        <div class="copyright">© {{YEAR}} Church Center. Todos los derechos reservados.</div>
+    </div>
+</body>
+
+</html>

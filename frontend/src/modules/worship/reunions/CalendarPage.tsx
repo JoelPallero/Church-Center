@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
+import { useTutorials } from '../../../context/TutorialContext';
 import { Modal } from '../../../components/ui/Modal';
 import { MeetingForm } from '../../../components/reunions/MeetingForm';
 import { MeetingDetailView } from '../../../components/reunions/MeetingDetailView';
@@ -37,15 +38,25 @@ export const CalendarPage: FC = () => {
     const { t, i18n } = useTranslation();
     const [searchParams] = useSearchParams();
     const { isMaster, user, hasRole } = useAuth();
+    const { startTutorial, showTutorials } = useTutorials();
     const [instances, setInstances] = useState<MeetingInstance[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedInstanceId, setSelectedInstanceId] = useState<number | null>(null);
+    const [selectedInstanceId, setSelectedInstanceId] = useState<number | null>(() => {
+        const idParam = searchParams.get('meeting_id');
+        return idParam ? parseInt(idParam) : null;
+    });
+    const [editingMeeting, setEditingMeeting] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<'calendar' | 'meetings'>('calendar');
     const [meetingsViewMode] = useState<'list' | 'grid'>('grid');
     const [showFilters, setShowFilters] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [dayMeetings, setDayMeetings] = useState<MeetingInstance[]>([]);
+    const [churches, setChurches] = useState<any[]>([]);
+    const [selectedChurchId, setSelectedChurchId] = useState<number | null>(null);
+
 
 
     const [filters, setFilters] = useState({
@@ -59,7 +70,7 @@ export const CalendarPage: FC = () => {
     const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
     const isPastor = user?.role?.name === 'pastor' || hasRole('pastor');
     const isLeader = user?.role?.name === 'leader' || hasRole('leader');
-    const finalChurchId = churchId || user?.churchId;
+    const finalChurchId = selectedChurchId || churchId || user?.churchId;
     const canManageMeetings = isMaster || isPastor || isLeader;
 
     useEffect(() => {
@@ -117,6 +128,49 @@ export const CalendarPage: FC = () => {
         else setIsLoading(false);
     }, [finalChurchId, activeTab]);
 
+    useEffect(() => {
+        const idParam = searchParams.get('meeting_id');
+        if (idParam) {
+            setSelectedInstanceId(parseInt(idParam));
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (isMaster) {
+            fetchChurches();
+        }
+    }, [isMaster]);
+
+    useEffect(() => {
+        if (showTutorials && !isLoading && instances.length >= 0) {
+            const hasSeenTutorial = localStorage.getItem('tutorial_seen_meetings');
+            if (!hasSeenTutorial) {
+                if (window.confirm('¿Quieres realizar un breve recorrido por la gestión de reuniones?')) {
+                    startTutorial('meetings');
+                }
+                localStorage.setItem('tutorial_seen_meetings', 'true');
+            }
+        }
+    }, [showTutorials, isLoading]);
+
+    const fetchChurches = async () => {
+        try {
+            const response = await api.get('/churches', {
+                params: { action: 'my_churches' }
+            });
+            if (response.data.success) {
+                setChurches(response.data.churches);
+                // If we don't have a selection yet, set it to the current user's church or first in list
+                if (!selectedChurchId) {
+                    const initialId = churchId || user?.churchId || response.data.churches[0]?.id;
+                    setSelectedChurchId(initialId);
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching churches:', err);
+        }
+    };
+
     const fetchInstances = async () => {
         setIsLoading(true);
         try {
@@ -166,6 +220,29 @@ export const CalendarPage: FC = () => {
         setSelectedInstanceId(parseInt(info.event.id));
     };
 
+    const handleDateClick = (arg: any) => {
+        const year = arg.date.getFullYear();
+        const month = String(arg.date.getMonth() + 1).padStart(2, '0');
+        const day = String(arg.date.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        const dayOfWeek = arg.date.getDay();
+
+        const meetings = instances.filter(i =>
+            (i.instance_date === dateStr) ||
+            (i.meeting_type === 'recurrent' && (i.day_of_week === dayOfWeek || (i.day_of_week === 7 && dayOfWeek === 0)))
+        );
+
+        const formattedDate = arg.date.toLocaleDateString(i18n.language, {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        setSelectedDate(`${formattedDate.charAt(0).toUpperCase()}${formattedDate.slice(1)}`);
+        setDayMeetings(meetings);
+    };
+
     const handleDeleteMeeting = async (id: number) => {
         if (!window.confirm('¿Estás seguro de que deseas eliminar esta reunión?')) return;
         setIsSubmitting(true);
@@ -183,7 +260,9 @@ export const CalendarPage: FC = () => {
     };
 
     const formatTime = (isoStr: string) => {
+        if (!isoStr || isoStr.startsWith('0000')) return '';
         const date = new Date(isoStr);
+        if (isNaN(date.getTime())) return '';
         return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
     };
 
@@ -195,57 +274,81 @@ export const CalendarPage: FC = () => {
         return matchesSearch && matchesType && matchesCategory;
     });
 
-    const renderMeetingCard = (instance: MeetingInstance, mode: 'list' | 'grid') => (
+    const renderMeetingCard = (instance: MeetingInstance, _mode: 'list' | 'grid') => (
         <Card key={`${instance.id}-${instance.instance_date}`} style={{
-            padding: '20px',
+            padding: '12px 16px',
             display: 'flex',
-            flexDirection: mode === 'grid' ? 'column' : 'row',
-            justifyContent: 'space-between',
-            alignItems: mode === 'grid' ? 'flex-start' : 'center',
-            gap: mode === 'grid' ? '16px' : '0',
-            cursor: 'pointer'
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            minHeight: '74px'
         }} onClick={() => setSelectedInstanceId(instance.id)}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', width: mode === 'grid' ? '100%' : 'auto' }}>
-                <div style={{
-                    width: '60px', height: '60px', borderRadius: '16px', backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
-                }}>
-                    <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--color-brand-blue)', textTransform: 'uppercase' }}>
-                        {instance.instance_date ? new Date(instance.instance_date).toLocaleDateString(i18n.language, { month: 'short' }) : 'Rec'}
-                    </span>
-                    <span style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--color-brand-blue)' }}>
-                        {instance.instance_date ? new Date(instance.instance_date).getDate() : '∞'}
-                    </span>
-                </div>
-                <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <h3 className="text-h3" style={{ margin: 0, fontSize: mode === 'grid' ? '16px' : '18px' }}>{instance.title}</h3>
-                        {instance.category && (
-                            <span style={{
-                                fontSize: '10px', padding: '2px 8px', borderRadius: '20px',
-                                backgroundColor: `${getCategoryColor(instance.category)}15`,
-                                color: getCategoryColor(instance.category), fontWeight: '600', border: `1px solid ${getCategoryColor(instance.category)}30`
-                            }}>
-                                {instance.category}
-                            </span>
-                        )}
-                    </div>
-                    <p className="text-body-secondary" style={{ fontSize: '12px', margin: '4px 0 0' }}>
-                        {instance.start_time || (instance.start_datetime_utc && formatTime(instance.start_datetime_utc))}
-                    </p>
-                </div>
+            <div style={{
+                width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            }}>
+                <span style={{ fontSize: '9px', fontWeight: 'bold', color: 'var(--color-brand-blue)', textTransform: 'uppercase' }}>
+                    {instance.instance_date && !isNaN(new Date(instance.instance_date).getTime())
+                        ? new Date(instance.instance_date).toLocaleDateString(i18n.language, { month: 'short' })
+                        : 'Rec'}
+                </span>
+                <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--color-brand-blue)', lineHeight: 1 }}>
+                    {instance.instance_date && !isNaN(new Date(instance.instance_date).getTime())
+                        ? new Date(instance.instance_date).getDate()
+                        : '∞'}
+                </span>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-                {(isMaster || isPastor) && (
-                    <Button variant="secondary" icon="delete" disabled={isSubmitting} onClick={(e) => { e.stopPropagation(); handleDeleteMeeting(instance.id); }} style={{ color: 'var(--color-danger-red)' }} />
-                )}
-                <Button variant="secondary" icon="visibility" onClick={(e) => { e.stopPropagation(); setSelectedInstanceId(instance.id); }} />
+            
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                    <h3 className="text-h3" style={{ 
+                        margin: 0, 
+                        fontSize: '15px', 
+                        whiteSpace: 'nowrap', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis' 
+                    }}>{instance.title}</h3>
+                    
+                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                        {(isMaster || isPastor) && (
+                            <Button 
+                                variant="ghost" 
+                                icon="delete" 
+                                disabled={isSubmitting} 
+                                onClick={(e) => { e.stopPropagation(); handleDeleteMeeting(instance.id); }} 
+                                style={{ color: 'var(--color-danger-red)', padding: '4px', height: '32px', width: '32px' }} 
+                            />
+                        )}
+                        <Button 
+                            variant="ghost" 
+                            icon="visibility" 
+                            onClick={(e) => { e.stopPropagation(); setSelectedInstanceId(instance.id); }} 
+                            style={{ padding: '4px', height: '32px', width: '32px' }} 
+                        />
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    {instance.category && (
+                        <span style={{
+                            fontSize: '9px', padding: '1px 6px', borderRadius: '4px',
+                            backgroundColor: `${getCategoryColor(instance.category)}15`,
+                            color: getCategoryColor(instance.category), fontWeight: '700', border: `1px solid ${getCategoryColor(instance.category)}30`
+                        }}>
+                            {instance.category}
+                        </span>
+                    )}
+                    <span className="text-body-secondary" style={{ fontSize: '11px', fontWeight: 500, opacity: 0.8 }}>
+                        {instance.start_time || (instance.start_datetime_utc && formatTime(instance.start_datetime_utc))}
+                    </span>
+                </div>
             </div>
         </Card>
     );
 
     return (
-        <div style={{ position: 'relative', maxWidth: '1200px', margin: '0 auto', paddingBottom: '100px' }}>
+        <div style={{ position: 'relative', width: '100%', minWidth: 0, paddingBottom: '100px' }}>
             <style>{`
                 .fc { --fc-border-color: var(--color-border-subtle); --fc-button-bg-color: transparent; --fc-button-border-color: var(--color-border-subtle); --fc-button-text-color: var(--color-ui-text); --fc-button-active-bg-color: var(--color-brand-blue); --fc-button-active-border-color: var(--color-brand-blue); font-family: inherit; }
                 .fc .fc-toolbar-title { font-size: 1.25rem; font-weight: 700; text-transform: capitalize; }
@@ -264,7 +367,7 @@ export const CalendarPage: FC = () => {
 
             <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid var(--color-border-subtle)' }}>
                 {['calendar', 'meetings'].map(tab => (
-                    <button key={tab} onClick={() => setActiveTab(tab as any)} style={{
+                    <button key={tab} id={tab === 'meetings' ? 'tab-meetings' : undefined} onClick={() => setActiveTab(tab as any)} style={{
                         padding: '12px 20px', border: 'none', borderBottom: activeTab === tab ? '3px solid var(--color-brand-blue)' : '3px solid transparent',
                         backgroundColor: 'transparent', color: activeTab === tab ? 'var(--color-brand-blue)' : 'var(--color-ui-text-soft)',
                         fontWeight: activeTab === tab ? '700' : '500', cursor: 'pointer', transition: 'all 0.2s', fontSize: '14px'
@@ -282,7 +385,7 @@ export const CalendarPage: FC = () => {
                 marginBottom: '32px',
                 gap: '16px'
             }}>
-                <div>
+                <div id="calendar-header">
                     <h1 className="text-h1" style={{ margin: 0, fontSize: isMobile ? '24px' : '32px' }}>
                         {activeTab === 'calendar' ? t('nav.calendar') : t('nav.reunions')}
                     </h1>
@@ -290,14 +393,39 @@ export const CalendarPage: FC = () => {
                         {activeTab === 'calendar' ? t('reunions.description') : 'Busca y filtra todas las reuniones.'}
                     </p>
                 </div>
-                {canManageMeetings && (
-                    <Button
-                        label={t('reunions.newMeeting')}
-                        icon="add"
-                        onClick={() => setIsModalOpen(true)}
-                        style={{ width: isMobile ? '100%' : 'auto' }}
-                    />
-                )}
+                <div style={{ display: 'flex', gap: '12px', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
+                    {isMaster && (
+                        <select
+                            value={selectedChurchId || ''}
+                            onChange={(e) => setSelectedChurchId(parseInt(e.target.value))}
+                            style={{
+                                padding: '8px 12px',
+                                borderRadius: '12px',
+                                border: '1px solid var(--color-border-subtle)',
+                                backgroundColor: 'var(--color-ui-surface)',
+                                color: 'var(--color-ui-text)',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                minWidth: '200px'
+                            }}
+                        >
+                            <option value="">{t('common.selectChurch')}</option>
+                            {churches.map(c => (
+                                <option key={c.id} value={c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    )}
+                    {canManageMeetings && (
+                        <div id="btn-new-meeting">
+                            <Button
+                                label={t('reunions.newMeeting')}
+                                icon="add"
+                                onClick={() => setIsModalOpen(true)}
+                                style={{ width: '100%' }}
+                            />
+                        </div>
+                    )}
+                </div>
             </header>
 
             {isLoading ? (
@@ -312,6 +440,7 @@ export const CalendarPage: FC = () => {
                             locale={esLocale}
                             events={fcEvents}
                             eventClick={handleEventClick}
+                            dateClick={handleDateClick}
                             headerToolbar={{
                                 left: 'prev,next today',
                                 center: 'title',
@@ -379,7 +508,92 @@ export const CalendarPage: FC = () => {
             </Modal>
 
             <Modal isOpen={!!selectedInstanceId} onClose={() => setSelectedInstanceId(null)} title={t('reunions.details')}>
-                {selectedInstanceId && <MeetingDetailView instanceId={selectedInstanceId} onClose={() => setSelectedInstanceId(null)} />}
+                {selectedInstanceId && (
+                    <MeetingDetailView
+                        instanceId={selectedInstanceId}
+                        onClose={() => setSelectedInstanceId(null)}
+                        onEdit={(details) => {
+                            setSelectedInstanceId(null);
+                            setEditingMeeting(details);
+                        }}
+                        onDelete={() => {
+                            setSelectedInstanceId(null);
+                            fetchInstances();
+                        }}
+                    />
+                )}
+            </Modal>
+
+            <Modal isOpen={!!editingMeeting} onClose={() => setEditingMeeting(null)} title={t('common.edit')}>
+                {editingMeeting && (
+                    <MeetingForm
+                        initialChurchId={finalChurchId}
+                        initialData={editingMeeting}
+                        onSuccess={() => { setEditingMeeting(null); fetchInstances(); }}
+                        onCancel={() => setEditingMeeting(null)}
+                    />
+                )}
+            </Modal>
+
+            <Modal
+                isOpen={!!selectedDate}
+                onClose={() => setSelectedDate(null)}
+                title={selectedDate || ''}
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: isMobile ? '100%' : '400px' }}>
+                    {dayMeetings.length > 0 ? (
+                        dayMeetings.map(meeting => (
+                            <Card
+                                key={meeting.id}
+                                style={{
+                                    padding: '12px 16px',
+                                    cursor: 'pointer',
+                                    border: '1px solid var(--color-border-subtle)',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    minHeight: '64px'
+                                }}
+                                onClick={() => {
+                                    setSelectedDate(null);
+                                    setSelectedInstanceId(meeting.id);
+                                }}
+                            >
+                                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <h4 style={{ margin: 0, fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{meeting.title}</h4>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{
+                                            fontSize: '8px', padding: '1px 5px', borderRadius: '4px',
+                                            backgroundColor: `${getCategoryColor(meeting.category || '')}15`,
+                                            color: getCategoryColor(meeting.category || '')
+                                        }}>
+                                            {meeting.category || 'Reunión'}
+                                        </span>
+                                        <span className="text-body-secondary" style={{ fontSize: '10px', opacity: 0.8 }}>
+                                            {meeting.start_time || formatTime(meeting.start_datetime_utc)}
+                                        </span>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" icon="visibility" style={{ padding: '4px', height: '32px', width: '32px' }} />
+                            </Card>
+                        ))
+                    ) : (
+                        <div style={{ padding: '32px', textAlign: 'center' }}>
+                            <p className="text-body-secondary">No hay reuniones programadas para este día.</p>
+                            {canManageMeetings && (
+                                <Button
+                                    label="Programar una ahora"
+                                    variant="primary"
+                                    onClick={() => {
+                                        setSelectedDate(null);
+                                        setIsModalOpen(true);
+                                    }}
+                                    style={{ marginTop: '16px' }}
+                                />
+                            )}
+                        </div>
+                    )}
+                </div>
             </Modal>
         </div>
     );

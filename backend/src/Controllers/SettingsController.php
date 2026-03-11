@@ -11,8 +11,7 @@ class SettingsController
     public function handle($memberId, $action, $method)
     {
         // Require church.update permission for settings management
-        // Note:Pastor, Leader, Coordinator should have this or be allowed to customize their invitations
-        // The user specifically asked for Pastor, Leader, Coordinator and Super Admin.
+        PermissionMiddleware::require($memberId, 'church.update');
 
         if ($method === 'GET') {
             if ($action === 'invitation-templates') {

@@ -7,67 +7,59 @@ import '../../index.css';
 
 export const BottomNav: FC = () => {
     const { t } = useTranslation();
-    const { isSuperAdmin, isMaster, isPastor, hasPermission, user } = useAuth();
-    const effectiveIsSuperAdmin = isSuperAdmin || isMaster || isPastor;
+    const { canAccess, user, isSuperAdmin } = useAuth();
+    const isPastor = user?.role?.name?.toLowerCase() === 'pastor';
+    const isLeader = user?.role?.name?.toLowerCase() === 'leader' || user?.role?.name?.toLowerCase() === 'coordinator';
+    const isMember = user?.role?.name?.toLowerCase() === 'member';
 
     interface NavItem {
         path: string;
         icon: string;
         label: string;
-        permission?: string | null;
-        visible?: boolean;
-        isCentral?: boolean;
-        isDisabled?: boolean;
     }
 
-    // Unified Nav Items logic based on permissions
-    const allPossibleItems: NavItem[] = [
-        { path: '/dashboard', icon: 'dashboard', label: t('nav.dashboard'), permission: null },
-        { path: '/mainhub/churches', icon: 'church', label: t('nav.churches'), visible: isSuperAdmin },
-        { path: `/mainhub/churches/edit/${user?.churchId}`, icon: 'church', label: 'Mi Iglesia', visible: !isSuperAdmin && !isMaster && !!user?.churchId && hasPermission('church.update') },
-        { path: '/mainhub/pastor', icon: 'auto_graph', label: t('nav.areas'), permission: 'church.update' },
-        { path: '/mainhub/reports', icon: 'analytics', label: t('nav.reports'), permission: 'reports.view' },
-        { path: '/worship/calendar', icon: 'event', label: t('nav.calendar'), permission: 'calendar.read' },
-        { path: '/worship/playlists', icon: 'queue_music', label: t('nav.playlists'), permission: 'calendar.read' },
-        { path: '/worship/songs', icon: 'library_music', label: t('nav.songs'), permission: 'song.read' },
-        { path: '/mainhub/teams', icon: 'groups', label: t('nav.teams'), permission: 'team.read' },
-        { path: '/mainhub/people', icon: 'person_search', label: t('nav.people'), visible: isSuperAdmin || isMaster || isPastor || hasPermission('church.update') },
-        { path: '/mainhub/consolidation', icon: 'how_to_reg', label: t('nav.consolidation'), visible: isSuperAdmin || isMaster || isPastor || hasPermission('reunions.view') },
+    // Comprehensive list of paths as defined in the CSV matrix
+    const allItems: NavItem[] = [
+        { path: '/dashboard', icon: 'dashboard', label: (isPastor || isSuperAdmin) ? 'Dashboard' : t('nav.dashboard') },
+        { path: '/mainhub/reports', icon: 'analytics', label: (isPastor || isSuperAdmin) ? 'Reportes' : t('nav.reports') },
+        { path: '/mainhub/churches', icon: 'church', label: isSuperAdmin ? 'Iglesias' : 'Mi Iglesia' },
+        { path: '/mainhub/areas', icon: 'layers', label: isPastor ? 'Areas' : t('nav.areas') },
+        { path: '/settings', icon: 'settings', label: 'Ajustes' },
+        { path: '/mainhub/my-team', icon: 'diversity_3', label: 'Mi Equipo' },
+        { path: '/worship/calendar', icon: 'event', label: isSuperAdmin ? 'Calendarios' : (isPastor ? 'Calendario' : t('nav.calendar')) },
+        { path: '/worship/playlists', icon: 'queue_music', label: (isPastor || isLeader || isMember) ? 'Listados' : t('nav.playlists') },
+        { path: '/worship/songs', icon: 'library_music', label: (isPastor || isSuperAdmin) ? 'Biblioteca' : (isLeader ? 'Canciones' : t('nav.songs')) },
+        { path: '/mainhub/teams', icon: 'groups', label: isPastor ? 'Equipos' : t('nav.teams') },
+        { path: '/mainhub/people', icon: 'person_search', label: (isPastor || isSuperAdmin) ? 'Personas' : t('nav.people') },
+        { path: '/mainhub/consolidation', icon: 'how_to_reg', label: t('nav.consolidation') },
     ];
 
-    // Filter items based on user permissions
-    const filteredNavItems = allPossibleItems.filter(item => {
-        if (item.visible !== undefined) return item.visible;
-        return !item.permission || hasPermission(item.permission);
-    });
+    let navItems: NavItem[] = [];
 
-    // Limit to 5 items for mobile bottom nav, prioritizing key hubs
-    let navItems: NavItem[] = filteredNavItems;
-
-    if (effectiveIsSuperAdmin) {
-        navItems = filteredNavItems.filter(i => ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/settings'].includes(i.path));
-        // Add settings manually as it might not be in the list
-        if (!navItems.find(i => i.path === '/settings')) {
-            navItems.push({ path: '/settings', icon: 'settings', label: 'Ajustes', permission: null });
-        }
+    if (isSuperAdmin) {
+        // Specific footer for Superadmin
+        const superadminFooterPaths = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/settings'];
+        navItems = allItems.filter(item => superadminFooterPaths.includes(item.path));
+    } else if (isPastor) {
+        // Specific footer for Pastor
+        const pastorFooterPaths = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/mainhub/areas', '/settings'];
+        navItems = allItems.filter(item => pastorFooterPaths.includes(item.path));
+    } else if (isLeader || isMember) {
+        // Specific footer for Leader and Member
+        const leaderFooterPaths = ['/worship/calendar', '/mainhub/my-team', '/worship/playlists', '/worship/songs', '/settings'];
+        navItems = leaderFooterPaths
+            .map(path => allItems.find(item => item.path === path))
+            .filter((item): item is NavItem => !!item);
     } else {
-        // For others, take the first 5 or relevant ones
-        const prioritized = ['/dashboard', '/worship/calendar', '/worship/playlists', '/worship/songs', '/mainhub/teams'];
-        navItems = filteredNavItems.filter(i => prioritized.includes(i.path));
+        // Filter by permissions matrix for other roles
+        const filteredItems = allItems.filter(item => canAccess(item.path));
+        // Take up to 5 items
+        navItems = filteredItems.slice(0, 5);
+    }
 
-        // If still too few, backfill from filteredNavItems
-        if (navItems.length < 5) {
-            const others = filteredNavItems.filter(i => !prioritized.includes(i.path));
-            navItems = [...navItems, ...others].slice(0, 5);
-        }
-
-        // Final fallback: Ensure at least Home and Profile
-        if (navItems.length === 0) {
-            navItems = [
-                { path: '/dashboard', icon: 'home', label: 'Dashboard' },
-                { path: '/profile', icon: 'person', label: 'Perfil' }
-            ];
-        }
+    // If no items (very rare), fallback to profile
+    if (navItems.length === 0) {
+        navItems.push({ path: '/profile', icon: 'person', label: 'Perfil' });
     }
 
     return (
@@ -94,58 +86,40 @@ export const BottomNav: FC = () => {
                 {navItems.map((item) => (
                     <NavLink
                         key={item.path}
-                        to={item.isDisabled || item.path.includes('undefined') ? '#' : item.path}
+                        to={item.path}
                         end={item.path === '/dashboard'}
-                        className={({ isActive }) => clsx('nav-link', isActive && !item.isDisabled ? 'text-brand-blue' : 'text-gray-500')}
-                        onClick={(e) => { if (item.isDisabled || item.path.includes('undefined')) e.preventDefault(); }}
+                        className={({ isActive }) => clsx('nav-link', isActive ? 'text-brand-blue' : 'text-gray-500')}
                         style={({ isActive }) => ({
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             textDecoration: 'none',
-                            color: (isActive && !item.isDisabled) ? 'var(--color-brand-blue)' : '#9CA3AF',
+                            color: isActive ? 'var(--color-brand-blue)' : '#9CA3AF',
                             transition: 'all 0.2s ease',
                             flex: 1,
                             position: 'relative',
-                            opacity: (item.isDisabled || item.path.includes('undefined')) ? 0.4 : 1,
-                            cursor: (item.isDisabled || item.path.includes('undefined')) ? 'default' : 'pointer'
+                            cursor: 'pointer'
                         })}
                     >
                         {({ isActive }) => (
-                            item.isCentral ? (
-                                <div style={{
-                                    width: '64px',
-                                    height: '64px',
-                                    borderRadius: '50%',
-                                    backgroundColor: (item.isDisabled || item.path.includes('undefined')) ? '#4B5563' : 'var(--color-brand-blue)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginTop: '-40px',
-                                    boxShadow: (item.isDisabled || item.path.includes('undefined')) ? 'none' : '0 8px 16px rgba(61, 104, 223, 0.4)',
-                                    border: '4px solid var(--color-ui-bg)',
-                                    color: 'white'
+                            <>
+                                <span className="material-symbols-outlined" style={{
+                                    fontVariationSettings: isActive ? "'FILL' 1, 'wght' 600" : "'FILL' 0, 'wght' 400",
+                                    fontSize: '28px',
+                                    marginBottom: '4px'
                                 }}>
-                                    <span className="material-symbols-outlined" style={{ fontSize: '32px', fontVariationSettings: "'FILL' 1" }}>
-                                        {item.icon}
-                                    </span>
-                                </div>
-                            ) : (
-                                <>
-                                    <span className="material-symbols-outlined" style={{
-                                        fontVariationSettings: (isActive && !item.isDisabled && !item.path.includes('undefined')) ? "'FILL' 1, 'wght' 600" : "'FILL' 0, 'wght' 400",
-                                        fontSize: '28px',
-                                        marginBottom: '4px'
+                                    {item.icon}
+                                </span>
+                                {item.label && (
+                                    <span className="text-overline" style={{
+                                        fontSize: '10px',
+                                        fontWeight: isActive ? 700 : 500,
+                                        textAlign: 'center'
                                     }}>
-                                        {item.icon}
+                                        {item.label}
                                     </span>
-                                    {item.label && (
-                                        <span className="text-overline" style={{ fontSize: '10px', fontWeight: (isActive && !item.isDisabled && !item.path.includes('undefined')) ? 700 : 500 }}>
-                                            {item.label}
-                                        </span>
-                                    )}
-                                </>
-                            )
+                                )}
+                            </>
                         )}
                     </NavLink>
                 ))}

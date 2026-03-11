@@ -39,6 +39,19 @@ class TeamRepo
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public static function getTeamsByLeader($memberId)
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("
+            SELECT g.* 
+            FROM groups g
+            JOIN group_members gm ON g.id = gm.group_id
+            WHERE gm.member_id = ? AND gm.role_in_group = 'leader'
+        ");
+        $stmt->execute([$memberId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public static function assignMember($groupId, $memberId, $role = 'member')
     {
         $db = Database::getInstance();
@@ -72,6 +85,19 @@ class TeamRepo
             FROM member m
             JOIN group_members gm ON m.id = gm.member_id
             WHERE gm.group_id = ?
+        ");
+        $stmt->execute([$groupId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function getTeamMemberEmails($groupId)
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("
+            SELECT m.email, m.name
+            FROM member m
+            JOIN group_members gm ON m.id = gm.member_id
+            WHERE gm.group_id = ? AND m.email IS NOT NULL AND m.email != ''
         ");
         $stmt->execute([$groupId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -54,19 +54,13 @@ export const PastorDashboard: FC = () => {
             </header>
 
             {/* Quick Stats Grid */}
-            {/* Quick Stats Grid */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '20px',
-                marginBottom: '40px'
-            }}>
-                <Card style={{ padding: '24px' }}>
+            <div className="dashboard-stats-grid">
+                <Card className="stat-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                         <p className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>{t('pastor.stats.activeTeam') || 'Equipo Activo'}</p>
                         <div style={{
-                            width: '36px',
-                            height: '36px',
+                            width: '32px',
+                            height: '32px',
                             borderRadius: '10px',
                             backgroundColor: 'rgba(59, 130, 246, 0.1)',
                             color: 'var(--color-brand-blue)',
@@ -74,22 +68,22 @@ export const PastorDashboard: FC = () => {
                             alignItems: 'center',
                             justifyContent: 'center'
                         }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>groups</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>groups</span>
                         </div>
                     </div>
-                    <h3 className="text-h1" style={{ fontSize: '32px', marginBottom: '4px' }}>{stats?.active_members || 0}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10B981', fontSize: '12px', fontWeight: 600 }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>trending_up</span>
+                    <h3 className="text-h1">{stats?.active_members || 0}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10B981', fontSize: '11px', fontWeight: 600 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>trending_up</span>
                         <span>+12% vs mes ant.</span>
                     </div>
                 </Card>
 
-                <Card style={{ padding: '24px' }}>
+                <Card className="stat-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                         <p className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>{t('pastor.stats.monthlyMeetings') || 'Ensayos / Reuniones'}</p>
                         <div style={{
-                            width: '36px',
-                            height: '36px',
+                            width: '32px',
+                            height: '32px',
                             borderRadius: '10px',
                             backgroundColor: 'rgba(139, 92, 246, 0.1)',
                             color: '#8B5CF6',
@@ -97,21 +91,21 @@ export const PastorDashboard: FC = () => {
                             alignItems: 'center',
                             justifyContent: 'center'
                         }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>event_available</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>event_available</span>
                         </div>
                     </div>
-                    <h3 className="text-h1" style={{ fontSize: '32px', marginBottom: '4px' }}>{stats?.meetings_count || 0}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-ui-text-soft)', fontSize: '12px' }}>
-                        <span>Próximo: Mañana 19:00</span>
+                    <h3 className="text-h1">{stats?.meetings_count || 0}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-ui-text-soft)', fontSize: '11px' }}>
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Mañana 19:00</span>
                     </div>
                 </Card>
 
-                <Card style={{ padding: '24px' }}>
+                <Card className="stat-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                         <p className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>Canciones en Base</p>
                         <div style={{
-                            width: '36px',
-                            height: '36px',
+                            width: '32px',
+                            height: '32px',
                             borderRadius: '10px',
                             backgroundColor: 'rgba(255, 184, 0, 0.1)',
                             color: '#FFB800',
@@ -119,21 +113,21 @@ export const PastorDashboard: FC = () => {
                             alignItems: 'center',
                             justifyContent: 'center'
                         }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>library_music</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>library_music</span>
                         </div>
                     </div>
-                    <h3 className="text-h1" style={{ fontSize: '32px', marginBottom: '4px' }}>128</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6B7280', fontSize: '12px' }}>
+                    <h3 className="text-h1">128</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6B7280', fontSize: '11px' }}>
                         <span>8 nuevas este mes</span>
                     </div>
                 </Card>
 
-                <Card style={{ padding: '24px' }}>
+                <Card className="stat-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                         <p className="text-overline" style={{ color: 'var(--color-ui-text-soft)' }}>{t('pastor.stats.compliance') || 'Cumplimiento'}</p>
                         <div style={{
-                            width: '36px',
-                            height: '36px',
+                            width: '32px',
+                            height: '32px',
                             borderRadius: '10px',
                             backgroundColor: 'rgba(16, 185, 129, 0.1)',
                             color: '#10B981',
@@ -141,16 +135,15 @@ export const PastorDashboard: FC = () => {
                             alignItems: 'center',
                             justifyContent: 'center'
                         }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>check_circle</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>check_circle</span>
                         </div>
                     </div>
-                    <h3 className="text-h1" style={{ fontSize: '32px', marginBottom: '4px' }}>{stats?.compliance || '94%'}</h3>
+                    <h3 className="text-h1">{stats?.compliance || '94%'}</h3>
                     <div style={{ height: '4px', width: '100%', backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '2px', marginTop: '8px' }}>
                         <div style={{ height: '100%', width: stats?.compliance || '94%', backgroundColor: '#10B981', borderRadius: '2px' }}></div>
                     </div>
                 </Card>
             </div>
-
 
             {/* Operational sections */}
             <div style={{
@@ -215,10 +208,6 @@ export const PastorDashboard: FC = () => {
                     </Card>
                 </div>
             </div>
-
         </div>
     );
 };
-
-
-

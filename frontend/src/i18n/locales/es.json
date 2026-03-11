@@ -41,7 +41,7 @@
         "multimediaHub": "Multimedia Hub",
         "diaconosHub": "Diaconos Hub",
         "socialMediaHub": "Social Media",
-        "churchCenter": "Church Center",
+        "churchCenter": "Service Manager",
         "selectChurch": "Selecciona una iglesia"
     },
     "worship": {
@@ -54,10 +54,10 @@
         "teams": "Equipos",
         "reunions": "Reuniones",
         "calendar": "Calendario",
-        "songs": "Biblioteca de canciones",
+        "songs": "Canciones",
         "me": "Mi Perfil",
         "reports": "Reportes",
-        "playlists": "Listado de canciones",
+        "playlists": "Listados",
         "areas": "Áreas",
         "churches": "Iglesias",
         "settings": "Panel de Control",
@@ -162,14 +162,14 @@
         "typeLabel": "Tipo",
         "fast": "Rápida",
         "slow": "Lenta",
-        "singerAssignments": "líder de alabanza",
+        "singerAssignments": "Líder de Alabanza",
         "addAssignment": "Añadir Líder",
-        "noSingersAssigned": "Aún no hay líderes asignados.",
+        "noSingersAssigned": "Aún no hay Líderes asignados.",
         "contentLabel": "Contenido de la Canción (ChordPro)",
         "contentPlaceholder": "[G]Sublime [D]Gracia, que [G]un pe[C]cador...",
         "previewPlaceholder": "La vista previa aparecerá aquí...",
         "saveSuccess": "Cambios guardados correctamente.",
-        "submitApprovalSuccess": "Tus cambios han sido enviados para revisión por un líder.",
+        "submitApprovalSuccess": "Tus cambios han sido enviados para revisión por un Líder.",
         "moderation": {
             "title": "Moderación de Cambios",
             "subtitle": "Revisa y autoriza las ediciones propuestas por los colaboradores.",
@@ -258,7 +258,7 @@
         "forgotPassword": "¿Olvidaste tu contraseña?",
         "name": "Nombre Completo",
         "namePlaceholder": "Juan Pérez",
-        "signInTitle": "Church Center",
+        "signInTitle": "Service Manager",
         "signInSubtitle": "Inicia sesión para continuar",
         "signInAction": "Ingresar",
         "signingIn": "Ingresando...",
@@ -399,7 +399,10 @@
         "adminDebug": "Consola de Debug",
         "adminDebugSubtitle": "Logs en vivo y errores",
         "adminDiag": "Diagnóstico de API",
-        "adminDiagSubtitle": "Verificar estado del servidor"
+        "adminDiagSubtitle": "Verificar estado del servidor",
+        "tutorials": "Tutoriales y Guías",
+        "tutorialsActive": "Activados: Se mostrarán guías interactivas.",
+        "tutorialsInactive": "Desactivados: Las guías están ocultas."
     },
     "notifications": {
         "title": "Notificaciones",
@@ -475,6 +478,93 @@
             "noSongs": "No hay canciones programadas aún."
         },
         "viewFullCalendar": "Ver Calendario Completo"
+    },
+    "tutorials": {
+        "btn": {
+            "done": "Entendido",
+            "next": "Siguiente",
+            "prev": "Anterior"
+        },
+        "meetings": {
+            "title": "Gestión de Reuniones",
+            "desc": "Aquí puedes ver y administrar todas las reuniones de tu iglesia.",
+            "newTitle": "Nueva Reunión",
+            "newDesc": "Haz clic aquí para programar una nueva reunión recurrente o especial.",
+            "tabsTitle": "Lista de reuniones",
+            "tabsDesc": "Cambia a esta pestaña para ver un listado detallado y buscar reuniones específicas."
+        },
+        "songs": {
+            "title": "Biblioteca de Canciones",
+            "desc": "Explora y gestiona el repertorio musical de tu congregación.",
+            "newTitle": "Crear Canción",
+            "newDesc": "Agrega nuevas canciones con letras, acordes y videos de referencia.",
+            "searchTitle": "Buscador Inteligente",
+            "searchDesc": "Encuentra canciones por título o artista rápidamente."
+        },
+        "playlists": {
+            "title": "Listados de Canciones",
+            "desc": "Organiza las canciones para tus reuniones y eventos.",
+            "newTitle": "Nuevo Listado",
+            "newDesc": "Crea una nueva selección de canciones para una fecha específica."
+        },
+        "worship": {
+            "welcome": {
+                "title": "¡Bienvenido al Equipo de Alabanza!",
+                "desc": "Este es un recorrido para que aprendas a gestionar el repertorio. ¿Comenzamos?"
+            },
+            "list": {
+                "title": "Biblioteca de Canciones",
+                "desc": "Aquí tienes todas las canciones. Puedes buscar por nombre o filtrar por tonalidad."
+            },
+            "quickView": {
+                "title": "Vista Rápida",
+                "desc": "Haz clic en una canción para abrir este panel. Te permite ver la letra sin salir del listado."
+            },
+            "metronome": {
+                "title": "Metrónomo",
+                "desc": "¡Úsalo para practicar! El tempo ya está configurado según la canción."
+            },
+            "fullView": {
+                "title": "Vista Completa",
+                "desc": "Entra aquí para ver todos los recursos, videos y configuraciones avanzadas."
+            },
+            "transpose": {
+                "title": "Cambio de Tonalidad",
+                "desc": "Prueba a cambiar la nota. Verás cómo los acordes cambian automáticamente (transposición)."
+            },
+            "notation": {
+                "title": "Sistema de Cifrado",
+                "desc": "Cambia entre Cifrado Americano (C, D, E), Español (Do, Re, Mi) o Números Romanos."
+            },
+            "fontSize": {
+                "title": "Tamaño de Letra",
+                "desc": "Ajusta el tamaño para que sea cómodo leer desde el atril o tablet."
+            },
+            "create": {
+                "title": "Crear Canción",
+                "desc": "Ahora vamos a aprender a registrar una canción nueva."
+            },
+            "formBasic": {
+                "title": "Datos Principales",
+                "desc": "El Nombre, BPM y Tonalidad Original son los datos más importantes para el equipo."
+            },
+            "editor": {
+                "title": "Editor de Acordes",
+                "desc": "Escribe la letra y los acordes. Recomendamos poner los acordes entre corchetes [A] arriba de la letra."
+            },
+            "sections": {
+                "title": "Botones de Secciones",
+                "desc": "Usa estos botones para marcar rápido [CORO], [PUENTE], etc. Facilita mucho la lectura."
+            },
+            "singers": {
+                "title": "Tonalidades por Cantante",
+                "desc": "Si un cantante necesita la canción en otra nota, asígnala aquí. El sistema la recordará para siempre."
+            },
+            "save": {
+                "title": "Guardar",
+                "desc": "¡Listo! Una vez guardado, todos podrán verla. Editar una canción sigue este mismo proceso."
+            }
+        }
     },
     "setup": {
         "church": {
@@ -573,7 +663,27 @@
         "updateSuccess": "Equipo actualizado correctamente.",
         "updateError": "Error al actualizar el equipo.",
         "teamInfo": "Información del Equipo",
-        "memberManagement": "Gestión de Miembros"
+        "memberManagement": "Gestión de Miembros",
+        "noTeamAssigned": "Sin Equipo Asignado",
+        "noTeamMessage": "Aún no has sido asignado como líder de ningún equipo. Por favor, contacta a tu Pastor o Coordinador para que te asigne un equipo y puedas gestionar a tus miembros."
+    },
+    "errors": {
+        "403": {
+            "title": "Acceso restringido",
+            "message": "No tienes los permisos necesarios para ver esta sección. Por favor, contacta con un administrador."
+        },
+        "404": {
+            "title": "Página no encontrada",
+            "message": "Lo sentimos, el enlace que seguiste podría estar roto o la página fue eliminada."
+        },
+        "500": {
+            "title": "Error del servidor",
+            "message": "Algo salió mal en nuestros servidores. Estamos trabajando para solucionarlo."
+        },
+        "503": {
+            "title": "Servicio en mantenimiento",
+            "message": "Estamos realizando tareas de mantenimiento para mejorar tu experiencia. Volveremos pronto."
+        }
     },
     "consolidation": {
         "title": "Consolidación",

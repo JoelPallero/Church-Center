@@ -13,17 +13,40 @@ import { ChordSheetRenderer } from '../../../components/music/ChordSheetRenderer
 import type { ChordViewMode } from '../../../components/music/ChordSheetRenderer';
 import { musicUtils } from '../../../utils/musicUtils';
 import { peopleService } from '../../../services/peopleService';
+import { Metronome } from '../../../components/music/Metronome';
 import type { User } from '../../../types/domain';
+import { useTutorials } from '../../../context/TutorialContext';
 
 export const SongList: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { hasPermission, isMaster, user } = useAuth();
+    const { isMaster, user, canManageSongs, hasRole, hasService } = useAuth();
+    const { startTutorial, showTutorials } = useTutorials();
     const [songs, setSongs] = useState<Song[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [singers, setSingers] = useState<User[]>([]);
+
+    useEffect(() => {
+        if (!showTutorials || !user || loading) return;
+
+        const hasSeenFullTour = localStorage.getItem('tutorial_seen_worship_master');
+        if (hasSeenFullTour === 'true') return;
+
+        // Roles: Leader, Coordinator, or Anyone in Praise
+        const isLeader = hasRole('leader');
+        const isCoordinator = hasRole('coordinator');
+        const isPraiseMember = hasService('worship');
+
+        if (isLeader || isCoordinator || isPraiseMember) {
+            const stage = localStorage.getItem('worship_tour_stage') || 'list';
+            if (stage === 'list') {
+                // We are in the library, start part 1
+                startTutorial('worship_list');
+            }
+        }
+    }, [user, showTutorials, loading, hasRole, hasService, startTutorial]);
 
     // Pagination
     const [page, setPage] = useState(1);
@@ -67,6 +90,18 @@ export const SongList: FC = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (showTutorials && !loading && songs.length >= 0) {
+            const hasSeenTutorial = localStorage.getItem('tutorial_seen_songs');
+            if (!hasSeenTutorial) {
+                if (window.confirm('¿Quieres realizar un breve recorrido por la Biblioteca de Canciones?')) {
+                    startTutorial('songs');
+                }
+                localStorage.setItem('tutorial_seen_songs', 'true');
+            }
+        }
+    }, [showTutorials, loading]);
 
     // Generate the list to display based on filters
     const getDisplaySongs = () => {
@@ -126,10 +161,18 @@ export const SongList: FC = () => {
         setTranspose(0);
     };
 
+    const handleDelete = async (id: number | string) => {
+        if (!window.confirm(t('common.confirmDelete') || '¿Estás seguro de que deseas eliminar esta canción?')) return;
+        const success = await songService.delete(id, finalChurchId || undefined);
+        if (success) {
+            loadSongs();
+        }
+    };
+
     return (
-        <div style={{ position: 'relative', display: 'flex', gap: '24px', alignItems: 'start', padding: '24px' }}>
+        <div style={{ position: 'relative', display: 'flex', gap: '24px', alignItems: 'start', width: '100%', minWidth: 0 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-                <header style={{
+                <header id="songs-header" style={{
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '8px',
@@ -143,18 +186,23 @@ export const SongList: FC = () => {
                         gap: '12px'
                     }}>
                         <h1 className="text-h1" style={{ margin: 0, fontSize: 'clamp(22px, 4vw, 32px)', lineHeight: 1.2 }}>{t('songs.title')}</h1>
-                        {hasPermission('songs.create') && (
-                            <Button
-                                variant="primary"
-                                icon="add"
-                                label={t('songs.add')}
-                                onClick={() => navigate('/worship/songs/new' + (finalChurchId ? `?church_id=${finalChurchId}` : ''))}
-                                style={{ height: '38px', padding: '0 16px', flexShrink: 0 }}
-                            />
+                        {canManageSongs && (
+                            <div id="btn-new-song">
+                                <Button
+                                    variant="primary"
+                                    icon="add"
+                                    label={t('songs.add')}
+                                    onClick={() => navigate('/worship/songs/new' + (finalChurchId ? `?church_id=${finalChurchId}` : ''))}
+                                    style={{ height: '38px', padding: '0 16px', flexShrink: 0 }}
+                                />
+                            </div>
                         )}
                     </div>
+                    <p className="text-body" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '8px' }}>
+                        {t('songs.description') || 'Gestiona el repertorio musical, tonalidades y recursos.'}
+                    </p>
 
-                    <div style={{ position: 'relative', display: 'flex', gap: '8px' }}>
+                    <div id="songs-search" style={{ position: 'relative', display: 'flex', gap: '8px' }}>
                         <div style={{ position: 'relative', flex: 1 }}>
                             <span className="material-symbols-outlined text-muted" style={{
                                 position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)'
@@ -193,8 +241,8 @@ export const SongList: FC = () => {
                                     style={{ width: '100%', padding: '8px', borderRadius: '8px', backgroundColor: 'var(--color-ui-bg)', color: 'var(--color-ui-text)', border: '1px solid var(--color-border-subtle)', outline: 'none', fontSize: '13px' }}
                                 >
                                     <option value="">{t('common.all')}</option>
-                                    {['C', 'C#', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'].map(k => (
-                                        <option key={k} value={k}>{k}</option>
+                                    {['C', 'Cm', 'C#', 'C#m', 'Db', 'Dbm', 'D', 'Dm', 'Eb', 'Ebm', 'E', 'Em', 'F', 'Fm', 'F#', 'F#m', 'Gb', 'Gbm', 'G', 'Gm', 'Ab', 'Abm', 'A', 'Am', 'Bb', 'Bbm', 'B', 'Bm'].map(k => (
+                                        <option key={k} value={k}>{musicUtils.formatKey(k)}</option>
                                     ))}
                                 </select>
                             </div>
@@ -239,6 +287,7 @@ export const SongList: FC = () => {
                                     key={`${song.id}-${song.isAssigned ? 'assigned' : 'orig'}`}
                                     song={song}
                                     singerIdFilter={filterSinger}
+                                    onDelete={handleDelete}
                                 />
                             ))}
 
@@ -265,12 +314,15 @@ export const SongList: FC = () => {
                         </Card>
                     ) : (
                         <>
-                            <SongTable
-                                songs={visibleSongs}
-                                singerIdFilter={filterSinger}
-                                onSelect={handleSelectSong}
-                                selectedId={selectedSong?.id.toString()}
-                            />
+                            <div id="songs-list-table">
+                                <SongTable
+                                    songs={visibleSongs}
+                                    singerIdFilter={filterSinger}
+                                    onSelect={handleSelectSong}
+                                    selectedId={selectedSong?.id.toString()}
+                                    onDelete={handleDelete}
+                                />
+                            </div>
 
                             {hasMore && (
                                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '32px' }}>
@@ -297,7 +349,7 @@ export const SongList: FC = () => {
                         style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 100, backdropFilter: 'blur(4px)' }}
                         onClick={() => setSelectedSong(null)}
                     />
-                    <aside style={{
+                    <aside id="song-quick-view" style={{
                         width: '400px',
                         height: 'calc(100vh - 140px)',
                         position: 'sticky',
@@ -311,12 +363,19 @@ export const SongList: FC = () => {
                         animation: 'fadeIn 0.2s ease-out'
                     }}>
                         <div style={{ padding: '20px', borderBottom: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ overflow: 'hidden' }}>
-                                <h3 className="text-card-title" style={{ margin: 0, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{selectedSong.title}</h3>
-                                <p className="text-overline" style={{ margin: 0 }}>{selectedSong.artist}</p>
+                            <div style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ overflow: 'hidden' }}>
+                                    <h3 className="text-card-title" style={{ margin: 0, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{selectedSong.title}</h3>
+                                    <p className="text-overline" style={{ margin: 0 }}>{selectedSong.artist}</p>
+                                </div>
+                                {selectedSong.tempo && (
+                                    <div id="songs-metronome-quick">
+                                        <Metronome bpm={Number(selectedSong.tempo)} variant="card" />
+                                    </div>
+                                )}
                             </div>
                             <div style={{ display: 'flex', gap: '4px' }}>
-                                <Button variant="ghost" icon="open_in_new" onClick={() => navigate(`/worship/songs/${selectedSong.id}`)} style={{ padding: '8px', minWidth: 'auto' }} />
+                                <Button id="btn-full-view" variant="ghost" icon="open_in_new" onClick={() => navigate(`/worship/songs/${selectedSong.id}`)} style={{ padding: '8px', minWidth: 'auto' }} />
                                 <Button variant="ghost" icon="close" onClick={() => setSelectedSong(null)} style={{ padding: '8px', minWidth: 'auto' }} />
                             </div>
                         </div>
@@ -350,7 +409,7 @@ export const SongList: FC = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'var(--color-ui-surface)', padding: '4px', borderRadius: '8px' }}>
                                     <Button variant="ghost" icon="remove" onClick={() => setTranspose(p => p - 1)} style={{ padding: '4px', height: '28px', minWidth: 'auto' }} />
                                     <span style={{ fontSize: '12px', fontWeight: 800, minWidth: '40px', textAlign: 'center', color: 'var(--color-brand-blue)' }}>
-                                        {musicUtils.transposeNote(selectedSong.originalKey, transpose)}
+                                        {musicUtils.formatKey(musicUtils.transposeNote(selectedSong.originalKey, transpose), viewMode === 'american' ? 'american' : 'spanish')}
                                     </span>
                                     <Button variant="ghost" icon="add" onClick={() => setTranspose(p => p + 1)} style={{ padding: '4px', height: '28px', minWidth: 'auto' }} />
                                 </div>

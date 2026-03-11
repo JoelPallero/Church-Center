@@ -21,17 +21,20 @@ class BootstrapController
         $serviceRoles = PermissionRepo::getServiceRoles($memberId, $member['church_id']);
 
         $isSuper = PermissionRepo::isSuperAdmin($memberId);
-        $roles = array_map(fn($r) => $r['name'], $serviceRoles);
+        $roles = array_map(fn($r) => trim(strtolower($r['name'])), $serviceRoles);
         if ($isSuper) {
             $roles[] = 'superadmin';
         }
         $roles = array_values(array_unique($roles));
 
-        $serviceKeys = array_values(array_unique(array_map(fn($r) => $r['service_key'], $serviceRoles)));
+        $serviceKeys = array_values(array_unique(array_map(fn($r) => trim(strtolower($r['service_key'])), $serviceRoles)));
 
-        // Pastors should have access to all services by default
-        if (in_array('pastor', $roles)) {
+        // Roles that should have access to core modules by default
+        $churchRoles = ['pastor', 'leader', 'coordinator', 'multimedia', 'member'];
+        
+        if (count(array_intersect($churchRoles, $roles)) > 0) {
             $serviceKeys[] = 'worship';
+            $serviceKeys[] = 'consolidation';
             $serviceKeys[] = 'social';
             // Add other modules as they are created
         }

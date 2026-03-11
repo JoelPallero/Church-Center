@@ -8,7 +8,6 @@ export const PrivacySupport: FC = () => {
 
     const faqs = [
         { q: '¿Cómo recupero mi cuenta?', a: 'Podés recuperar tu cuenta solicitando un enlace de restablecimiento de contraseña en la página de inicio de sesión.' },
-        { q: '¿Cómo gestiono mis diezmos?', a: 'La gestión de diezmos se realiza a través del módulo de finanzas, accesible solo para roles administrativos.' },
         { q: '¿Puedo exportar reportes de membresía?', a: 'Sí, los administradores pueden exportar listados en formato PDF y Excel desde la sección de Personas.' }
     ];
 
@@ -119,7 +118,7 @@ export const PrivacySupport: FC = () => {
                     <span className="material-symbols-outlined" style={{ color: '#4B5563', fontSize: '20px' }}>church</span>
                 </div>
                 <p className="text-overline" style={{ color: '#4B5563' }}>
-                    Church Management Platform v2.4.0<br />
+                    Service Manager v1.0.0<br />
                     © {new Date().getFullYear()} Todos los derechos reservados.
                 </p>
             </footer>

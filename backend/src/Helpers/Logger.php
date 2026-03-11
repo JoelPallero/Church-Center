@@ -6,7 +6,7 @@ class Logger
 {
     private static function getLogFile()
     {
-        $dir = APP_ROOT . DIRECTORY_SEPARATOR . 'logs';
+        $dir = \APP_ROOT . DIRECTORY_SEPARATOR . 'logs';
         if (!is_dir($dir)) {
             @mkdir($dir, 0777, true);
         }
@@ -20,22 +20,22 @@ class Logger
         return sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'msm2_fallback.log';
     }
 
-    public static function info($message)
+    public static function info($message, array $context = [])
     {
-        self::log("INFO", $message);
+        self::log("INFO", $message, $context);
     }
 
-    public static function warning($message)
+    public static function warning($message, array $context = [])
     {
-        self::log("WARNING", $message);
+        self::log("WARNING", $message, $context);
     }
 
-    public static function error($message)
+    public static function error($message, array $context = [])
     {
-        self::log("ERROR", $message);
+        self::log("ERROR", $message, $context);
     }
 
-    private static function log($level, $message)
+    private static function log($level, $message, array $context = [])
     {
         $logFile = self::getLogFile();
 
@@ -45,7 +45,8 @@ class Logger
         }
 
         $date = date('Y-m-d H:i:s');
-        $formatted = "[$date] [$level] $message" . PHP_EOL;
+        $contextStr = !empty($context) ? ' | ' . json_encode($context) : '';
+        $formatted = "[$date] [$level] $message$contextStr" . PHP_EOL;
         @file_put_contents($logFile, $formatted, FILE_APPEND);
     }
 }

@@ -54,7 +54,7 @@ export const MainDashboard: FC = () => {
 
     // Role-based HOME selection
     if (isMaster) return <MasterDashboard />;
-    if (isPastor) return <PastorDashboard />;
+    if (isPastor || isLeader) return <PastorDashboard />;
     if (isMember) return <Playlists />;
 
     if (isGuest) {

@@ -67,7 +67,7 @@ export const Home: FC = () => {
                             <span className="material-symbols-outlined" style={{ color: 'white', fontSize: '20px' }}>church</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                            <span style={{ fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>Church Center</span>
+                            <span style={{ fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>Service Manager</span>
                             <span style={{
                                 fontSize: '10px',
                                 fontWeight: 700,
@@ -80,7 +80,7 @@ export const Home: FC = () => {
                                 letterSpacing: '0.05em',
                                 lineHeight: 1
                             }}>
-                                Beta
+                                v1.0
                             </span>
                         </div>
                     </div>
@@ -318,7 +318,7 @@ export const Home: FC = () => {
                             <div style={{ width: '24px', height: '24px', backgroundColor: '#3d68df', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <span className="material-symbols-outlined" style={{ color: 'white', fontSize: '14px' }}>church</span>
                             </div>
-                            <span style={{ fontWeight: 800, fontSize: '18px' }}>Church Center</span>
+                            <span style={{ fontWeight: 800, fontSize: '18px' }}>Service Manager</span>
                         </div>
                         <p style={{ fontSize: '14px', color: '#64748B', lineHeight: 1.6 }}>
                             Global platform for church management, production, and ministry coordination.
@@ -348,7 +348,7 @@ export const Home: FC = () => {
                 </div>
                 <div className="section-padding" style={{ maxWidth: '1366px', margin: '40px auto 0', paddingTop: '40px', borderTop: '1px solid #E2E8F0', textAlign: 'center' }}>
                     <p style={{ fontSize: '12px', color: '#94A3B8' }}>
-                        © {new Date().getFullYear()} Church Center. Todos los derechos reservados. Edificando el Reino.
+                        © {new Date().getFullYear()} Service Manager. Todos los derechos reservados. Edificando el Reino.
                     </p>
                 </div>
             </footer>
