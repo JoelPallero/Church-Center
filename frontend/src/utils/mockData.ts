@@ -69,7 +69,9 @@ export const MOCK_PROFILES: Record<string, { user: User; permissions: string[]; 
             'calendar.read',
             'song.read',
             'team.read',
-            'song.write'
+            'song.write',
+            'song.create',
+            'song.update'
         ],
         roles: ['leader']
     },
@@ -78,7 +80,10 @@ export const MOCK_PROFILES: Record<string, { user: User; permissions: string[]; 
         permissions: [
             'calendar.read',
             'song.read',
-            'team.read'
+            'team.read',
+            'song.create',
+            'song.update',
+            'song.write'
         ],
         roles: ['coordinator']
     },

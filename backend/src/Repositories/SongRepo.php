@@ -11,21 +11,28 @@ class SongRepo
     {
         try {
             $db = Database::getInstance('music');
-            $sql = "SELECT id, church_id, title, artist, category, original_key, tempo, bpm_type, time_signature, is_active FROM songs WHERE is_active = 1";
-            $params = [];
-
-            if ($churchId !== null) {
-                // Include specific church songs AND universal songs (id 0)
-                $sql .= " AND (church_id = ? OR church_id = 0)";
-                $params[] = $churchId;
+            
+            // If SuperAdmin (null) or General (0), see EVERYTHING
+            if ($churchId === null || (int)$churchId === 0) {
+                $stmt = $db->query("SELECT id, church_id, title, artist, category, original_key, tempo, bpm_type, time_signature, youtube_url, spotify_url, content, is_active, created_at FROM songs WHERE is_active = 1 ORDER BY id DESC");
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
 
-            $sql .= " ORDER BY title ASC";
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
+            // Check if this specific church has Global Access enabled
+            $enabledFeatures = \App\Repositories\ChurchRepo::getEnabledServiceKeys($churchId);
+            $hasGlobalAccess = in_array('global_songs', $enabledFeatures);
+
+            if ($hasGlobalAccess) {
+                // Global Mode: See all songs
+                $stmt = $db->query("SELECT id, church_id, title, artist, category, original_key, tempo, bpm_type, time_signature, youtube_url, spotify_url, content, is_active, created_at FROM songs WHERE is_active = 1 ORDER BY id DESC");
+            } else {
+                // Private Mode: Only see songs of THIS church OR Global songs (ID 0)
+                $stmt = $db->prepare("SELECT id, church_id, title, artist, category, original_key, tempo, bpm_type, time_signature, youtube_url, spotify_url, content, is_active, created_at FROM songs WHERE (church_id = ? OR church_id = 0) AND is_active = 1 ORDER BY id DESC");
+                $stmt->execute([$churchId]);
+            }
+            
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (\Exception $e) {
-            // Log the error but don't break the whole app if music db is down
             \App\Helpers\Logger::error("SongRepo::getAll error: " . $e->getMessage());
             return [];
         }
@@ -35,7 +42,7 @@ class SongRepo
     {
         try {
             $db = Database::getInstance('music');
-            $stmt = $db->prepare("SELECT * FROM songs WHERE id = ?");
+            $stmt = $db->prepare("SELECT id, church_id, title, artist, category, original_key, tempo, bpm_type, time_signature, youtube_url, spotify_url, content, is_active FROM songs WHERE id = ?");
             $stmt->execute([$id]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (\Exception $e) {
@@ -49,8 +56,8 @@ class SongRepo
         try {
             $db = Database::getInstance('music');
             $stmt = $db->prepare("
-                INSERT INTO songs (church_id, title, artist, original_key, tempo, content, category, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                INSERT INTO songs (church_id, title, artist, original_key, tempo, time_signature, bpm_type, content, category, youtube_url, spotify_url, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             ");
             $stmt->execute([
                 $data['church_id'] ?? 0,
@@ -58,8 +65,12 @@ class SongRepo
                 $data['artist'],
                 $data['original_key'] ?? '',
                 $data['tempo'] ?? '',
+                $data['time_signature'] ?? '4/4',
+                $data['bpm_type'] ?? 'fast',
                 $data['content'] ?? '',
-                $data['category'] ?? ''
+                $data['category'] ?? '',
+                $data['youtube_url'] ?? '',
+                $data['spotify_url'] ?? ''
             ]);
             return $db->lastInsertId();
         } catch (\Exception $e) {
@@ -146,7 +157,7 @@ class SongRepo
             $fields = [];
             $params = [];
             foreach ($data as $key => $value) {
-                if (in_array($key, ['title', 'artist', 'original_key', 'tempo', 'content', 'category'])) {
+                if (in_array($key, ['title', 'artist', 'original_key', 'tempo', 'time_signature', 'bpm_type', 'content', 'category', 'youtube_url', 'spotify_url', 'church_id'])) {
                     $fields[] = "$key = ?";
                     $params[] = $value;
                 }

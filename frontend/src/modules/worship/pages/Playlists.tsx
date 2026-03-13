@@ -17,8 +17,8 @@ export const Playlists: FC = () => {
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [searchParams] = useSearchParams();
-    const { user, isMaster, hasRole, canManagePlaylists } = useAuth();
-    const { startTutorial, showTutorials } = useTutorials();
+    const { user, isMaster, hasRole, canManagePlaylists, isSuperAdmin } = useAuth();
+    const { startTutorial, showTutorials, setShowTutorials } = useTutorials();
     
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [upcomingReunions, setUpcomingReunions] = useState<Reunion[]>([]);
@@ -52,11 +52,13 @@ export const Playlists: FC = () => {
         loadData();
     }, [finalChurchId, isMaster, isPastor, navigate]);
     useEffect(() => {
-        if (showTutorials && !loading && playlists.length >= 0) {
+        if (showTutorials && !loading && playlists.length >= 0 && !isSuperAdmin) {
             const hasSeenTutorial = localStorage.getItem('tutorial_seen_playlists');
             if (!hasSeenTutorial) {
                 if (window.confirm('¿Quieres realizar un breve recorrido por la gestión de Listados?')) {
                     startTutorial('playlists');
+                } else {
+                    setShowTutorials(false);
                 }
                 localStorage.setItem('tutorial_seen_playlists', 'true');
             }

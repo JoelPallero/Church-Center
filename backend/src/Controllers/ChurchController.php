@@ -10,10 +10,15 @@ class ChurchController
 {
     public function handle($memberId, $action, $method)
     {
+        $uri = $_SERVER['REQUEST_URI'];
+        $isServicesRequest = strpos($uri, '/services') !== false;
+
         if ($method === 'GET') {
             PermissionMiddleware::require($memberId, 'church.read');
             if ($action === 'my_churches') {
                 $this->myChurches($memberId);
+            } elseif ($isServicesRequest && is_numeric($action)) {
+                $this->getServices($action);
             } elseif ($action && is_numeric($action)) {
                 $this->show($action);
             } else {
@@ -28,7 +33,11 @@ class ChurchController
             }
         } elseif ($method === 'PUT') {
             PermissionMiddleware::require($memberId, 'church.update');
-            $this->update($memberId, $action);
+            if ($isServicesRequest && is_numeric($action)) {
+                $this->updateServices($action);
+            } else {
+                $this->update($memberId, $action);
+            }
         } elseif ($method === 'DELETE') {
             PermissionMiddleware::require($memberId, 'church.update');
             $this->delete($memberId, $action);
@@ -62,7 +71,12 @@ class ChurchController
         }
 
         try {
-            $churchId = ChurchRepo::create($data['name'], $data['slug']);
+            $churchId = ChurchRepo::create(
+                $data['name'], 
+                $data['slug'], 
+                $data['address'] ?? null, 
+                $data['timezone'] ?? 'America/Argentina/Buenos_Aires'
+            );
             if ($churchId) {
                 Response::json([
                     'success' => true,
@@ -104,7 +118,13 @@ class ChurchController
             Response::error("Datos incompletos", 400);
         }
 
-        $success = ChurchRepo::update($id, $data['name'], $data['slug']);
+        $success = ChurchRepo::update(
+            $id, 
+            $data['name'], 
+            $data['slug'], 
+            $data['address'] ?? null, 
+            $data['timezone'] ?? null
+        );
         Response::json(['success' => $success, 'message' => $success ? 'Iglesia actualizada' : 'Error al actualizar']);
     }
 
@@ -147,5 +167,25 @@ class ChurchController
 
         $success = ChurchRepo::restore($id);
         Response::json(['success' => $success, 'message' => $success ? 'Iglesia restaurada correctamente' : 'Error al restaurar']);
+    }
+
+    private function getServices($churchId)
+    {
+        $services = ChurchRepo::getServices($churchId);
+        Response::json(['success' => true, 'services' => $services]);
+    }
+
+    private function updateServices($churchId)
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+        if (!$data || !isset($data['services'])) {
+            Response::error("Datos incompletos", 400);
+        }
+
+        foreach ($data['services'] as $svc) {
+            ChurchRepo::updateService($churchId, $svc['id'], $svc['is_enabled']);
+        }
+
+        Response::json(['success' => true, 'message' => 'Configuración de hubs actualizada']);
     }
 }

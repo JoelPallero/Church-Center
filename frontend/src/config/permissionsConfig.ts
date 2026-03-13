@@ -7,7 +7,7 @@
  * CRÍTICO: No modificar este archivo sin permiso explícito del programador.
  */
 
-export type UserRole = 'superadmin' | 'pastor' | 'leader' | 'coordinator' | 'member' | string;
+export type UserRole = 'superadmin' | 'pastor' | 'leader' | 'coordinator' | 'member' | 'ujier' | string;
 
 export interface PermissionMatrix {
     [routeOrAction: string]: UserRole[];
@@ -15,58 +15,63 @@ export interface PermissionMatrix {
 
 export const PERMISSIONS_MATRIX: PermissionMatrix = {
     // Shared / Core
-    '/dashboard': ['superadmin', 'pastor'],
-    '/profile': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
-    '/settings': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
+    '/dashboard': ['superadmin', 'pastor', 'ujier'],
+    '/profile': ['superadmin', 'pastor', 'leader', 'coordinator', 'member', 'ujier'],
+    '/settings': ['superadmin', 'pastor', 'leader', 'coordinator', 'member', 'ujier'],
     '/settings/invitations': ['superadmin', 'pastor', 'leader'],
-    '/privacy': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
-    '/social': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
+    '/privacy': ['superadmin', 'pastor', 'leader', 'coordinator', 'member', 'ujier'],
+    '/social': ['superadmin', 'pastor', 'leader', 'coordinator', 'member', 'ujier'],
 
     // Worship Hub
     '/worship': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
     '/worship/songs': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
     '/worship/songs/view': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
     '/worship/songs/edit': ['superadmin', 'pastor', 'leader', 'coordinator'],
-    '/worship/songs/approvals': ['superadmin', 'pastor', 'leader'],
+    '/worship/songs/new': ['superadmin', 'pastor', 'leader', 'coordinator'],
+    '/worship/songs/approvals': ['superadmin', 'pastor', 'leader', 'coordinator'],
     '/worship/playlists': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
     '/worship/calendar': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
 
     // MainHub (Pastoral/Admin)
     '/mainhub': ['superadmin', 'pastor', 'leader', 'coordinator'],
     '/mainhub/people': ['superadmin', 'pastor'],
-    '/mainhub/people/approvals': ['superadmin', 'pastor', 'leader'],
+    '/mainhub/people/approvals': ['superadmin', 'pastor', 'leader', 'coordinator'],
     '/mainhub/people/invite': ['superadmin', 'pastor', 'leader', 'coordinator'],
-    '/mainhub/teams': ['superadmin', 'pastor', 'leader'],
+    '/mainhub/teams': ['superadmin', 'pastor', 'leader', 'coordinator'],
     '/mainhub/my-team': ['superadmin', 'pastor', 'leader', 'coordinator'],
     '/mainhub/reports': ['superadmin', 'pastor'],
-    '/mainhub/consolidation': ['superadmin', 'pastor'],
-    '/mainhub/attendance': ['superadmin', 'pastor'],
-    '/mainhub/visitor': ['superadmin', 'pastor'],
+    '/mainhub/consolidation': ['superadmin', 'pastor', 'ujier'],
+    '/mainhub/attendance': ['superadmin', 'pastor', 'ujier'],
+    '/mainhub/visitor': ['superadmin', 'pastor', 'ujier'],
     '/mainhub/master': ['superadmin'],
     '/mainhub/pastor': ['pastor', 'superadmin'], // superadmin allowed everywhere
     '/mainhub/churches': ['superadmin', 'pastor'],
     '/mainhub/churches/edit': ['superadmin'],
     '/mainhub/areas': ['superadmin', 'pastor'],
     '/mainhub/setup-areas': ['superadmin', 'pastor'],
-    '/mainhub/setup-teams': ['superadmin', 'pastor', 'leader'],
+    '/mainhub/setup-teams': ['superadmin', 'pastor', 'leader', 'coordinator'],
     '/mainhub/select-church': ['superadmin'],
     '/mainhub/admin/permissions': ['superadmin'],
     '/mainhub/join-teams': ['member'],
 
     // Modals / Actions
-    'action.meeting.edit': ['superadmin', 'pastor', 'leader'],
-    'action.meeting.view_detail': ['superadmin', 'pastor', 'leader'],
+    'action.meeting.edit': ['superadmin', 'pastor', 'leader', 'coordinator'],
+    'action.meeting.delete': ['superadmin', 'pastor', 'leader'],
+    'action.meeting.view_detail': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
     'action.meeting.list_by_date': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
-    'action.meeting.assign_staff': ['superadmin', 'pastor'],
+    'action.meeting.assign_staff': ['superadmin', 'pastor', 'leader'],
     'action.meeting.assign_setlist': ['superadmin', 'pastor', 'leader', 'coordinator'],
     'action.people.edit_profile': ['superadmin', 'pastor', 'leader'],
-    'action.team.config': ['superadmin', 'pastor', 'leader'],
+    'action.team.config': ['superadmin', 'pastor', 'leader', 'coordinator'],
     'action.team.create': ['superadmin', 'pastor', 'leader'],
     'action.instruments.manage': ['leader', 'coordinator', 'member'],
     'action.area.edit': ['superadmin', 'pastor'],
     'action.church.selector': ['superadmin'],
     'action.notifications.view': ['superadmin', 'pastor', 'leader', 'coordinator', 'member'],
     'action.playlist.manage': ['superadmin', 'pastor', 'leader', 'coordinator'],
+    'action.playlist.delete': ['superadmin', 'pastor', 'leader'],
+    'action.song.edit': ['superadmin', 'pastor', 'leader', 'coordinator'],
+    'action.song.delete': ['superadmin', 'pastor', 'leader'],
 };
 
 /**
@@ -102,6 +107,7 @@ export const getDefaultHome = (role: string | undefined): string => {
     const r = role.toLowerCase();
     if (r === 'superadmin') return '/mainhub/master';
     if (r === 'pastor') return '/mainhub/pastor';
+    if (r === 'ujier') return '/mainhub/consolidation';
     if (r === 'leader' || r === 'coordinator') return '/worship';
     if (r === 'member') return '/worship/playlists';
     return '/dashboard';

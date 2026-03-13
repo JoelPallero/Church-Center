@@ -1,4 +1,4 @@
-export type UserRoleName = 'master' | 'pastor' | 'leader' | 'coordinator' | 'member' | 'admin' | 'guest' | 'superadmin';
+export type UserRoleName = 'master' | 'pastor' | 'leader' | 'coordinator' | 'member' | 'admin' | 'guest' | 'superadmin' | 'ujier';
 
 export interface Instrument {
     id: number;
@@ -158,6 +158,8 @@ export interface SongEdit {
     proposedTempo?: number;
     proposedTimeSignature?: string;
     proposedBpmType?: 'fast' | 'slow';
+    proposedYoutubeUrl?: string;
+    proposedSpotifyUrl?: string;
     status: 'pending' | 'approved' | 'rejected';
     reviewerId?: number;
     reviewerNotes?: string;

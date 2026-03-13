@@ -116,6 +116,7 @@
             "leader": "Líder",
             "coordinator": "Coordinador",
             "member": "Miembro",
+            "ujier": "Ujier",
             "multimedia": "Multimedia"
         },
         "moderation": {
@@ -698,6 +699,7 @@
         "addVisitor": "Registrar Visitante",
         "adults": "Adultos",
         "children": "Niños",
+        "newPeople": "Personas Nuevas",
         "total": "Total",
         "reports": "Reportes de Consolidación",
         "consolidated": "Consolidado de Seguimiento",

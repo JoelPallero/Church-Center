@@ -2,6 +2,7 @@ import { createContext, useState, useContext, useEffect, type FC, type PropsWith
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../hooks/useAuth';
 
 export type TutorialId = 'meetings' | 'songs' | 'playlists' | 'worship_list' | 'worship_detail' | 'worship_editor';
 
@@ -20,11 +21,14 @@ export const TutorialProvider: FC<PropsWithChildren> = ({ children }) => {
         return saved === null ? true : saved === 'true';
     });
 
+    const { isSuperAdmin } = useAuth();
+
     useEffect(() => {
         localStorage.setItem('user_show_tutorials', showTutorials.toString());
     }, [showTutorials]);
 
     const startTutorial = (tutorialId: TutorialId) => {
+        if (isSuperAdmin) return;
         if (!showTutorials) return;
 
         const d = driver({
@@ -33,7 +37,11 @@ export const TutorialProvider: FC<PropsWithChildren> = ({ children }) => {
             doneBtnText: t('tutorials.btn.done'),
             nextBtnText: t('tutorials.btn.next'),
             prevBtnText: t('tutorials.btn.prev'),
-            steps: getSteps(tutorialId) as any
+            steps: getSteps(tutorialId) as any,
+            onDestroyStarted: () => {
+                setShowTutorials(false);
+                d.destroy();
+            },
         });
 
         d.drive();

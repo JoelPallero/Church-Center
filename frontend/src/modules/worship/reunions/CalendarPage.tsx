@@ -37,8 +37,8 @@ interface MeetingInstance {
 export const CalendarPage: FC = () => {
     const { t, i18n } = useTranslation();
     const [searchParams] = useSearchParams();
-    const { isMaster, user, hasRole } = useAuth();
-    const { startTutorial, showTutorials } = useTutorials();
+    const { isMaster, user, hasRole, isSuperAdmin } = useAuth();
+    const { startTutorial, showTutorials, setShowTutorials } = useTutorials();
     const [instances, setInstances] = useState<MeetingInstance[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -142,11 +142,13 @@ export const CalendarPage: FC = () => {
     }, [isMaster]);
 
     useEffect(() => {
-        if (showTutorials && !isLoading && instances.length >= 0) {
+        if (showTutorials && !isLoading && instances.length >= 0 && !isSuperAdmin) {
             const hasSeenTutorial = localStorage.getItem('tutorial_seen_meetings');
             if (!hasSeenTutorial) {
                 if (window.confirm('¿Quieres realizar un breve recorrido por la gestión de reuniones?')) {
                     startTutorial('meetings');
+                } else {
+                    setShowTutorials(false);
                 }
                 localStorage.setItem('tutorial_seen_meetings', 'true');
             }

@@ -7,15 +7,15 @@ use PDO;
 
 class ConsolidationRepo
 {
-    public static function saveCount($meetingId, $adults, $children)
+    public static function saveCount($meetingId, $adults, $children, $newPeople = 0)
     {
         $db = Database::getInstance();
         $stmt = $db->prepare("
-            INSERT INTO meeting_attendance (meeting_id, adults, children)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE adults = VALUES(adults), children = VALUES(children)
+            INSERT INTO meeting_attendance (meeting_id, adults, children, new_people)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE adults = VALUES(adults), children = VALUES(children), new_people = VALUES(new_people)
         ");
-        return $stmt->execute([$meetingId, $adults, $children]);
+        return $stmt->execute([$meetingId, $adults, $children, $newPeople]);
     }
 
     public static function getCount($meetingId)
@@ -83,7 +83,7 @@ class ConsolidationRepo
     public static function getVisitors($meetingId)
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare("SELECT * FROM meeting_visitors WHERE meeting_id = ? ORDER BY created_at DESC");
+        $stmt = $db->prepare("SELECT * FROM meeting_visitors WHERE meeting_id = ? ORDER BY id DESC");
         $stmt->execute([$meetingId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -104,7 +104,7 @@ class ConsolidationRepo
             FROM visitors v
             LEFT JOIN meetings m ON v.first_meeting_id = m.id
             WHERE v.church_id = ?
-            ORDER BY v.created_at DESC
+            ORDER BY v.id DESC
         ");
         $stmt->execute([$churchId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -145,8 +145,8 @@ class ConsolidationRepo
         $db = Database::getInstance();
         $stmt = $db->prepare("
             SELECT m.id, m.title, m.start_at, 
-                   ma.adults, ma.children, (IFNULL(ma.adults,0) + IFNULL(ma.children,0)) as total,
-                   (SELECT COUNT(*) FROM meeting_visitors mv WHERE mv.meeting_id = m.id) as visitors_count
+                   ma.adults, ma.children, ma.new_people as visitors_count, (IFNULL(ma.adults,0) + IFNULL(ma.children,0)) as total,
+                   (SELECT COUNT(*) FROM meeting_visitors mv WHERE mv.meeting_id = m.id) as db_visitors_count
             FROM meetings m
             JOIN calendars c ON m.calendar_id = c.id
             LEFT JOIN meeting_attendance ma ON m.id = ma.meeting_id

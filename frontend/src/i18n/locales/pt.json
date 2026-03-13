@@ -88,6 +88,7 @@
             "leader": "Líder",
             "coordinator": "Coordenador",
             "member": "Membro",
+            "ujier": "Ujier",
             "multimedia": "Multimídia"
         },
         "moderation": {
@@ -211,6 +212,7 @@
         "description": "Seguimento e Registro de Visitantes.",
         "attendance": "Contagem de Presença",
         "visitors": "Novos Visitantes",
+        "newPeople": "Novas Pessoas",
         "saveCount": "Salvar Contagem",
         "addVisitor": "Registrar Visitante"
     }

@@ -25,8 +25,8 @@ export const ConsolidationDashboard: FC = () => {
     const [visitors, setVisitors] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'meetings' | 'database'>('meetings');
-    const { isSuperAdmin, isMaster } = useAuth();
-    const canEditAttendance = isSuperAdmin || isMaster; // Only these can edit if Pastor is restricted
+    const { isSuperAdmin, isMaster, isPastor, isUjier } = useAuth();
+    const canEditAttendance = isSuperAdmin || isMaster || isPastor || isUjier; // Only these can edit if Pastor is restricted
 
     const churchId = searchParams.get('church_id');
 

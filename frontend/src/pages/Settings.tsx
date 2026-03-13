@@ -9,7 +9,7 @@ import { Card } from '../components/ui/Card';
 import { useToast } from '../context/ToastContext';
 
 export const Settings: FC = () => {
-    const { user } = useAuth();
+    const { user, isSuperAdmin } = useAuth();
     const { t, i18n } = useTranslation();
     const { theme, setTheme } = useTheme();
     const navigate = useNavigate();
@@ -141,38 +141,40 @@ export const Settings: FC = () => {
                             }
                         />
 
-                        <SettingRow
-                            icon="school"
-                            title={t('profile.tutorials')}
-                            subtitle={showTutorials ? t('profile.tutorialsActive') : t('profile.tutorialsInactive')}
-                            rightElement={
-                                <div 
-                                    onClick={() => setShowTutorials(!showTutorials)}
-                                    style={{ 
-                                        width: '44px', 
-                                        height: '24px', 
-                                        borderRadius: '12px', 
-                                        backgroundColor: showTutorials ? 'var(--color-brand-blue)' : 'var(--color-ui-bg)',
-                                        position: 'relative',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease',
-                                        border: '1px solid var(--color-border-subtle)'
-                                    }}
-                                >
-                                    <div style={{
-                                        width: '18px',
-                                        height: '18px',
-                                        borderRadius: '50%',
-                                        backgroundColor: 'white',
-                                        position: 'absolute',
-                                        top: '2px',
-                                        left: showTutorials ? '22px' : '2px',
-                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                    }} />
-                                </div>
-                            }
-                        />
+                        {!isSuperAdmin && (
+                            <SettingRow
+                                icon="school"
+                                title={t('profile.tutorials')}
+                                subtitle={showTutorials ? t('profile.tutorialsActive') : t('profile.tutorialsInactive')}
+                                rightElement={
+                                    <div 
+                                        onClick={() => setShowTutorials(!showTutorials)}
+                                        style={{ 
+                                            width: '44px', 
+                                            height: '24px', 
+                                            borderRadius: '12px', 
+                                            backgroundColor: showTutorials ? 'var(--color-brand-blue)' : 'var(--color-ui-bg)',
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.3s ease',
+                                            border: '1px solid var(--color-border-subtle)'
+                                        }}
+                                    >
+                                        <div style={{
+                                            width: '18px',
+                                            height: '18px',
+                                            borderRadius: '50%',
+                                            backgroundColor: 'white',
+                                            position: 'absolute',
+                                            top: '2px',
+                                            left: showTutorials ? '22px' : '2px',
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                        }} />
+                                    </div>
+                                }
+                            />
+                        )}
 
                         <SettingRow
                             icon="translate"

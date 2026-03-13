@@ -53,7 +53,7 @@ class ActivityRepo
             }
 
             $limitInt = (int) $limit;
-            $sql .= " ORDER BY al.created_at DESC LIMIT $limitInt";
+            $sql .= " ORDER BY al.id DESC LIMIT $limitInt";
 
             $stmt = $db->prepare($sql);
             $stmt->execute($params);

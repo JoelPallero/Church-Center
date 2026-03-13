@@ -19,14 +19,14 @@ export const SongDetail: FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { t } = useTranslation();
-    const { user, canManageSongs, hasRole, hasService } = useAuth();
+    const { user, canManageSongs, hasRole, hasService, isSuperAdmin } = useAuth();
     const { startTutorial, showTutorials } = useTutorials();
 
     const [song, setSong] = useState<Song | undefined>(undefined);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!showTutorials || !user || loading) return;
+        if (!showTutorials || !user || loading || isSuperAdmin) return;
 
         const hasSeenFullTour = localStorage.getItem('tutorial_seen_worship_master');
         if (hasSeenFullTour === 'true') return;
@@ -132,13 +132,35 @@ export const SongDetail: FC = () => {
                     <p className="text-overline" style={{ margin: 0, color: 'gray' }}>{song.artist}</p>
                 </div>
                 {canManageSongs && (
-                    <Button
-                        variant="ghost"
-                        onClick={() => navigate(`/worship/songs/${id}/edit`)}
-                        style={{ padding: '8px' }}
-                    >
-                        <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
-                    </Button>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                        {isSuperAdmin && (
+                            <Button
+                                variant="secondary"
+                                onClick={async () => {
+                                    const isGlobal = (intId: any) => intId === 0 || intId === '0';
+                                    const nextChurchId = isGlobal(song?.churchId) ? user?.churchId : 0;
+                                    const confirmMsg = isGlobal(song?.churchId) 
+                                        ? '¿Mover a tu biblioteca privada? Solo tu iglesia podrá verla.' 
+                                        : '¿Hacer GLOBAL? Todas las iglesias podrán ver esta canción en su repositorio.';
+                                    
+                                    if (window.confirm(confirmMsg)) {
+                                        const success = await songService.update(id!, { ...song, churchId: nextChurchId || 0 });
+                                        if (success) loadSong(id!);
+                                    }
+                                }}
+                                style={{ padding: '8px', fontSize: '11px' }}
+                                icon={song?.churchId === 0 ? "visibility_off" : "public"}
+                                label={song?.churchId === 0 ? "Quitar de Global" : "Hacer Global"}
+                            />
+                        )}
+                        <Button
+                            variant="ghost"
+                            onClick={() => navigate(`/worship/songs/${id}/edit`)}
+                            style={{ padding: '8px' }}
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>edit</span>
+                        </Button>
+                    </div>
                 )}
             </div>
 
@@ -347,7 +369,7 @@ export const SongDetail: FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} className="resources-container">
                     {song.youtubeUrl && (
                         <Card style={{ padding: '12px', overflow: 'hidden' }}>
-                            <h4 className="text-overline" style={{ marginBottom: '12px', marginLeft: '8px' }}>VIDEO REFERENCIA</h4>
+                            <h4 className="text-overline" style={{ marginBottom: '12px', marginLeft: '8px' }}>VIDEO REFERENCIA (YT)</h4>
                             <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, borderRadius: '12px', overflow: 'hidden', backgroundColor: '#000' }}>
                                 <iframe
                                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
@@ -355,6 +377,22 @@ export const SongDetail: FC = () => {
                                     title="YouTube video player"
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowFullScreen
+                                />
+                            </div>
+                        </Card>
+                    )}
+
+                    {song.spotifyUrl && (
+                        <Card style={{ padding: '12px', overflow: 'hidden' }}>
+                            <h4 className="text-overline" style={{ marginBottom: '12px', marginLeft: '8px' }}>AUDIO REFERENCIA (Spotify)</h4>
+                            <div style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                                <iframe
+                                    src={`https://open.spotify.com/embed/track/${song.spotifyUrl.split('track/')[1]?.split('?')[0] || song.spotifyUrl.split('/').pop()}`}
+                                    width="100%"
+                                    height="152"
+                                    frameBorder="0"
+                                    allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                    loading="lazy"
                                 />
                             </div>
                         </Card>

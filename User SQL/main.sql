@@ -6,89 +6,32 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS activity_log;
+DROP TABLE IF EXISTS invitation_templates;
+DROP TABLE IF EXISTS meeting_attendance;
+DROP TABLE IF EXISTS meeting_visitors;
 DROP TABLE IF EXISTS meeting_setlists;
 DROP TABLE IF EXISTS meeting_assignments;
-DROP TABLE IF EXISTS notifications;
-DROP TABLE IF EXISTS instruments;
-
+DROP TABLE IF EXISTS visitor_follow_up;
+DROP TABLE IF EXISTS visitors;
 DROP TABLE IF EXISTS meetings;
 DROP TABLE IF EXISTS meeting_categories;
 DROP TABLE IF EXISTS calendars;
 DROP TABLE IF EXISTS group_members;
 DROP TABLE IF EXISTS groups;
 DROP TABLE IF EXISTS areas;
-
+DROP TABLE IF EXISTS member_instruments;
+DROP TABLE IF EXISTS instruments;
+DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS user_service_roles;
 DROP TABLE IF EXISTS user_global_roles;
-
 DROP TABLE IF EXISTS role_permissions;
 DROP TABLE IF EXISTS permissions;
 DROP TABLE IF EXISTS roles;
 DROP TABLE IF EXISTS services;
-
 DROP TABLE IF EXISTS user_accounts;
 DROP TABLE IF EXISTS member;
+DROP TABLE IF EXISTS church_services;
 DROP TABLE IF EXISTS church;
-
-/* =========================================================
-   17) CONTEO DE PERSONAS (UJIERES)
-   ========================================================= */
-
-CREATE TABLE IF NOT EXISTS meeting_attendance (
-  meeting_id INT NOT NULL PRIMARY KEY,
-  adults INT NOT NULL DEFAULT 0,
-  children INT NOT NULL DEFAULT 0,
-  total INT AS (adults + children) STORED,
-  updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS meeting_visitors (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  meeting_id INT NOT NULL,
-  first_name VARCHAR(100) NOT NULL,
-  surname VARCHAR(100) NULL,
-  phone VARCHAR(40) NULL,
-  email VARCHAR(190) NULL,
-  is_first_time TINYINT(1) DEFAULT 1,
-  notes TEXT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE INDEX IF NOT EXISTS idx_visitor_meeting ON meeting_visitors(meeting_id);
-
-
-
-
-
-CREATE TABLE IF NOT EXISTS visitors (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  church_id INT NOT NULL,
-  first_name VARCHAR(100) NOT NULL,
-  surname VARCHAR(100) NULL,
-  whatsapp VARCHAR(40) NULL,
-  email VARCHAR(190) NULL,
-  first_meeting_id INT NULL,
-  prayer_requests TEXT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE CASCADE,
-  FOREIGN KEY (first_meeting_id) REFERENCES meetings(id) ON DELETE SET NULL,
-  UNIQUE KEY uq_visitor_email (church_id, email),
-  UNIQUE KEY uq_visitor_phone (church_id, whatsapp)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS visitor_follow_up (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  visitor_id INT NOT NULL,
-  contact_date DATE NOT NULL,
-  contact_method VARCHAR(100) NULL,
-  comments TEXT NULL,
-  created_by_member_id INT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (visitor_id) REFERENCES visitors(id) ON DELETE CASCADE,
-  FOREIGN KEY (created_by_member_id) REFERENCES member(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* =========================================================
    1) IGLESIAS
@@ -98,6 +41,8 @@ CREATE TABLE church (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   slug VARCHAR(120) NOT NULL UNIQUE,
+  address TEXT NULL,
+  timezone VARCHAR(100) DEFAULT 'America/Argentina/Buenos_Aires',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -112,9 +57,10 @@ CREATE TABLE member (
   church_id INT NULL,
   name VARCHAR(120) NOT NULL,
   surname VARCHAR(120) NULL,
+  sex ENUM('M', 'F') NULL,
   email VARCHAR(190) NOT NULL UNIQUE,
   phone VARCHAR(60) NULL,
-  status ENUM('active','pending','inactive') NOT NULL DEFAULT 'active',
+  status ENUM('active','pending','inactive','deleted') NOT NULL DEFAULT 'active',
   invite_token VARCHAR(100) NULL UNIQUE,
   token_expires_at DATETIME NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -126,7 +72,6 @@ CREATE INDEX idx_member_church ON member(church_id);
 
 /* =========================================================
    3) CUENTAS (LOGIN)
-   - member_id referencia a member
    ========================================================= */
 
 CREATE TABLE user_accounts (
@@ -138,6 +83,8 @@ CREATE TABLE user_accounts (
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   default_theme VARCHAR(40) NULL,
   default_language VARCHAR(10) NULL,
+  google_calendar_id VARCHAR(255) NULL,
+  google_api_key VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE
@@ -156,9 +103,17 @@ CREATE TABLE services (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS church_services (
+  church_id INT NOT NULL,
+  service_id INT NOT NULL,
+  is_enabled TINYINT(1) DEFAULT 1,
+  PRIMARY KEY (church_id, service_id),
+  FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE CASCADE,
+  FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 /* =========================================================
-   5) ROLES
-   - service_id NULL => rol global (superadmin)
+   5) ROLES Y PERMISOS
    ========================================================= */
 
 CREATE TABLE roles (
@@ -174,22 +129,14 @@ CREATE TABLE roles (
   FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-/* =========================================================
-   6) PERMISOS
-   ========================================================= */
-
 CREATE TABLE permissions (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(90) NOT NULL UNIQUE,     -- e.g. "team.create"
+  name VARCHAR(90) NOT NULL UNIQUE,
   display_name VARCHAR(140) NOT NULL,
-  module VARCHAR(60) NOT NULL,          -- e.g. "team"
+  module VARCHAR(60) NOT NULL,
   description VARCHAR(255) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-/* =========================================================
-   7) ROLE -> PERMISSIONS
-   ========================================================= */
 
 CREATE TABLE role_permissions (
   role_id INT NOT NULL,
@@ -200,10 +147,6 @@ CREATE TABLE role_permissions (
   FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-/* =========================================================
-   8) ROLES GLOBALES POR USUARIO (SUPERADMIN)
-   ========================================================= */
-
 CREATE TABLE user_global_roles (
   member_id INT NOT NULL,
   role_id INT NOT NULL,
@@ -212,11 +155,6 @@ CREATE TABLE user_global_roles (
   FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
   FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-/* =========================================================
-   9) ROLES POR IGLESIA Y SERVICIO
-   (un usuario puede tener roles diferentes por iglesia y servicio)
-   ========================================================= */
 
 CREATE TABLE user_service_roles (
   member_id INT NOT NULL,
@@ -231,12 +169,37 @@ CREATE TABLE user_service_roles (
   FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_usr_church ON user_service_roles(church_id);
-CREATE INDEX idx_usr_member ON user_service_roles(member_id);
-CREATE INDEX idx_usr_service ON user_service_roles(service_id);
+/* =========================================================
+   6) CONSOLIDACIÓN (VISITANTES Y SEGUIMIENTO)
+   ========================================================= */
+
+CREATE TABLE IF NOT EXISTS visitors (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  church_id INT NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  surname VARCHAR(100) NULL,
+  whatsapp VARCHAR(40) NULL,
+  email VARCHAR(190) NULL,
+  first_meeting_id INT NULL,
+  prayer_requests TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS visitor_follow_up (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  visitor_id INT NOT NULL,
+  contact_date DATE NOT NULL,
+  contact_method VARCHAR(100) NULL,
+  comments TEXT NULL,
+  created_by_member_id INT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (visitor_id) REFERENCES visitors(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by_member_id) REFERENCES member(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* =========================================================
-   10) ÁREAS
+   7) ESTRUCTURA ORGANIZATIVA (ÁREAS Y EQUIPOS)
    ========================================================= */
 
 CREATE TABLE areas (
@@ -249,12 +212,6 @@ CREATE TABLE areas (
   FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE CASCADE,
   UNIQUE KEY uq_area_church_name (church_id, name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE INDEX idx_area_church ON areas(church_id);
-
-/* =========================================================
-   11) EQUIPOS
-   ========================================================= */
 
 CREATE TABLE groups (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -269,13 +226,6 @@ CREATE TABLE groups (
   UNIQUE KEY uq_group_church_name (church_id, name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_group_church ON groups(church_id);
-CREATE INDEX idx_group_area ON groups(area_id);
-
-/* =========================================================
-   12) MIEMBROS EN EQUIPO (ROL DENTRO DEL EQUIPO)
-   ========================================================= */
-
 CREATE TABLE group_members (
   group_id INT NOT NULL,
   member_id INT NOT NULL,
@@ -286,11 +236,8 @@ CREATE TABLE group_members (
   FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_group_members_role ON group_members(group_id, role_in_group);
-CREATE INDEX idx_group_members_member ON group_members(member_id);
-
 /* =========================================================
-   13) CALENDARIOS + REUNIONES
+   8) CALENDARIOS Y REUNIONES
    ========================================================= */
 
 CREATE TABLE calendars (
@@ -303,9 +250,6 @@ CREATE TABLE calendars (
   FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_calendar_church ON calendars(church_id);
-CREATE INDEX idx_calendar_group ON calendars(group_id);
-
 CREATE TABLE IF NOT EXISTS meeting_categories (
   id INT AUTO_INCREMENT PRIMARY KEY,
   church_id INT NOT NULL,
@@ -314,7 +258,6 @@ CREATE TABLE IF NOT EXISTS meeting_categories (
   icon VARCHAR(50) DEFAULT 'event',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_church_category (church_id, name),
-  INDEX idx_category_church (church_id),
   FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -324,11 +267,11 @@ CREATE TABLE meetings (
   title VARCHAR(160) NOT NULL,
   description TEXT NULL,
   meeting_type ENUM('special', 'recurrent') NOT NULL DEFAULT 'special',
-  start_at DATETIME NULL,           -- Direct date for special meetings
-  end_at DATETIME NULL,             -- Direct end date for special meetings
-  day_of_week TINYINT NULL,         -- 0-6 for recurrent meetings
-  start_time TIME NULL,             -- Start time for recurrent meetings
-  end_time TIME NULL,               -- End time for recurrent meetings
+  start_at DATETIME NULL,
+  end_at DATETIME NULL,
+  day_of_week TINYINT NULL,
+  start_time TIME NULL,
+  end_time TIME NULL,
   location VARCHAR(255) NULL,
   category VARCHAR(100) NULL,
   created_by_member_id INT NULL,
@@ -338,25 +281,27 @@ CREATE TABLE meetings (
   FOREIGN KEY (created_by_member_id) REFERENCES member(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_meeting_calendar ON meetings(calendar_id);
-CREATE INDEX idx_meeting_start ON meetings(start_at);
+CREATE TABLE IF NOT EXISTS meeting_attendance (
+  meeting_id INT NOT NULL PRIMARY KEY,
+  adults INT NOT NULL DEFAULT 0,
+  children INT NOT NULL DEFAULT 0,
+  new_people INT NOT NULL DEFAULT 0,
+  total INT AS (adults + children) STORED,
+  updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-/* =========================================================
-   14) NOTIFICACIONES Y AUDITORÍA
-   ========================================================= */
-
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS meeting_visitors (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  member_id INT NOT NULL,
-  type VARCHAR(50) NOT NULL,
-  title VARCHAR(160) NOT NULL,
-  message TEXT NOT NULL,
-  link VARCHAR(255) NULL,
-  is_read TINYINT(1) NOT NULL DEFAULT 0,
+  meeting_id INT NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  surname VARCHAR(100) NULL,
+  phone VARCHAR(40) NULL,
+  email VARCHAR(190) NULL,
+  is_first_time TINYINT(1) DEFAULT 1,
+  notes TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX (member_id),
-  INDEX (member_id, is_read),
-  FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE
+  FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE meeting_assignments (
@@ -383,6 +328,10 @@ CREATE TABLE meeting_setlists (
   FOREIGN KEY (assigned_by_id) REFERENCES member(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+/* =========================================================
+   9) INSTRUMENTOS
+   ========================================================= */
+
 CREATE TABLE instruments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(60) NOT NULL UNIQUE,
@@ -397,6 +346,22 @@ CREATE TABLE IF NOT EXISTS member_instruments (
   FOREIGN KEY (instrument_id) REFERENCES instruments(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+/* =========================================================
+   10) SISTEMA (NOTIFICACIONES, AUDITORÍA, PLANTILLAS)
+   ========================================================= */
+
+CREATE TABLE notifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  member_id INT NOT NULL,
+  type VARCHAR(50) NOT NULL,
+  title VARCHAR(160) NOT NULL,
+  message TEXT NOT NULL,
+  link VARCHAR(255) NULL,
+  is_read TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE activity_log (
   id INT AUTO_INCREMENT PRIMARY KEY,
   church_id INT NOT NULL,
@@ -406,20 +371,14 @@ CREATE TABLE activity_log (
   entity_id INT NULL,
   details JSON NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  INDEX (church_id),
-  INDEX (created_at),
   FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE CASCADE,
   FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-/* =========================================================
-   15) PLANTILLAS DE INVITACIÓN
-   ========================================================= */
-
 CREATE TABLE IF NOT EXISTS invitation_templates (
     id INT AUTO_INCREMENT PRIMARY KEY,
     church_id INT NOT NULL,
-    template_index INT NOT NULL, -- 0, 1, 2
+    template_index INT NOT NULL,
     is_active TINYINT(1) DEFAULT 0,
     subject VARCHAR(255) NOT NULL,
     body_html TEXT NOT NULL,
@@ -430,7 +389,7 @@ CREATE TABLE IF NOT EXISTS invitation_templates (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* =========================================================
-   16) SEEDS (SERVICIOS, ROLES, PERMISOS, ROLE_PERMISSIONS)
+   11) SEEDS BASE
    ========================================================= */
 
 INSERT INTO services (`key`, name, description, active) VALUES
@@ -439,7 +398,8 @@ INSERT INTO services (`key`, name, description, active) VALUES
   ('social',  'Social Media Hub', 'Gestión de redes sociales', 1),
   ('sound',   'Sound Hub', 'Gestión de sonido y audio', 1),
   ('multimedia', 'Multimedia Hub', 'Proyección, letras y contenido visual', 1),
-  ('ushers',  'Diaconos Hub', 'Servicio de Ujieres y Recepción', 1)
+  ('ushers',  'Diaconos Hub', 'Servicio de Ujieres y Recepción', 1),
+  ('global_songs', 'Biblioteca Global', 'Acceso al repositorio general de canciones', 1)
 ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);
 
 -- Roles
@@ -447,7 +407,6 @@ INSERT INTO roles (service_id, name, display_name, description, level, is_system
 VALUES (NULL, 'superadmin', 'Super Administrador', 'Control total global', 0, 1)
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
--- Church center roles
 INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
 SELECT s.id, 'pastor', 'Pastor', 'Admin de iglesia', 10, 1 FROM services s WHERE s.`key`='mainhub'
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
@@ -464,7 +423,7 @@ INSERT INTO roles (service_id, name, display_name, description, level, is_system
 SELECT s.id, 'member', 'Miembro', 'Acceso básico', 40, 1 FROM services s WHERE s.`key`='mainhub'
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
--- Permisos base
+-- Permisos
 INSERT INTO permissions (name, display_name, module, description) VALUES
   ('church.read', 'Ver iglesia', 'church', 'Permite ver información de iglesia'),
   ('church.update', 'Editar iglesia', 'church', 'Permite editar configuración de iglesia'),
@@ -491,91 +450,29 @@ INSERT INTO permissions (name, display_name, module, description) VALUES
   ('reports.view', 'Ver estadísticas generales', 'reports', 'Permite ver reportes y dashboard')
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
--- Seeds de Instrumentos
+-- Instrumentos
 INSERT IGNORE INTO instruments (name, category) VALUES
 ('Voz (Soprano)', 'Voz'), ('Voz (Contralto)', 'Voz'), ('Voz (Tenor)', 'Voz'),
 ('Voz (Barítono)', 'Voz'), ('Piano / Teclado', 'Teclas'), ('Guitarra Acústica', 'Cuerdas'),
 ('Guitarra Eléctrica', 'Cuerdas'), ('Bajo', 'Cuerdas'), ('Batería', 'Percusión'),
 ('Violín', 'Cuerdas'), ('Saxo', 'Vientos');
 
--- MEMBER
+-- Asignación de Permisos por Rol
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r
-JOIN services s ON s.id = r.service_id
-JOIN permissions p
-WHERE r.name='member'
-  AND s.`key`='mainhub'
-  AND p.name IN (
-    'team.read',
-    'calendar.read',
-    'song.read'
-  )
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='member' AND p.name IN ('team.read', 'calendar.read', 'song.read')
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
--- COORDINATOR
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r
-JOIN services s ON s.id = r.service_id
-JOIN permissions p
-WHERE r.name='coordinator'
-  AND s.`key`='mainhub'
-  AND p.name IN (
-    'team.read',
-    'calendar.read',
-    'song.read',
-    'song.create',
-    'song.update'
-  )
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='coordinator' AND p.name IN ('team.read', 'calendar.read', 'song.read', 'song.create', 'song.update')
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
--- LEADER
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r
-JOIN services s ON s.id = r.service_id
-JOIN permissions p
-WHERE r.name='leader'
-  AND s.`key`='mainhub'
-  AND p.name IN (
-    'team.read',
-    'team.create',
-    'team.update',
-    'team.manage_members',
-    'calendar.read',
-    'meeting.create',
-    'meeting.update',
-    'song.read',
-    'song.create',
-    'song.update',
-    'song.delete'
-  )
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='leader' AND p.name IN ('team.read', 'team.create', 'team.update', 'team.manage_members', 'calendar.read', 'meeting.create', 'meeting.update', 'song.read', 'song.create', 'song.update', 'song.delete')
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
--- PASTOR
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id
-FROM roles r
-JOIN services s ON s.id = r.service_id
-JOIN permissions p
-WHERE r.name='pastor'
-  AND s.`key`='mainhub'
-  AND p.name IN (
-    'church.read', 'church.update',
-    'area.create', 'area.update',
-    'team.read', 'team.create', 'team.update', 'team.manage_members',
-    'person.read', 'users.invite', 'users.approve', 'users.delete',
-    'calendar.read', 'meeting.create', 'meeting.update',
-    'song.read', 'song.create', 'song.update', 'song.delete', 'song.approve',
-    'reunions.view', 'reports.view'
-  )
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='pastor' AND p.name IN ('church.read', 'church.update', 'area.create', 'area.update', 'team.read', 'team.create', 'team.update', 'team.manage_members', 'person.read', 'users.invite', 'users.approve', 'users.delete', 'calendar.read', 'meeting.create', 'meeting.update', 'song.read', 'song.create', 'song.update', 'song.delete', 'song.approve', 'reunions.view', 'reports.view')
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
--- LAS CREDENCIALES DE SUPERADMIN SE HAN MOVIDO A credentials.sql PARA SEGURIDAD
-
-/* =========================================================
-   FIN
-   ========================================================= */
-
+SET FOREIGN_KEY_CHECKS = 1;
 SET FOREIGN_KEY_CHECKS = 1;

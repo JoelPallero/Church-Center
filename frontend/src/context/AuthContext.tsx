@@ -14,6 +14,7 @@ interface AuthContextType {
     isSuperAdmin: boolean;
     isMaster: boolean;
     isPastor: boolean;
+    isUjier: boolean;
     isLoading: boolean;
     isAuthenticated: boolean;
     login: (email: string, password: string, recaptchaToken?: string) => Promise<void>;
@@ -192,11 +193,19 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
     }, [isLocalhost, loadBootstrap]);
 
     const canAccess = useCallback((identifier: string) => {
+        // Hub-level check: if a path belongs to a module, check if that module is enabled/assigned
+        // Worship Hub
+        if (identifier.startsWith('/worship') && !services.includes('worship') && !isSuperAdmin) return false;
+        // Social Hub
+        if (identifier.startsWith('/social') && !services.includes('social') && !isSuperAdmin) return false;
+        // Consolidation Hub
+        if (identifier.startsWith('/mainhub/consolidation') && !services.includes('consolidation') && !isSuperAdmin) return false;
+
         if (isSuperAdmin) return true;
         if (impersonatedRole) return canAccessGlobal(impersonatedRole.name, identifier);
         // Multi-role support: if any of the user's roles has access, return true
         return roles.some(role => canAccessGlobal(role, identifier));
-    }, [roles, impersonatedRole, isSuperAdmin]);
+    }, [roles, services, impersonatedRole, isSuperAdmin]);
 
     const hasPermission = useCallback((permission: string) => {
         if (isSuperAdmin) return true;
@@ -244,6 +253,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
             isSuperAdmin,
             isMaster: isSuperAdmin || user?.isMaster || impersonatedRole?.name === 'master',
             isPastor: roles.includes('pastor') || user?.role?.name === 'pastor' || impersonatedRole?.name === 'pastor',
+            isUjier: roles.includes('ujier') || user?.role?.name === 'ujier' || impersonatedRole?.name === 'ujier',
             isLoading,
             isAuthenticated: !!currentUser,
             login,

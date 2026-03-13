@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 interface MetronomeProps {
     bpm: number;
@@ -7,41 +7,60 @@ interface MetronomeProps {
 }
 
 const PlayIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
         <path d="M8 5v14l11-7z" />
     </svg>
 );
 
 const PauseIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
         <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
     </svg>
 );
 
-const MusicNoteIcon = ({ color = 'white' }: { color?: string }) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill={color}>
+const MusicNoteIcon = ({ color = 'white', size = 20 }: { color?: string; size?: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
     </svg>
 );
 
+// High-precision scheduling worker to avoid browser throttling
+const workerBlob = new Blob([`
+    let timerID = null;
+    let interval = 25;
+    self.onmessage = (e) => {
+        if (e.data === "start") {
+            timerID = setInterval(() => postMessage("tick"), interval);
+        } else if (e.data === "stop") {
+            clearInterval(timerID);
+            timerID = null;
+        }
+    };
+`], { type: 'application/javascript' });
+
 export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'floating' }: MetronomeProps & { variant?: 'floating' | 'card' | 'inline' }) => {
     const [playing, setPlaying] = useState(initialPlaying);
     const [subdivision, setSubdivision] = useState(false);
+    const instanceId = useMemo(() => Math.random().toString(36).substr(2, 9), []);
 
-    // Use Refs to allow the scheduler to access the latest state without re-creating the loop
     const bpmRef = useRef(bpm);
     const subdivisionRef = useRef(subdivision);
     const audioContext = useRef<AudioContext | null>(null);
     const nextClickTime = useRef(0);
-    const timerID = useRef<number | null>(null);
+    const worker = useRef<Worker | null>(null);
     const currentTick = useRef(0);
 
-    // Sync refs with state
     useEffect(() => { bpmRef.current = bpm; }, [bpm]);
     useEffect(() => { subdivisionRef.current = subdivision; }, [subdivision]);
 
     const playClick = useCallback((time: number, isStrong: boolean) => {
         if (!audioContext.current) return;
+        
+        // Ensure AudioContext is running (important for mobile safari)
+        if (audioContext.current.state === 'suspended') {
+            audioContext.current.resume();
+        }
+
         const osc = audioContext.current.createOscillator();
         const envelope = audioContext.current.createGain();
         const filter = audioContext.current.createBiquadFilter();
@@ -52,7 +71,8 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
         osc.type = 'square';
         osc.frequency.setValueAtTime(isStrong ? 1600 : 1000, time);
 
-        envelope.gain.setValueAtTime(isStrong ? 0.7 : 0.40, time);
+        envelope.gain.setValueAtTime(0, time);
+        envelope.gain.linearRampToValueAtTime(isStrong ? 0.7 : 0.40, time + 0.005);
         envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
 
         osc.connect(envelope);
@@ -63,8 +83,13 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
         osc.stop(time + 0.06);
     }, []);
 
-    const scheduler = useCallback(function runScheduler() {
+    const scheduler = useCallback(() => {
         if (!audioContext.current) return;
+
+        // Catch up if the clock is too far behind (prevents "crazy" rapid clicks after long backgrounding)
+        if (nextClickTime.current < audioContext.current.currentTime) {
+            nextClickTime.current = audioContext.current.currentTime + 0.05;
+        }
 
         while (nextClickTime.current < audioContext.current.currentTime + 0.1) {
             const tick = currentTick.current;
@@ -76,34 +101,70 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
             }
 
             const secondsPerBeat = 60.0 / bpmRef.current;
+            // subdivision means we check every half-beat
             nextClickTime.current += (secondsPerBeat / 2);
             currentTick.current = (currentTick.current + 1) % 8;
         }
-        timerID.current = window.setTimeout(runScheduler, 25);
     }, [playClick]);
+
+    // Handle global "stop others" logic
+    useEffect(() => {
+        const handleGlobalStop = (e: any) => {
+            if (e.detail?.id !== instanceId) {
+                stopMetronome();
+            }
+        };
+        window.addEventListener('metronome-play', handleGlobalStop);
+        return () => window.removeEventListener('metronome-play', handleGlobalStop);
+    }, [instanceId]);
+
+    const stopMetronome = () => {
+        if (worker.current) {
+            worker.current.postMessage("stop");
+        }
+        setPlaying(false);
+    };
 
     const toggleMetronome = (e?: any) => {
         if (e) e.stopPropagation();
+        
         if (!playing) {
+            // Signal others to stop
+            window.dispatchEvent(new CustomEvent('metronome-play', { detail: { id: instanceId } }));
+            
             if (!audioContext.current) {
-                audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)({
+                    latencyHint: 'interactive'
+                });
             }
+            
             if (audioContext.current.state === 'suspended') {
                 audioContext.current.resume();
             }
+
+            if (!worker.current) {
+                const url = URL.createObjectURL(workerBlob);
+                worker.current = new Worker(url);
+                worker.current.onmessage = (e) => {
+                    if (e.data === "tick") scheduler();
+                };
+            }
+
             currentTick.current = 0;
             nextClickTime.current = audioContext.current.currentTime + 0.05;
             setPlaying(true);
-            scheduler();
+            worker.current.postMessage("start");
         } else {
-            if (timerID.current) clearTimeout(timerID.current);
-            setPlaying(false);
+            stopMetronome();
         }
     };
 
     useEffect(() => {
         return () => {
-            if (timerID.current) clearTimeout(timerID.current);
+            if (worker.current) {
+                worker.current.postMessage("stop");
+                worker.current.terminate();
+            }
         };
     }, []);
 
@@ -117,32 +178,33 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
                     onClick={toggleMetronome}
                     className="btn-icon"
                     style={{
-                        width: '28px',
-                        height: '28px',
-                        backgroundColor: 'var(--color-brand-blue)',
+                        width: '58px',
+                        height: '58px',
+                        backgroundColor: playing ? 'var(--color-danger-red)' : 'var(--color-brand-blue)',
                         color: 'white',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                        transition: 'background-color 0.2s'
                     }}
                 >
                     {playing ? (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
                     ) : (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                     )}
                 </button>
                 <button
                     onClick={(e) => { e.stopPropagation(); setSubdivision(!subdivision); }}
                     className="btn-icon"
                     style={{
-                        width: '28px',
-                        height: '28px',
+                        width: '58px',
+                        height: '58px',
                         backgroundColor: subdivision ? 'var(--color-brand-blue)' : 'var(--color-ui-surface)',
                         color: subdivision ? 'white' : 'var(--color-ui-text)',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                     title="Corcheas"
                 >
-                    <MusicNoteIcon color="currentColor" />
+                    <MusicNoteIcon color="currentColor" size={36} />
                 </button>
             </div>
         );
@@ -163,8 +225,8 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
                         onClick={toggleMetronome}
                         className="btn-icon"
                         style={{
-                            width: '44px',
-                            height: '44px',
+                            width: '56px',
+                            height: '56px',
                             backgroundColor: playing ? 'var(--color-danger-red)' : 'var(--color-brand-blue)',
                             color: 'white',
                             boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
@@ -179,8 +241,8 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
                         onClick={() => setSubdivision(!subdivision)}
                         className="btn-icon"
                         style={{
-                            width: '44px',
-                            height: '44px',
+                            width: '56px',
+                            height: '56px',
                             backgroundColor: subdivision ? 'var(--color-brand-blue)' : 'var(--color-ui-surface)',
                             color: subdivision ? 'white' : 'var(--color-ui-text)',
                             border: '1px solid var(--color-border-subtle)',
@@ -189,7 +251,7 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
                         }}
                         title="Corcheas"
                     >
-                        <MusicNoteIcon color="currentColor" />
+                        <MusicNoteIcon color="currentColor" size={30} />
                     </button>
                 </div>
             </div>
@@ -210,21 +272,19 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
             <div
                 onClick={toggleMetronome}
                 style={{
-                    width: '64px',
-                    height: '64px',
+                    width: '72px',
+                    height: '72px',
                     borderRadius: '50%',
-                    backgroundColor: 'var(--color-brand-blue)',
+                    backgroundColor: playing ? 'var(--color-danger-red)' : 'var(--color-brand-blue)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
                     boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-                    transition: 'transform 0.1s',
+                    transition: 'all 0.2s',
                     border: 'none'
                 }}
-                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.92)'}
-                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
                 <span className="text-overline" style={{
                     fontSize: '11px',
@@ -240,8 +300,8 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
                 onClick={() => setSubdivision(!subdivision)}
                 className="btn-icon"
                 style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '52px',
+                    height: '52px',
                     backgroundColor: subdivision ? 'var(--color-brand-blue)' : 'var(--color-ui-surface)',
                     color: subdivision ? 'white' : 'var(--color-ui-text)',
                     boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
@@ -249,7 +309,7 @@ export const Metronome = ({ bpm, isPlaying: initialPlaying = false, variant = 'f
                 }}
                 title="Corcheas"
             >
-                <MusicNoteIcon color="currentColor" />
+                <MusicNoteIcon color="currentColor" size={28} />
             </button>
         </div>
     );

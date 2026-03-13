@@ -13,7 +13,7 @@ class ChurchRepo
             return null;
         try {
             $db = Database::getInstance();
-            $stmt = $db->prepare("SELECT id, name, slug, is_active FROM church WHERE id = ?");
+            $stmt = $db->prepare("SELECT id, name, slug, address, timezone, is_active FROM church WHERE id = ?");
             $stmt->execute([$id]);
             return $stmt->fetch();
         } catch (\Exception $e) {
@@ -26,7 +26,7 @@ class ChurchRepo
     {
         try {
             $db = Database::getInstance();
-            $stmt = $db->query("SELECT id, name, slug, is_active FROM church ORDER BY name ASC");
+            $stmt = $db->query("SELECT id, name, slug, address, timezone, is_active FROM church ORDER BY id DESC");
             return $stmt->fetchAll();
         } catch (\Exception $e) {
             \App\Helpers\Logger::error("ChurchRepo::getAll error: " . $e->getMessage());
@@ -34,7 +34,7 @@ class ChurchRepo
         }
     }
 
-    public static function create($name, $slug)
+    public static function create($name, $slug, $address = null, $timezone = 'America/Argentina/Buenos_Aires')
     {
         $db = Database::getInstance();
 
@@ -53,8 +53,8 @@ class ChurchRepo
         }
 
         // 2. Insert church
-        $stmt = $db->prepare("INSERT INTO church (name, slug, is_active) VALUES (?, ?, 1)");
-        $stmt->execute([$name, $slug]);
+        $stmt = $db->prepare("INSERT INTO church (name, slug, address, timezone, is_active) VALUES (?, ?, ?, ?, 1)");
+        $stmt->execute([$name, $slug, $address, $timezone]);
         return $db->lastInsertId();
     }
 
@@ -63,11 +63,11 @@ class ChurchRepo
         try {
             $db = Database::getInstance();
             $stmt = $db->prepare("
-                SELECT DISTINCT c.id, c.name, c.slug, c.is_active
+                SELECT DISTINCT c.id, c.name, c.slug, c.address, c.timezone, c.is_active
                 FROM church c
                 JOIN user_service_roles usr ON c.id = usr.church_id
                 WHERE usr.member_id = ?
-                ORDER BY c.name ASC
+                ORDER BY c.id DESC
             ");
             $stmt->execute([$memberId]);
             return $stmt->fetchAll();
@@ -77,11 +77,11 @@ class ChurchRepo
         }
     }
 
-    public static function update($id, $name, $slug)
+    public static function update($id, $name, $slug, $address = null, $timezone = null)
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare("UPDATE church SET name = ?, slug = ? WHERE id = ?");
-        return $stmt->execute([$name, $slug, $id]);
+        $stmt = $db->prepare("UPDATE church SET name = ?, slug = ?, address = ?, timezone = ? WHERE id = ?");
+        return $stmt->execute([$name, $slug, $address, $timezone, $id]);
     }
 
     public static function deactivate($id)
@@ -182,6 +182,60 @@ class ChurchRepo
                 $db->rollBack();
             }
             throw $e;
+        }
+    }
+
+    public static function getServices($churchId)
+    {
+        $db = Database::getInstance();
+        try {
+            $stmt = $db->prepare("
+                SELECT s.id, s.`key`, s.name, IFNULL(cs.is_enabled, 1) as is_enabled
+                FROM services s
+                LEFT JOIN church_services cs ON s.id = cs.service_id AND cs.church_id = ?
+                WHERE s.active = 1
+                ORDER BY s.id ASC
+            ");
+            $stmt->execute([$churchId]);
+            return $stmt->fetchAll();
+        } catch (\Exception $e) {
+            \App\Helpers\Logger::error("ChurchRepo::getServices error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public static function updateService($churchId, $serviceId, $isEnabled)
+    {
+        $db = Database::getInstance();
+        try {
+            $stmt = $db->prepare("
+                INSERT INTO church_services (church_id, service_id, is_enabled)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE is_enabled = VALUES(is_enabled)
+            ");
+            return $stmt->execute([$churchId, $serviceId, $isEnabled ? 1 : 0]);
+        } catch (\Exception $e) {
+            \App\Helpers\Logger::error("ChurchRepo::updateService error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public static function getEnabledServiceKeys($churchId)
+    {
+        if (!$churchId) return [];
+        $db = Database::getInstance();
+        try {
+            $stmt = $db->prepare("
+                SELECT s.`key`
+                FROM services s
+                LEFT JOIN church_services cs ON s.id = cs.service_id AND cs.church_id = ?
+                WHERE s.active = 1 AND IFNULL(cs.is_enabled, 1) = 1
+            ");
+            $stmt->execute([$churchId]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        } catch (\Exception $e) {
+            \App\Helpers\Logger::error("ChurchRepo::getEnabledServiceKeys error: " . $e->getMessage());
+            return [];
         }
     }
 }

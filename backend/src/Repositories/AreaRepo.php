@@ -17,7 +17,7 @@ class AreaRepo
     public static function getByChurch($churchId)
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare("SELECT * FROM areas WHERE church_id = ? ORDER BY name ASC");
+        $stmt = $db->prepare("SELECT * FROM areas WHERE church_id = ? AND is_active = 1 ORDER BY id DESC");
         $stmt->execute([$churchId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

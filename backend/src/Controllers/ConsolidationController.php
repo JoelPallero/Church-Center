@@ -60,8 +60,23 @@ class ConsolidationController
         $data = json_decode(file_get_contents('php://input'), true);
         $adults = (int) ($data['adults'] ?? 0);
         $children = (int) ($data['children'] ?? 0);
+        $newPeople = (int) ($data['newPeople'] ?? $data['new_people'] ?? 0);
 
-        $success = ConsolidationRepo::saveCount($meetingId, $adults, $children);
+        // Validation: Cannot register for future meetings
+        $db = \App\Database::getInstance();
+        $stmt = $db->prepare("SELECT start_at FROM meetings WHERE id = ?");
+        $stmt->execute([$meetingId]);
+        $meeting = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($meeting) {
+            $meetingStart = strtotime($meeting['start_at']);
+            $now = time();
+            if ($meetingStart > $now) {
+                Response::error("No se puede registrar asistencia para reuniones futuras", 403);
+            }
+        }
+
+        $success = ConsolidationRepo::saveCount($meetingId, $adults, $children, $newPeople);
         Response::json(['success' => $success]);
     }
 

@@ -37,3 +37,6 @@ Los componentes `DesktopSidebar.tsx`, `BottomNav.tsx` y `MainLayout.tsx` se sinc
 
 
 ## 6. Siempre que se realicen modificaciones, o agreguen funcionalidades nuevas, debe realizarse el chequeo de su traducción en el archivo de traducciones para cada idioma.
+
+
+## 7. Cuando se realicen cambios en la base de datos, debe actualizarse el archivo completo de la base de datos: /User SQL/main.sql.

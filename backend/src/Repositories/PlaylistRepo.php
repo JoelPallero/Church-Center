@@ -19,7 +19,7 @@ class PlaylistRepo
                 $params[] = $groupId;
             }
 
-            $sql .= " ORDER BY created_at DESC";
+            $sql .= " ORDER BY id DESC";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -48,7 +48,7 @@ class PlaylistRepo
 
             $db = Database::getInstance('music');
             $placeholders = implode(',', array_fill(0, count($allowedCreators), '?'));
-            $sql = "SELECT * FROM playlists WHERE church_id = ? AND is_active = 1 AND created_by IN ($placeholders) ORDER BY created_at DESC";
+            $sql = "SELECT * FROM playlists WHERE church_id = ? AND is_active = 1 AND created_by IN ($placeholders) ORDER BY id DESC";
 
             $stmt = $db->prepare($sql);
             $stmt->execute(array_merge([$churchId], $allowedCreators));

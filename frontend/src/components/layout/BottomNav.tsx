@@ -11,6 +11,7 @@ export const BottomNav: FC = () => {
     const isPastor = hasRole('pastor');
     const isLeader = hasRole('leader') || hasRole('coordinator');
     const isMember = hasRole('member');
+    const isUjier = hasRole('ujier');
 
     interface NavItem {
         path: string;
@@ -39,17 +40,21 @@ export const BottomNav: FC = () => {
     if (isSuperAdmin) {
         // Specific footer for Superadmin
         const superadminFooterPaths = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/settings'];
-        navItems = allItems.filter(item => superadminFooterPaths.includes(item.path));
+        navItems = allItems.filter(item => superadminFooterPaths.includes(item.path) && canAccess(item.path));
     } else if (isPastor) {
         // Specific footer for Pastor
         const pastorFooterPaths = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/mainhub/areas', '/settings'];
-        navItems = allItems.filter(item => pastorFooterPaths.includes(item.path));
+        navItems = allItems.filter(item => pastorFooterPaths.includes(item.path) && canAccess(item.path));
     } else if (isLeader || isMember) {
         // Specific footer for Leader and Member
         const leaderFooterPaths = ['/worship/calendar', '/mainhub/my-team', '/worship/playlists', '/worship/songs', '/settings'];
         navItems = leaderFooterPaths
             .map(path => allItems.find(item => item.path === path))
-            .filter((item): item is NavItem => !!item);
+            .filter((item): item is NavItem => !!item && canAccess(item.path));
+    } else if (isUjier) {
+        // Specific footer for Ujier
+        const ujierFooterPaths = ['/mainhub/consolidation', '/settings'];
+        navItems = allItems.filter(item => ujierFooterPaths.includes(item.path) && canAccess(item.path));
     } else {
         // Filter by permissions matrix for other roles
         const filteredItems = allItems.filter(item => canAccess(item.path));

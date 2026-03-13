@@ -29,16 +29,24 @@ class BootstrapController
 
         $serviceKeys = array_values(array_unique(array_map(fn($r) => trim(strtolower($r['service_key'])), $serviceRoles)));
 
+        // Get enabled services for this church
+        $churchEnabledServices = ChurchRepo::getEnabledServiceKeys($member['church_id']);
+
         // Roles that should have access to core modules by default
-        $churchRoles = ['pastor', 'leader', 'coordinator', 'multimedia', 'member'];
+        $churchRoles = ['pastor', 'leader', 'coordinator', 'multimedia', 'ushers', 'member'];
         
         if (count(array_intersect($churchRoles, $roles)) > 0) {
-            $serviceKeys[] = 'worship';
-            $serviceKeys[] = 'consolidation';
-            $serviceKeys[] = 'social';
-            // Add other modules as they are created
+            // Only add default hubs if they are enabled for this church
+            if (in_array('worship', $churchEnabledServices)) $serviceKeys[] = 'worship';
+            if (in_array('consolidation', $churchEnabledServices)) $serviceKeys[] = 'consolidation';
+            if (in_array('social', $churchEnabledServices)) $serviceKeys[] = 'social';
         }
-        $serviceKeys = array_values(array_unique($serviceKeys));
+
+        // Even if explicitly assigned, if it's disabled for the church, we remove it
+        // (Unless it's 'mainhub' which is always needed for structural access)
+        $serviceKeys = array_values(array_unique(array_filter($serviceKeys, function($key) use ($churchEnabledServices) {
+            return $key === 'mainhub' || in_array($key, $churchEnabledServices);
+        })));
 
         return Response::json([
             'success' => true,
@@ -48,11 +56,13 @@ class BootstrapController
                 'church' => $church,
                 'permissions' => $permissions,
                 'roles' => $roles,
-                'services' => array_unique($serviceKeys),
+                'services' => $serviceKeys,
                 'features' => [
                     'music' => in_array('worship', $serviceKeys),
-                    'social_media' => in_array('social', $serviceKeys)
-                ]
+                    'social_media' => in_array('social', $serviceKeys),
+                    'consolidation' => in_array('consolidation', $serviceKeys)
+                ],
+                'enabled_hubs' => $churchEnabledServices // Pass this for extra checks if needed
             ]
         ]);
     }

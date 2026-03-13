@@ -32,7 +32,7 @@ class TeamRepo
             $params[] = $areaId;
         }
 
-        $sql .= " ORDER BY g.name ASC";
+        $sql .= " ORDER BY g.id DESC";
 
         $stmt = $db->prepare($sql);
         $stmt->execute($params);

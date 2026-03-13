@@ -36,8 +36,7 @@ class CalendarRepo
             $sql .= " WHERE " . implode(" AND ", $where);
         }
 
-        $sql .= " ORDER BY m.start_at ASC, m.start_time ASC";
-
+        $sql .= " ORDER BY m.start_at DESC, m.id DESC";
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -239,7 +238,7 @@ class CalendarRepo
     public static function getCategories($churchId)
     {
         $db = Database::getInstance();
-        $stmt = $db->prepare("SELECT * FROM meeting_categories WHERE church_id = ? ORDER BY name ASC");
+        $stmt = $db->prepare("SELECT * FROM meeting_categories WHERE church_id = ? ORDER BY id DESC");
         $stmt->execute([$churchId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

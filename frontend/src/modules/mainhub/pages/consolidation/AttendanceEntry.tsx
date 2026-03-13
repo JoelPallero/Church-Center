@@ -24,41 +24,60 @@ export const AttendanceEntry: FC = () => {
     const navigate = useNavigate();
     const [adults, setAdults] = useState(0);
     const [children, setChildren] = useState(0);
+    const [newPeople, setNewPeople] = useState(0);
+    const [meeting, setMeeting] = useState<any>(null);
+    const [isPastOrCurrent, setIsPastOrCurrent] = useState(false);
     const [visitors, setVisitors] = useState<Visitor[]>([]);
     const [isSavingCount, setIsSavingCount] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newVisitor, setNewVisitor] = useState<Visitor>({
         first_name: '', surname: '', phone: '', email: '', is_first_time: true, notes: ''
     });
-    const { isPastor, isSuperAdmin, isMaster } = useAuth();
+    const { isPastor, isSuperAdmin, isMaster, isUjier } = useAuth();
 
     useEffect(() => {
-        if (isPastor && !isSuperAdmin && !isMaster) {
+        if (isPastor || isUjier || isSuperAdmin || isMaster) {
+            fetchData();
+        } else {
             navigate('/mainhub/consolidation');
-            return;
         }
-        fetchData();
     }, [meetingId, isPastor, isSuperAdmin, isMaster, navigate]);
 
     const fetchData = async () => {
         try {
-            const response = await api.get('/consolidation', { params: { meeting_id: meetingId } });
-            if (response.data.success) {
-                if (response.data.count) {
-                    setAdults(response.data.count.adults);
-                    setChildren(response.data.count.children);
+            const [consolidationRes, meetingRes] = await Promise.all([
+                api.get('/consolidation', { params: { meeting_id: meetingId } }),
+                api.get(`/meetings/${meetingId}`)
+            ]);
+
+            if (consolidationRes.data.success) {
+                if (consolidationRes.data.count) {
+                    setAdults(consolidationRes.data.count.adults);
+                    setChildren(consolidationRes.data.count.children);
+                    setNewPeople(consolidationRes.data.count.new_people || 0);
                 }
-                setVisitors(response.data.visitors || []);
+                setVisitors(consolidationRes.data.visitors || []);
+            }
+
+            if (meetingRes.data.success) {
+                const meetingData = meetingRes.data.meeting;
+                setMeeting(meetingData);
+                
+                // Time check
+                const startAt = new Date(meetingData.start_at).getTime();
+                const now = new Date().getTime();
+                setIsPastOrCurrent(now >= startAt);
             }
         } catch (err) {
-            console.error('Error fetching attendance:', err);
+            console.error('Error fetching attendance data:', err);
         }
     };
 
     const handleSaveCount = async () => {
+        if (!isPastOrCurrent) return;
         setIsSavingCount(true);
         try {
-            await api.post(`/consolidation/count?meeting_id=${meetingId}`, { adults, children });
+            await api.post(`/consolidation/count?meeting_id=${meetingId}`, { adults, children, newPeople });
         } catch (err) {
             console.error('Error saving count:', err);
         } finally {
@@ -68,6 +87,7 @@ export const AttendanceEntry: FC = () => {
 
     const handleAddVisitor = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!isPastOrCurrent) return;
         try {
             const response = await api.post(`/consolidation/visitor?meeting_id=${meetingId}`, newVisitor);
             if (response.data.success) {
@@ -94,16 +114,35 @@ export const AttendanceEntry: FC = () => {
         <div style={{ maxWidth: '800px', margin: '0 auto', paddingBottom: '40px' }}>
             <Button label={t('common.back')} icon="arrow_back" variant="ghost" onClick={() => navigate(-1)} style={{ marginBottom: '16px' }} />
 
-            <h1 className="text-h1" style={{ marginBottom: '24px' }}>{t('consolidation.attendance')}</h1>
+            {meeting && (
+                <div style={{ marginBottom: '24px' }}>
+                    <h1 className="text-h1" style={{ marginBottom: '4px' }}>{meeting.title || t('consolidation.attendance')}</h1>
+                    <p className="text-body" style={{ opacity: 0.7 }}>
+                        {new Date(meeting.start_at).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                </div>
+            )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
+            {!isPastOrCurrent && meeting && (
+                <Card style={{ padding: '20px', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid #EF4444', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#EF4444' }}>
+                        <span className="material-symbols-outlined">warning</span>
+                        <p className="text-body" style={{ fontWeight: 600 }}>
+                            Esta reunión aún no ha comenzado. Solo podrás registrar asistencia una vez que inicie.
+                        </p>
+                    </div>
+                </Card>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
                 <Card style={{ padding: '24px' }}>
                     <label className="text-overline" style={{ display: 'block', marginBottom: '8px' }}>{t('consolidation.adults')}</label>
                     <input
                         type="number"
                         value={adults}
                         onChange={e => setAdults(parseInt(e.target.value) || 0)}
-                        style={{ width: '100%', padding: '12px', fontSize: '24px', textAlign: 'center', borderRadius: '12px', border: '1px solid var(--color-border-subtle)', backgroundColor: 'transparent', color: 'var(--color-ui-text)' }}
+                        disabled={!isPastOrCurrent || isSavingCount}
+                        style={{ width: '100%', padding: '12px', fontSize: '24px', textAlign: 'center', borderRadius: '12px', border: '1px solid var(--color-border-subtle)', backgroundColor: 'transparent', color: 'var(--color-ui-text)', opacity: isPastOrCurrent ? 1 : 0.5 }}
                     />
                 </Card>
                 <Card style={{ padding: '24px' }}>
@@ -112,18 +151,41 @@ export const AttendanceEntry: FC = () => {
                         type="number"
                         value={children}
                         onChange={e => setChildren(parseInt(e.target.value) || 0)}
-                        style={{ width: '100%', padding: '12px', fontSize: '24px', textAlign: 'center', borderRadius: '12px', border: '1px solid var(--color-border-subtle)', backgroundColor: 'transparent', color: 'var(--color-ui-text)' }}
+                        disabled={!isPastOrCurrent || isSavingCount}
+                        style={{ width: '100%', padding: '12px', fontSize: '24px', textAlign: 'center', borderRadius: '12px', border: '1px solid var(--color-border-subtle)', backgroundColor: 'transparent', color: 'var(--color-ui-text)', opacity: isPastOrCurrent ? 1 : 0.5 }}
+                    />
+                </Card>
+                <Card style={{ padding: '24px' }}>
+                    <label className="text-overline" style={{ display: 'block', marginBottom: '8px' }}>{t('consolidation.newPeople')}</label>
+                    <input
+                        type="number"
+                        value={newPeople}
+                        onChange={e => setNewPeople(parseInt(e.target.value) || 0)}
+                        disabled={!isPastOrCurrent || isSavingCount}
+                        style={{ width: '100%', padding: '12px', fontSize: '24px', textAlign: 'center', borderRadius: '12px', border: '1px solid var(--color-border-subtle)', backgroundColor: 'transparent', color: 'var(--color-ui-text)', opacity: isPastOrCurrent ? 1 : 0.5 }}
                     />
                 </Card>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '48px' }}>
-                <Button label={t('consolidation.saveCount')} icon="save" onClick={handleSaveCount} disabled={isSavingCount} style={{ width: '200px' }} />
+                <Button 
+                    label={t('consolidation.saveCount')} 
+                    icon="save" 
+                    onClick={handleSaveCount} 
+                    disabled={isSavingCount || !isPastOrCurrent} 
+                    style={{ width: '200px' }} 
+                />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h2 className="text-h2">{t('consolidation.visitors')}</h2>
-                <Button label={t('consolidation.addVisitor')} icon="person_add" variant="secondary" onClick={() => setIsModalOpen(true)} />
+                <Button 
+                    label={t('consolidation.addVisitor')} 
+                    icon="person_add" 
+                    variant="secondary" 
+                    onClick={() => setIsModalOpen(true)} 
+                    disabled={!isPastOrCurrent}
+                />
             </div>
 
             <Card style={{ overflow: 'visible' }}>

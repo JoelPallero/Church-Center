@@ -19,11 +19,14 @@ export const ChurchEditor: FC = () => {
     });
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isSavingServices, setIsSavingServices] = useState(false);
+    const [services, setServices] = useState<any[]>([]);
     const [error, setError] = useState('');
 
     useEffect(() => {
         if (id) {
             fetchChurch();
+            fetchServices();
         }
     }, [id]);
 
@@ -52,6 +55,21 @@ export const ChurchEditor: FC = () => {
         }
     };
 
+    const fetchServices = async () => {
+        try {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(`/api/churches/${id}/services`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const result = await response.json();
+            if (result.success) {
+                setServices(result.services);
+            }
+        } catch (err) {
+            console.error('Error fetching services:', err);
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
@@ -74,6 +92,8 @@ export const ChurchEditor: FC = () => {
             const result = await response.json();
             if (result.success) {
                 if (id) {
+                    // Update services too
+                    await handleSaveServices();
                     addToast(t('churches.updateSuccess') || 'Iglesia actualizada correctamente', 'success');
                     navigate('/mainhub/churches');
                 } else {
@@ -87,6 +107,25 @@ export const ChurchEditor: FC = () => {
             setError(t('setup.church.errorConnection'));
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleSaveServices = async () => {
+        setIsSavingServices(true);
+        try {
+            const token = localStorage.getItem('auth_token');
+            await fetch(`/api/churches/${id}/services`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ services })
+            });
+        } catch (err) {
+            console.error('Error saving services:', err);
+        } finally {
+            setIsSavingServices(false);
         }
     };
 
@@ -215,13 +254,69 @@ export const ChurchEditor: FC = () => {
                             <Button
                                 variant="primary"
                                 type="submit"
-                                disabled={isSaving}
+                                disabled={isSaving || isSavingServices}
                                 style={{ width: '100%', height: '48px' }}
                             >
-                                {isSaving ? t('setup.church.saving') : t('setup.church.submit')}
+                                {(isSaving || isSavingServices) ? t('setup.church.saving') : t('setup.church.submit')}
                             </Button>
                         </div>
                     </Card>
+
+                    {id && services.length > 0 && (
+                        <Card style={{ padding: '24px', marginTop: '24px' }}>
+                            <h3 className="text-overline" style={{ color: 'var(--color-brand-blue)', marginBottom: '16px', letterSpacing: '1px', fontWeight: 700 }}>
+                                {t('churches.hubsActivation') || 'Activación de Hubs'}
+                            </h3>
+                            <p className="text-body-secondary" style={{ fontSize: '12px', marginBottom: '20px' }}>
+                                {t('churches.hubsHint') || 'Activa o desactiva los módulos disponibles para esta iglesia. Esto ocultará menús y funciones para todos sus usuarios.'}
+                            </p>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {services.map(svc => (
+                                    <div key={svc.id} style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'space-between',
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        backgroundColor: 'var(--color-ui-bg-alt)',
+                                        border: '1px solid var(--color-border-subtle)'
+                                    }}>
+                                        <div>
+                                            <p className="text-body-strong" style={{ margin: 0 }}>{svc.name}</p>
+                                            <p className="text-overline" style={{ margin: 0, opacity: 0.6, fontSize: '10px' }}>{svc.key}</p>
+                                        </div>
+                                        <div 
+                                            onClick={() => {
+                                                setServices(prev => prev.map(s => s.id === svc.id ? { ...s, is_enabled: s.is_enabled ? 0 : 1 } : s));
+                                            }}
+                                            style={{
+                                                width: '44px',
+                                                height: '24px',
+                                                borderRadius: '12px',
+                                                backgroundColor: svc.is_enabled ? 'var(--color-brand-blue)' : '#D1D5DB',
+                                                position: 'relative',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            <div style={{
+                                                width: '18px',
+                                                height: '18px',
+                                                borderRadius: '50%',
+                                                backgroundColor: 'white',
+                                                position: 'absolute',
+                                                top: '3px',
+                                                left: svc.is_enabled ? '23px' : '3px',
+                                                transition: 'all 0.2s',
+                                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                                            }} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+                    )}
                 </form>
             )}
 

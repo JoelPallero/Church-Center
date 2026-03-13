@@ -19,6 +19,7 @@ class PermissionMiddleware
 
         $permissions = PermissionRepo::getPermissions($memberId, $churchId);
         if (!in_array($permission, $permissions)) {
+            \App\Helpers\Logger::warning("Forbidden: Member $memberId missing permission '$permission' for church $churchId");
             Response::error("Forbidden: Missing permission '$permission'", 403);
         }
 

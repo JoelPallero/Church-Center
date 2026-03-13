@@ -21,8 +21,8 @@ export const SongList: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { isMaster, user, canManageSongs, hasRole, hasService } = useAuth();
-    const { startTutorial, showTutorials } = useTutorials();
+    const { isMaster, user, canManageSongs, hasRole, hasService, isSuperAdmin } = useAuth();
+    const { showTutorials, startTutorial, setShowTutorials } = useTutorials();
     const [songs, setSongs] = useState<Song[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -35,7 +35,7 @@ export const SongList: FC = () => {
         if (hasSeenFullTour === 'true') return;
 
         // Excluir Super Admin
-        if (hasRole('master')) return;
+        if (isSuperAdmin || hasRole('master') || hasRole('superadmin')) return;
 
         const isLeader = hasRole('leader');
         const isCoordinator = hasRole('coordinator');
@@ -94,11 +94,13 @@ export const SongList: FC = () => {
     };
 
     useEffect(() => {
-        if (showTutorials && !loading && songs.length >= 0) {
+        if (showTutorials && !loading && songs.length >= 0 && !isSuperAdmin) {
             const hasSeenTutorial = localStorage.getItem('tutorial_seen_songs');
             if (!hasSeenTutorial) {
                 if (window.confirm('¿Quieres realizar un breve recorrido por la Biblioteca de Canciones?')) {
                     startTutorial('songs');
+                } else {
+                    setShowTutorials(false);
                 }
                 localStorage.setItem('tutorial_seen_songs', 'true');
             }
@@ -143,8 +145,7 @@ export const SongList: FC = () => {
             list = list.filter(s => s.originalKey === filterKey);
         }
 
-        // 5. Alpha Sort
-        list.sort((a, b) => a.title.localeCompare(b.title));
+        // 5. Alpha Sort removed to respect backend order (DESC)
 
         return list;
     };

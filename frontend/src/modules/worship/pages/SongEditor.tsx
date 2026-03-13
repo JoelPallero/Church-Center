@@ -44,12 +44,12 @@ export const SongEditor: FC = () => {
     });
 
     const [loading, setLoading] = useState(false);
-    const { user, isMaster, canManageSongs, hasRole, hasService } = useAuth();
+    const { user, isMaster, canManageSongs, hasRole, hasService, isSuperAdmin } = useAuth();
     const { startTutorial, showTutorials } = useTutorials();
     const { addToast } = useToast();
 
     useEffect(() => {
-        if (!showTutorials || !user || loading) return;
+        if (!showTutorials || !user || loading || isSuperAdmin) return;
 
         const hasSeenFullTour = localStorage.getItem('tutorial_seen_worship_master');
         if (hasSeenFullTour === 'true') return;
@@ -114,7 +114,7 @@ export const SongEditor: FC = () => {
                 category: song.category || 'worship',
                 bpmType: song.bpmType || 'fast',
                 youtubeUrl: song.youtubeUrl || '',
-                spotifyUrl: (song as any).spotifyUrl || '',
+                spotifyUrl: song.spotifyUrl || '',
                 memberKeys: song.memberKeys || []
             });
         }
@@ -172,13 +172,8 @@ export const SongEditor: FC = () => {
             else prefix = "\n\n";
         }
 
-        let suffix = "\n";
-        if (after.length > 0) {
-            if (!after.startsWith('\n')) suffix = "\n\n";
-            else if (!after.startsWith('\n\n')) suffix = "\n";
-        }
-
-        const fullTag = `${prefix}[${tag}]\n${suffix}`;
+        // Just one newline after the tag to start typing immediately below
+        const fullTag = `${prefix}[${tag}]\n`;
         const newContent = before + fullTag + after.trimStart();
         setForm({ ...form, content: newContent });
 
@@ -212,7 +207,9 @@ export const SongEditor: FC = () => {
                         proposedKey: form.originalKey,
                         proposedTempo: form.tempo,
                         proposedTimeSignature: form.timeSignature,
-                        proposedBpmType: form.bpmType
+                        proposedBpmType: form.bpmType,
+                        proposedYoutubeUrl: form.youtubeUrl,
+                        proposedSpotifyUrl: form.spotifyUrl
                     });
                     addToast(t('songs.submitApprovalSuccess') || 'Tus cambios han sido enviados para revisión por un Líder.', 'success');
                 }
@@ -330,7 +327,7 @@ export const SongEditor: FC = () => {
                                 <label className="text-overline" style={{ color: 'var(--color-ui-text-soft)', marginBottom: '6px', display: 'block' }}>Spotify Link</label>
                                 <div style={{ position: 'relative' }}>
                                     <span className="material-symbols-outlined" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#1DB954', fontSize: '18px' }}>album</span>
-                                    <input className="text-body" value={(form as any).spotifyUrl} onChange={e => setForm({ ...form, ['spotifyUrl' as any]: e.target.value })} style={{ ...inputStyle, paddingLeft: '40px' }} placeholder="https://spotify.com/..." />
+                                    <input className="text-body" value={form.spotifyUrl} onChange={e => setForm({ ...form, spotifyUrl: e.target.value })} style={{ ...inputStyle, paddingLeft: '40px' }} placeholder="https://spotify.com/..." />
                                 </div>
                             </div>
                         </div>
@@ -406,6 +403,23 @@ export const SongEditor: FC = () => {
                             className="text-body"
                             value={form.content}
                             onChange={e => setForm({ ...form, content: e.target.value })}
+                            onKeyDown={e => {
+                                if (e.key === '[') {
+                                    e.preventDefault();
+                                    const textarea = e.currentTarget;
+                                    const start = textarea.selectionStart;
+                                    const end = textarea.selectionEnd;
+                                    const text = form.content;
+                                    
+                                    // Insert [] and put cursor in middle
+                                    const newContent = text.substring(0, start) + '[]' + text.substring(end);
+                                    setForm({ ...form, content: newContent });
+                                    
+                                    setTimeout(() => {
+                                        textarea.setSelectionRange(start + 1, start + 1);
+                                    }, 0);
+                                }
+                            }}
                             style={{
                                 ...inputStyle,
                                 flex: 1,

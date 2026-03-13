@@ -22,6 +22,8 @@ export const songService = {
                 category: s.category,
                 churchName: s.church_name,
                 bpmType: s.bpm_type || 'fast',
+                youtubeUrl: s.youtube_url || '',
+                spotifyUrl: s.spotify_url || '',
                 memberKeys: s.member_keys || []
             })) : [];
         } catch (error) {
@@ -44,7 +46,11 @@ export const songService = {
                     timeSignature: s.time_signature || '4/4',
                     tempo: s.tempo,
                     content: s.content,
-                    category: s.category
+                    category: s.category,
+                    bpmType: s.bpm_type || 'fast',
+                    youtubeUrl: s.youtube_url || '',
+                    spotifyUrl: s.spotify_url || '',
+                    memberKeys: s.member_keys || []
                 };
             }
             return undefined;
@@ -60,8 +66,12 @@ export const songService = {
             artist: song.artist,
             original_key: song.originalKey,
             tempo: song.tempo,
+            time_signature: song.timeSignature,
+            bpm_type: song.bpmType,
             content: song.content,
-            category: song.category
+            category: song.category,
+            youtube_url: song.youtubeUrl,
+            spotify_url: song.spotifyUrl
         });
 
         const data = response.data;
@@ -79,8 +89,13 @@ export const songService = {
                 artist: song.artist,
                 original_key: song.originalKey,
                 tempo: song.tempo,
+                time_signature: song.timeSignature,
+                bpm_type: song.bpmType,
                 content: song.content,
-                category: song.category
+                category: song.category,
+                youtube_url: song.youtubeUrl,
+                spotify_url: song.spotifyUrl,
+                church_id: song.churchId
             });
             return true;
         } catch (error: any) {
@@ -100,7 +115,9 @@ export const songService = {
                 proposed_key: edit.proposedKey,
                 proposed_tempo: edit.proposedTempo,
                 proposed_time_signature: edit.proposedTimeSignature,
-                proposed_bpm_type: edit.proposedBpmType
+                proposed_bpm_type: edit.proposedBpmType,
+                proposed_youtube_url: (edit as any).proposedYoutubeUrl,
+                proposed_spotify_url: (edit as any).proposedSpotifyUrl
             });
             return true;
         } catch (error) {

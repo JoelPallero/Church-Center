@@ -129,7 +129,7 @@ class UserRepo
             $sql .= " AND m.church_id = ?";
             $params[] = $churchId;
         }
-        $sql .= " ORDER BY m.created_at DESC";
+        $sql .= " ORDER BY m.id DESC";
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $users = $stmt->fetchAll(PDO::FETCH_ASSOC);

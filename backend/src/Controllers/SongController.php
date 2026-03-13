@@ -32,7 +32,9 @@ class SongController
                 PermissionMiddleware::require($memberId, 'song.approve', $churchId);
                 $this->listEdits($memberId);
             } elseif (is_numeric($action)) {
-                PermissionMiddleware::require($memberId, 'song.read', $churchId);
+                $song = \App\Repositories\SongRepo::findById($action);
+                $targetChurchId = $song['church_id'] ?? $churchId;
+                PermissionMiddleware::require($memberId, 'song.read', $targetChurchId);
                 $this->show($action);
             } else {
                 PermissionMiddleware::require($memberId, 'song.read', $churchId);
@@ -51,15 +53,25 @@ class SongController
             }
         } elseif ($method === 'PUT') {
             // Edición
-            PermissionMiddleware::require($memberId, 'song.update', $churchId);
             if (is_numeric($action)) {
+                $song = \App\Repositories\SongRepo::findById($action);
+                if (!$song) {
+                    return Response::error("Song not found", 404);
+                }
+                $targetChurchId = $song['church_id'] ?? $churchId;
+                PermissionMiddleware::require($memberId, 'song.update', $targetChurchId);
                 $this->update($action, $data);
             }
         } elseif ($method === 'DELETE') {
             // Baja
-            PermissionMiddleware::require($memberId, 'song.delete', $churchId);
             if (is_numeric($action)) {
-                $this->delete((int) $action);
+                $song = \App\Repositories\SongRepo::findById($action);
+                if (!$song) {
+                    return Response::error("Song not found", 404);
+                }
+                $targetChurchId = $song['church_id'] ?? $churchId;
+                PermissionMiddleware::require($memberId, 'song.delete', $targetChurchId);
+                $this->delete($action);
             }
         }
     }
@@ -159,19 +171,29 @@ class SongController
 
     private function create($memberId, $churchId = null, $input = [])
     {
+        // Safety: If no churchId is passed or it's 0 (General), 
+        // we check the member's native church to make it private to them by default.
+        if (!$churchId || (int)$churchId === 0) {
+            $member = \App\Repositories\UserRepo::getMemberData($memberId);
+            $churchId = $member['church_id'] ?? 0;
+        }
 
         if (!isset($input['title']) || !isset($input['artist'])) {
             return Response::error("Title and Artist are required");
         }
 
         $id = \App\Repositories\SongRepo::add([
-            'church_id' => $churchId ?? 0,
+            'church_id' => $churchId,
             'title' => $input['title'],
             'artist' => $input['artist'],
             'original_key' => $input['original_key'] ?? '',
             'tempo' => $input['tempo'] ?? '',
+            'time_signature' => $input['time_signature'] ?? '4/4',
+            'bpm_type' => $input['bpm_type'] ?? 'fast',
             'content' => $input['content'] ?? '',
-            'category' => $input['category'] ?? ''
+            'category' => $input['category'] ?? '',
+            'youtube_url' => $input['youtube_url'] ?? '',
+            'spotify_url' => $input['spotify_url'] ?? ''
         ]);
 
         if ($id) {
