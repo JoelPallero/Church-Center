@@ -116,7 +116,7 @@ class UserRepo
     {
         $db = Database::getInstance();
         $sql = "
-            SELECT m.id, m.church_id, m.name, m.surname, m.email, m.phone, m.status, usr.role_id, r.name as role_name, r.display_name as role_display, c.name as church_name
+            SELECT m.id, m.church_id, m.name, m.surname, m.email, m.phone, m.status, m.can_create_teams, usr.role_id, r.name as role_name, r.display_name as role_display, c.name as church_name
             FROM member m
             LEFT JOIN church c ON m.church_id = c.id
             LEFT JOIN services s ON s.key = 'mainhub'
@@ -130,9 +130,20 @@ class UserRepo
             $params[] = $churchId;
         }
         $sql .= " ORDER BY m.id DESC";
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+        } catch (\PDOException $e) {
+            if (strpos($e->getMessage(), "Unknown column") !== false && strpos($e->getMessage(), "can_create_teams") !== false) {
+                $db->exec("ALTER TABLE member ADD COLUMN can_create_teams TINYINT(1) DEFAULT 0;");
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+            } else {
+                throw $e;
+            }
+        }
+        
+        $users = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         // Fetch areas and instruments for each user (inefficient but safe for small volumes, or use a better join)
         foreach ($users as &$u) {
@@ -274,6 +285,11 @@ class UserRepo
         if (isset($data['sex'])) {
             $fields[] = "sex = ?";
             $params[] = $data['sex'];
+        }
+        
+        if (isset($data['can_create_teams'])) {
+            $fields[] = "can_create_teams = ?";
+            $params[] = $data['can_create_teams'] ? 1 : 0;
         }
         
         $newChurchId = null;

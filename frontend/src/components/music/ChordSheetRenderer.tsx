@@ -26,6 +26,9 @@ export const ChordSheetRenderer: FC<ChordSheetRendererProps> = ({
 
     // 2. Sanitize content (close unclosed brackets on each line to avoid parser crash while typing)
     const sanitizedContent = content.split('\n').map((line: string) => {
+        // Fix typos where user typed `}` instead of `]` for brackets
+        line = line.replace(/\[([^\]]*)\}/g, '[$1]');
+
         let openCount = 0;
         for (let i = 0; i < line.length; i++) {
             if (line[i] === '[') openCount++;
@@ -40,7 +43,8 @@ export const ChordSheetRenderer: FC<ChordSheetRendererProps> = ({
         const trimmed = fixedLine.trim();
         const sectionMatch = trimmed.match(/^\[([^\]]+)\]$/);
         if (sectionMatch) {
-            const tag = sectionMatch[1].trim();
+            let tag = sectionMatch[1].trim();
+            tag = tag.replace(/\}$/, ''); // remove trailing } if user made a typo like [Intro}
             const sectionKeywords = ['intro', 'coro', 'verse', 'verso', 'estrofa', 'puente', 'bridge', 'solo', 'final', 'outro', 'instrumental', 'interlude', 'coda', 'pre-coro', 'pre-chorus', 'estribillo', 'parte'];
             const isKeyword = sectionKeywords.some(k => tag.toLowerCase().includes(k));
             
@@ -108,7 +112,10 @@ export const ChordSheetRenderer: FC<ChordSheetRendererProps> = ({
 
     // 4. Format to HTML
     const formatter = new HtmlDivFormatter();
-    const html = formatter.format(song);
+    let html = formatter.format(song);
+
+    // Fix large gap after section comments by adding a targetable class
+    html = html.replace(/<div class="row">\s*<div class="comment">/g, '<div class="row row-has-comment"><div class="comment">');
 
     // 5. CSS for hiding chords and styling
     const styles = `
@@ -119,12 +126,16 @@ export const ChordSheetRenderer: FC<ChordSheetRendererProps> = ({
             color: var(--color-ui-text);
         }
         .chord-sheet-container .paragraph {
-            margin-bottom: 32px;
+            margin-bottom: 16px;
         }
         .chord-sheet-container .row {
             display: flex;
             flex-wrap: wrap;
-            margin-bottom: 16px;
+            align-items: flex-end; /* Align lyrics when chords are hidden */
+            margin-bottom: 12px;
+        }
+        .chord-sheet-container .row-has-comment {
+            margin-bottom: 4px;
         }
         .chord-sheet-container .column {
             display: flex;
@@ -136,7 +147,13 @@ export const ChordSheetRenderer: FC<ChordSheetRendererProps> = ({
             font-weight: bold;
             height: 1.5em;
             padding-top: 4px;
+            padding-right: 8px; /* Ensure space between adjacent chords */
+            margin-right: 4px; /* Ensure space between adjacent chords */
+            white-space: pre; /* Prevent wrapping inside chord names */
             display: ${viewMode === 'lyrics' ? 'none' : 'block'};
+        }
+        .chord-sheet-container .chord:empty {
+            display: none !important; /* Hide empty chords so lyric lines don't get huge gaps */
         }
         .chord-sheet-container .lyrics {
             min-height: 1.25em;
@@ -145,7 +162,7 @@ export const ChordSheetRenderer: FC<ChordSheetRendererProps> = ({
         .chord-sheet-container .comment {
             font-weight: bold;
             color: var(--color-brand-blue);
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             display: block;
             text-transform: uppercase;
             font-size: 0.85em;

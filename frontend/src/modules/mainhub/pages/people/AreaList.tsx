@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '../../../../components/ui/Card';
 import { Button } from '../../../../components/ui/Button';
 import { useAuth } from '../../../../hooks/useAuth';
+import { useConfirm } from '../../../../context/ConfirmContext';
 
 export const AreaList: FC = () => {
     const { t } = useTranslation();
     const { isMaster } = useAuth();
+    const confirm = useConfirm();
     const [areas, setAreas] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editingArea, setEditingArea] = useState<any>(null);
@@ -85,7 +87,13 @@ export const AreaList: FC = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm(t('common.confirmDelete') || '¿Estás seguro?')) return;
+        const confirmed = await confirm({
+            title: t('common.delete') || 'Eliminar',
+            message: t('common.confirmDelete') || '¿Estás seguro?',
+            variant: 'danger',
+            confirmText: 'Eliminar'
+        });
+        if (!confirmed) return;
         try {
             const token = localStorage.getItem('auth_token');
             const response = await fetch(`/api/areas/${id}`, {

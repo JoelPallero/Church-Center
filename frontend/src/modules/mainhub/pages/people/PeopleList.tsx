@@ -10,12 +10,14 @@ import { useToast } from '../../../../context/ToastContext';
 import type { User, UserRoleName } from '../../../../context/AuthContext';
 import { EditMemberModal } from '../../../../components/people/EditMemberModal';
 import { PeopleTable } from '../../../../components/people/PeopleTable';
+import { useConfirm } from '../../../../context/ConfirmContext';
 
 export const PeopleList: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, hasPermission, isMaster } = useAuth();
     const { addToast } = useToast();
+    const confirm = useConfirm();
     const [searchParams] = useSearchParams();
     const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
     const [users, setUsers] = useState<User[]>([]);
@@ -87,7 +89,16 @@ export const PeopleList: FC = () => {
 
         if (isInvitation) {
             if (!target.email) return;
-            if (!window.confirm(t('people.moderation.confirmDeleteInvitation', { name: target.name }) || `¿Estás seguro de que deseas eliminar la invitación de ${target.name}?`)) return;
+
+            const confirmed = await confirm({
+                title: 'Eliminar Invitación',
+                message: t('people.moderation.confirmDeleteInvitation', { name: target.name }) || `¿Estás seguro de que deseas eliminar la invitación de ${target.name}?`,
+                variant: 'danger',
+                confirmText: 'Eliminar'
+            });
+
+            if (!confirmed) return;
+            
             const success = await peopleService.deleteInvitation(target.email);
             if (success) {
                 addToast(t('people.moderation.invitationDeleted') || 'Invitación eliminada.', 'success');
@@ -100,7 +111,14 @@ export const PeopleList: FC = () => {
             const actionText = isAdmin ? t('common.deletePermanently') || 'ELIMINAR PERMANENTEMENTE' : t('common.deactivate') || 'desactivar';
             const confirmMsg = t('people.confirmDelete', { action: actionText, name: target.name }) || `¿Estás seguro de que deseas ${actionText} el perfil de ${target.name}?${isAdmin ? '\n\nATENCIÓN: Esta acción borrará todos sus datos y no se puede deshacer.' : ''}`;
 
-            if (!window.confirm(confirmMsg)) return;
+            const confirmed = await confirm({
+                title: isAdmin ? 'Eliminar Perfil' : 'Desactivar Perfil',
+                message: confirmMsg,
+                variant: 'danger',
+                confirmText: isAdmin ? 'Eliminar' : 'Desactivar'
+            });
+
+            if (!confirmed) return;
 
             const success = isAdmin
                 ? await peopleService.deleteMember(target.id)

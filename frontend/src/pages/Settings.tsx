@@ -148,7 +148,17 @@ export const Settings: FC = () => {
                                 subtitle={showTutorials ? t('profile.tutorialsActive') : t('profile.tutorialsInactive')}
                                 rightElement={
                                     <div 
-                                        onClick={() => setShowTutorials(!showTutorials)}
+                                        onClick={() => {
+                                            const newVal = !showTutorials;
+                                            setShowTutorials(newVal);
+                                            if (newVal) {
+                                                localStorage.removeItem('tutorial_seen_worship_master');
+                                                localStorage.removeItem('tutorial_seen_songs');
+                                                localStorage.removeItem('tutorial_seen_meetings');
+                                                localStorage.removeItem('tutorial_seen_playlists');
+                                                localStorage.removeItem('worship_tour_stage');
+                                            }
+                                        }}
                                         style={{ 
                                             width: '44px', 
                                             height: '24px', 

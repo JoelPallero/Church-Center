@@ -7,6 +7,7 @@ import { AssignmentForm } from './AssignmentForm';
 import { SetlistAssignmentForm } from './SetlistAssignmentForm';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
 
 interface MeetingDetailViewProps {
     instanceId: number;
@@ -19,6 +20,7 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
     const navigate = useNavigate();
     const { isMaster, user, hasRole } = useAuth();
     const { addToast } = useToast();
+    const confirm = useConfirm();
     const [details, setDetails] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -128,7 +130,13 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                                     icon="delete"
                                     disabled={isDeleting}
                                     onClick={async () => {
-                                        if (window.confirm('¿Estás seguro de que deseas eliminar esta reunión?')) {
+                                        const confirmed = await confirm({
+                                            title: 'Eliminar Reunión',
+                                            message: '¿Estás seguro de que deseas eliminar esta reunión?',
+                                            variant: 'danger',
+                                            confirmText: 'Eliminar'
+                                        });
+                                        if (confirmed) {
                                             setIsDeleting(true);
                                             try {
                                                 const response = await api.delete(`/calendar/${instanceId}`);

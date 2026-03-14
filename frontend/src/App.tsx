@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { TutorialProvider } from './context/TutorialContext';
+import { ConfirmProvider } from './context/ConfirmContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
 import { ModuleGuard } from './components/layout/ModuleGuard';
@@ -78,6 +79,7 @@ const App: FC = () => {
       <ThemeProvider>
         <TutorialProvider>
           <ToastProvider>
+            <ConfirmProvider>
             {import.meta.env.DEV && <DevProfileSelector />}
             <BrowserRouter>
               <Suspense fallback={<LoadingFallback />}>
@@ -162,6 +164,7 @@ const App: FC = () => {
                 </Routes>
               </Suspense>
             </BrowserRouter>
+            </ConfirmProvider>
           </ToastProvider>
         </TutorialProvider>
       </ThemeProvider>

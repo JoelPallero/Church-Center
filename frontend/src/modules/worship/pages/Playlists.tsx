@@ -10,6 +10,7 @@ import { SongSelector } from '../../../components/music/SongSelector';
 import { useAuth } from '../../../hooks/useAuth';
 import { useToast } from '../../../context/ToastContext';
 import { useTutorials } from '../../../context/TutorialContext';
+import { useConfirm } from '../../../context/ConfirmContext';
 import type { Playlist, Song } from '../../../types/domain';
 
 export const Playlists: FC = () => {
@@ -19,6 +20,7 @@ export const Playlists: FC = () => {
     const [searchParams] = useSearchParams();
     const { user, isMaster, hasRole, canManagePlaylists, isSuperAdmin } = useAuth();
     const { startTutorial, showTutorials, setShowTutorials } = useTutorials();
+    const confirm = useConfirm();
     
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [upcomingReunions, setUpcomingReunions] = useState<Reunion[]>([]);
@@ -54,16 +56,28 @@ export const Playlists: FC = () => {
     useEffect(() => {
         if (showTutorials && !loading && playlists.length >= 0 && !isSuperAdmin) {
             const hasSeenTutorial = localStorage.getItem('tutorial_seen_playlists');
-            if (!hasSeenTutorial) {
-                if (window.confirm('¿Quieres realizar un breve recorrido por la gestión de Listados?')) {
-                    startTutorial('playlists');
-                } else {
-                    setShowTutorials(false);
-                }
-                localStorage.setItem('tutorial_seen_playlists', 'true');
+            if (hasSeenTutorial !== 'true' && hasSeenTutorial !== 'pending') {
+                localStorage.setItem('tutorial_seen_playlists', 'pending');
+                const askTutorial = async () => {
+                    const wantsTutorial = await confirm({
+                        title: t('tutorials.playlists.title') || 'Recorrido',
+                        message: '¿Quieres realizar un breve recorrido por la gestión de Listados?',
+                        confirmText: t('common.yes') || 'Sí, claro',
+                        cancelText: t('common.no') || 'No, gracias'
+                    });
+                    
+                    if (wantsTutorial) {
+                        startTutorial('playlists');
+                    } else {
+                        setShowTutorials(false);
+                        localStorage.setItem('user_show_tutorials', 'false');
+                    }
+                    localStorage.setItem('tutorial_seen_playlists', 'true');
+                };
+                askTutorial();
             }
         }
-    }, [showTutorials, loading]);
+    }, [showTutorials, loading, isSuperAdmin, playlists.length, confirm, startTutorial, setShowTutorials, t]);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -268,8 +282,14 @@ export const Playlists: FC = () => {
                                      <Button
                                          variant="secondary"
                                          icon="delete"
-                                         onClick={() => {
-                                             if (window.confirm(t('common.confirmDelete') || '¿Eliminar?')) {
+                                         onClick={async () => {
+                                             const confirmed = await confirm({
+                                                 title: t('common.confirmDeleteTitle') || 'Eliminar Listado',
+                                                 message: t('common.confirmDelete') || '¿Estás seguro de que deseas eliminar esto?',
+                                                 variant: 'danger',
+                                                 confirmText: t('common.delete') || 'Eliminar'
+                                             });
+                                             if (confirmed) {
                                                  playlistService.delete(p.id).then(() => {
                                                      playlistService.getAll(finalChurchId || undefined).then(setPlaylists);
                                                  });

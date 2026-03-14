@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { useTranslation } from 'react-i18next';
 import { peopleService } from '../../services/peopleService';
 import { useAuth } from '../../hooks/useAuth';
+import { useConfirm } from '../../context/ConfirmContext';
 
 interface Props {
     user: any;
@@ -19,7 +20,8 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
     const [groups, setGroups] = useState<any[]>([]);
     const [instruments, setInstruments] = useState<any[]>([]);
     const [churches, setChurches] = useState<any[]>([]);
-    const { isMaster } = useAuth();
+    const { isMaster, isPastor, hasRole } = useAuth();
+    const confirm = useConfirm();
 
     // Split name and surname if they are together in user.name
     const nameParts = (user.name || '').split(' ');
@@ -36,7 +38,8 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
         areaIds: (user.areas || []).map((a: any) => a.id),
         groupId: user.group_id || (user.groups?.[0]?.id) || '',
         selectedInstruments: user.instruments?.map((i: any) => i.id) || [],
-        churchId: user.church_id || user.churchId || ''
+        churchId: user.church_id || user.churchId || '',
+        canCreateTeams: !!user.can_create_teams
     });
 
     const [isSaving, setIsSaving] = useState(false);
@@ -150,7 +153,8 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                 areaIds: isAdminRole ? [] : formData.areaIds,
                 groups: (isAdminRole || !formData.groupId) ? [] : [parseInt(formData.groupId as string)],
                 instruments: formData.selectedInstruments,
-                churchId: formData.churchId ? parseInt(formData.churchId as string) : null
+                churchId: formData.churchId ? parseInt(formData.churchId as string) : null,
+                can_create_teams: formData.canCreateTeams
             });
 
             if (success) {
@@ -169,7 +173,13 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
         // Actually, let's just make it a real Delete since Super Admin asked for it.
 
         const confirmMsg = t('people.confirmDeleteProfile');
-        if (!window.confirm(confirmMsg)) return;
+        const confirmed = await confirm({
+            title: t('people.deleteProfile') || 'Eliminar Perfil',
+            message: confirmMsg,
+            variant: 'danger',
+            confirmText: 'Eliminar'
+        });
+        if (!confirmed) return;
 
         const success = await peopleService.deleteMember(user.id);
         if (success) {
@@ -329,6 +339,23 @@ export const EditMemberModal: FC<Props> = ({ user, onClose, onSave }) => {
                             </select>
                         </div>
                     </div>
+                    
+                    {/* Extra Feature: teams creation for leaders */}
+                    {selectedRoleName === 'leader' && (isMaster || isPastor || hasRole('admin')) && (
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                <input 
+                                    type="checkbox" 
+                                    checked={formData.canCreateTeams}
+                                    onChange={e => setFormData(prev => ({ ...prev, canCreateTeams: e.target.checked }))}
+                                    style={{ width: '18px', height: '18px', accentColor: 'var(--color-brand-blue)' }}
+                                />
+                                <span className="text-body" style={{ color: 'var(--color-ui-text)' }}>
+                                    {t('people.enableCreateTeams') || 'Habilitar creación de equipos (funcionalidad extra)'}
+                                </span>
+                            </label>
+                        </div>
+                    )}
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                         <div>

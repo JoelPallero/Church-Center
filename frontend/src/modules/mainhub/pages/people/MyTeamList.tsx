@@ -8,11 +8,13 @@ import { EditMemberModal } from '../../../../components/people/EditMemberModal';
 import { Card } from '../../../../components/ui/Card';
 import { useToast } from '../../../../context/ToastContext';
 import type { User } from '../../../../context/AuthContext';
+import { useConfirm } from '../../../../context/ConfirmContext';
 
 export const MyTeamList: FC = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
     const { addToast } = useToast();
+    const confirm = useConfirm();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -45,7 +47,13 @@ export const MyTeamList: FC = () => {
     };
 
     const handleDelete = async (target: User) => {
-        if (!window.confirm(t('people.confirmDelete', { action: t('common.deactivate'), name: target.name }))) return;
+        const confirmed = await confirm({
+            title: t('common.deactivate') || 'Desactivar',
+            message: t('people.confirmDelete', { action: t('common.deactivate'), name: target.name }) || `¿Estás seguro de que deseas desactivar el perfil de ${target.name}?`,
+            variant: 'danger',
+            confirmText: t('common.deactivate') || 'Desactivar'
+        });
+        if (!confirmed) return;
         const success = await peopleService.updateStatus(target.id, 2);
         if (success) {
             addToast(t('people.deactivatedSuccess'), 'success');

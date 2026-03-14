@@ -87,6 +87,7 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
                     churchId: rawUser.church_id || null,
                     roleId: 0, // Mock for type compatibility
                     statusId: (rawUser.status === 'active' || !rawUser.status) ? 1 : 2,
+                    can_create_teams: !!Number(rawUser.can_create_teams),
                     isMaster: is_superadmin || mainRole === 'superadmin' || mainRole === 'master',
                     role: {
                         id: 0,
@@ -200,6 +201,11 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
         if (identifier.startsWith('/social') && !services.includes('social') && !isSuperAdmin) return false;
         // Consolidation Hub
         if (identifier.startsWith('/mainhub/consolidation') && !services.includes('consolidation') && !isSuperAdmin) return false;
+
+        // Custom specific check: Leader with 'can_create_teams' extra functionality
+        if ((identifier === '/mainhub/setup-teams' || identifier === 'action.team.create' || identifier === '/mainhub/teams') && user?.can_create_teams) {
+            return true;
+        }
 
         if (isSuperAdmin) return true;
         if (impersonatedRole) return canAccessGlobal(impersonatedRole.name, identifier);

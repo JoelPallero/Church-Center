@@ -110,6 +110,7 @@
         "confirmDeleteProfile": "¿Estás seguro de que deseas ELIMINAR este perfil permanentemente?\n\nEsta acción borrará todos los registros asociados y no se puede deshacer.",
         "inactive": "Inactivo",
         "filter": "Filtrar por rol",
+        "enableCreateTeams": "Habilitar creación de equipos (funcionalidad extra)",
         "roles": {
             "master": "Maestro",
             "pastor": "Pastor",

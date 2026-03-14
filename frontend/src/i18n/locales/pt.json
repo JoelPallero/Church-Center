@@ -82,6 +82,7 @@
         "invitationError": "Erro ao reenviar.",
         "deletedSuccess": "Perfil excluído.",
         "deactivatedSuccess": "Perfil desativado.",
+        "enableCreateTeams": "Permitir a criação de equipes (funcionalidade extra)",
         "roles": {
             "master": "Mestre",
             "pastor": "Pastor",

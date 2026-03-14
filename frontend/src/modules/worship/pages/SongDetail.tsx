@@ -13,6 +13,7 @@ import type { Song } from '../../../services/songService';
 import { musicUtils } from '../../../utils/musicUtils';
 
 import { useTutorials } from '../../../context/TutorialContext';
+import { useConfirm } from '../../../context/ConfirmContext';
 
 export const SongDetail: FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -21,6 +22,7 @@ export const SongDetail: FC = () => {
     const { t } = useTranslation();
     const { user, canManageSongs, hasRole, hasService, isSuperAdmin } = useAuth();
     const { startTutorial, showTutorials } = useTutorials();
+    const confirm = useConfirm();
 
     const [song, setSong] = useState<Song | undefined>(undefined);
     const [loading, setLoading] = useState(true);
@@ -143,7 +145,14 @@ export const SongDetail: FC = () => {
                                         ? '¿Mover a tu biblioteca privada? Solo tu iglesia podrá verla.' 
                                         : '¿Hacer GLOBAL? Todas las iglesias podrán ver esta canción en su repositorio.';
                                     
-                                    if (window.confirm(confirmMsg)) {
+                                    const confirmed = await confirm({
+                                        title: isGlobal(song?.churchId) ? 'Quitar de Global' : 'Hacer Global',
+                                        message: confirmMsg,
+                                        confirmText: t('common.yes') || 'Sí',
+                                        cancelText: t('common.no') || 'No'
+                                    });
+
+                                    if (confirmed) {
                                         const success = await songService.update(id!, { ...song, churchId: nextChurchId || 0 });
                                         if (success) loadSong(id!);
                                     }

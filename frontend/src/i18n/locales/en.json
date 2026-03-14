@@ -110,6 +110,7 @@
         "confirmDeleteProfile": "Are you sure you want to PERMANENTLY DELETE this profile?\n\nThis action will delete all associated records and cannot be undone.",
         "inactive": "Inactive",
         "filter": "Filter by role",
+        "enableCreateTeams": "Enable team creation (extra functionality)",
         "roles": {
             "master": "Master",
             "pastor": "Pastor",

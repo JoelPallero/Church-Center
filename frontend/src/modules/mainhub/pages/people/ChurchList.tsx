@@ -7,12 +7,14 @@ import { Button } from '../../../../components/ui/Button';
 import api from '../../../../services/api';
 import { useAuth } from '../../../../hooks/useAuth';
 import { useToast } from '../../../../context/ToastContext';
+import { useConfirm } from '../../../../context/ConfirmContext';
 
 export const ChurchList: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { isMaster } = useAuth();
     const { addToast } = useToast();
+    const confirm = useConfirm();
     const [churches, setChurches] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -46,15 +48,26 @@ export const ChurchList: FC = () => {
 
     const handleAction = async (church: any, action: 'deactivate' | 'restore' | 'hardDelete') => {
         let confirmMsg = '';
+        let title = '';
         if (action === 'deactivate') {
             confirmMsg = t('churches.confirmDeactivate', { name: church.name });
+            title = t('churches.deactivate') || 'Desactivar Iglesia';
         } else if (action === 'hardDelete') {
             confirmMsg = t('churches.confirmHardDelete', { name: church.name });
+            title = 'Eliminar Permanentemente';
         } else if (action === 'restore') {
             confirmMsg = t('churches.confirmRestore', { name: church.name }) || `¿Deseas reactivar la iglesia ${church.name}?`;
+            title = t('churches.restore') || 'Restaurar Iglesia';
         }
 
-        if (!window.confirm(confirmMsg)) {
+        const confirmed = await confirm({
+            title,
+            message: confirmMsg,
+            variant: action === 'restore' ? 'primary' : 'danger',
+            confirmText: action === 'restore' ? t('common.yes') || 'Sí' : t('common.delete') || 'Eliminar'
+        });
+
+        if (!confirmed) {
             return;
         }
 

@@ -7,6 +7,7 @@ import { Button } from '../../../../components/ui/Button';
 import { peopleService } from '../../../../services/peopleService';
 import { useAuth } from '../../../../hooks/useAuth';
 import { useToast } from '../../../../context/ToastContext';
+import { useConfirm } from '../../../../context/ConfirmContext';
 
 interface TeamSettingsProps {
     team: any;
@@ -185,6 +186,7 @@ export const TeamsList: FC = () => {
     const { t } = useTranslation();
     const { user, hasPermission, isMaster, isLoading: authLoading } = useAuth();
     const { addToast } = useToast();
+    const confirm = useConfirm();
     const [groups, setGroups] = useState<any[]>([]);
     const [members, setMembers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -193,6 +195,11 @@ export const TeamsList: FC = () => {
     const [newTeamName, setNewTeamName] = useState('');
     const [newTeamLeader, setNewTeamLeader] = useState<number | null>(null);
     const [allPotentialLeaders, setAllPotentialLeaders] = useState<any[]>([]);
+    const [areas, setAreas] = useState<any[]>([]);
+    const [newTeamArea, setNewTeamArea] = useState<number | null>(null);
+    const [isNewLeader, setIsNewLeader] = useState(false);
+    const [newLeaderName, setNewLeaderName] = useState('');
+    const [newLeaderEmail, setNewLeaderEmail] = useState('');
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
@@ -226,7 +233,7 @@ export const TeamsList: FC = () => {
     };
 
     const isLeader = user?.role?.name === 'leader' || user?.role?.name === 'coordinator';
-    const isAdmin = isMaster || user?.role?.name === 'pastor' || user?.role?.name === 'admin';
+    const isAdmin = isMaster || user?.role?.name === 'pastor' || user?.role?.name === 'admin' || (isLeader && !!user?.can_create_teams);
 
     useEffect(() => {
         if (authLoading) return;
@@ -243,8 +250,12 @@ export const TeamsList: FC = () => {
     }, [isAdmin, isLeader, finalChurchId, authLoading, user]);
 
     const loadPotentialLeaders = async () => {
-        const data = await peopleService.getAll(finalChurchId || undefined);
-        setAllPotentialLeaders(data);
+        const [leadersData, areasData] = await Promise.all([
+            peopleService.getAll(finalChurchId || undefined),
+            peopleService.getAreas(finalChurchId || undefined)
+        ]);
+        setAllPotentialLeaders(leadersData);
+        setAreas(areasData);
     };
 
     const loadGroups = async () => {
@@ -269,21 +280,52 @@ export const TeamsList: FC = () => {
 
     const handleAddTeam = async () => {
         if (!newTeamName.trim()) return;
-        // MUST use finalChurchId to ensure context for pastors/admins as well as superadmins
-        const success = await peopleService.addGroup(newTeamName, newTeamLeader || null, null, finalChurchId || undefined);
+
+        if (isNewLeader && (!newLeaderName.trim() || !newLeaderEmail.trim())) {
+            addToast('Por favor ingrese el nombre y correo electrónico del nuevo líder.', 'error');
+            return;
+        }
+
+        let finalLeaderId = newTeamLeader;
+        setLoading(true);
+
+        if (isNewLeader) {
+            // Role ID 3 = Leader
+            const newLeaderId = await peopleService.invite(newLeaderName, newLeaderEmail, 3, finalChurchId || undefined);
+            if (!newLeaderId) {
+                addToast('Error al crear el nuevo líder. El correo podría estar en uso.', 'error');
+                setLoading(false);
+                return;
+            }
+            finalLeaderId = newLeaderId;
+        }
+
+        const success = await peopleService.addGroup(newTeamName, finalLeaderId || null, newTeamArea, finalChurchId || undefined);
         if (success) {
             addToast(t('teams.addSuccess') || 'Equipo creado correctamente', 'success');
             setShowAddModal(false);
             setNewTeamName('');
             setNewTeamLeader(null);
+            setNewTeamArea(null);
+            setIsNewLeader(false);
+            setNewLeaderName('');
+            setNewLeaderEmail('');
             loadGroups();
         } else {
             addToast(t('setup.teams.errorCreate') || 'Error al crear equipo', 'error');
+            setLoading(false);
         }
     };
 
     const handleDeleteTeam = async (id: number) => {
-        if (!window.confirm(t('teams.deleteConfirm'))) return;
+        const confirmed = await confirm({
+            title: t('teams.deleteTitle') || 'Eliminar Equipo',
+            message: t('teams.deleteConfirm'),
+            variant: 'danger',
+            confirmText: 'Eliminar'
+        });
+        if (!confirmed) return;
+        
         const success = await peopleService.deleteGroup(id, finalChurchId || undefined);
         if (success) {
             addToast(t('teams.deleteSuccess') || 'Equipo eliminado correctamente', 'success');
@@ -295,36 +337,51 @@ export const TeamsList: FC = () => {
 
     return (
         <div>
-            <header style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <h1 className="text-h1">{t('nav.teams')}</h1>
-                    <p className="text-body" style={{ color: 'gray' }}>
-                        {churchName ? `Iglesia: ${churchName}` : t('teams.manageAllTeams')}
-                    </p>
+            <header style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                marginBottom: '24px'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                    gap: '12px'
+                }}>
+                    <h1 className="text-h1" style={{ margin: 0, fontSize: 'clamp(22px, 4vw, 32px)', lineHeight: 1.2 }}>{t('nav.teams')}</h1>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {hasPermission('team.create') && isAdmin && (
+                            <Button
+                                variant="primary"
+                                icon="add"
+                                label={t('teams.newTeam')}
+                                onClick={() => setShowAddModal(true)}
+                                style={{ height: '38px', padding: '0 12px', flexShrink: 0 }}
+                            />
+                        )}
+                        {isLeader && (
+                            <Button
+                                variant="primary"
+                                icon="person_add"
+                                label={t('teams.inviteMember')}
+                                onClick={() => navigate(`/mainhub/people/invite?church_id=${finalChurchId}`)}
+                                style={{ height: '38px', padding: '0 12px', flexShrink: 0 }}
+                            />
+                        )}
+                    </div>
                 </div>
-                {hasPermission('teams.create') && isAdmin && (
-                    <Button
-                        variant="primary"
-                        icon="add"
-                        label={t('teams.newTeam')}
-                        onClick={() => setShowAddModal(true)}
-                    />
-                )}
-                {isLeader && (
-                    <Button
-                        variant="primary"
-                        icon="person_add"
-                        label={t('teams.inviteMember')}
-                        onClick={() => navigate(`/mainhub/people/invite?church_id=${finalChurchId}`)}
-                    />
-                )}
+                <p className="text-body" style={{ color: '#6B7280', marginBottom: '16px' }}>
+                    {churchName ? `Iglesia: ${churchName}` : t('teams.manageAllTeams')}
+                </p>
             </header>
 
             {loading ? (
                 <div className="flex-center" style={{ height: '200px' }}>
                     <div className="spinner" />
                 </div>
-            ) : isLeader ? (
+            ) : (isLeader && !user?.can_create_teams) ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {members.length === 0 ? (
                         <p className="text-body" style={{ textAlign: 'center', color: 'gray', marginTop: '40px' }}>{t('teams.emptyMyTeam')}</p>
@@ -372,19 +429,11 @@ export const TeamsList: FC = () => {
                     {groups.length === 0 && (
                         <Card style={{ padding: '40px', textAlign: 'center', gridColumn: '1 / -1' }}>
                             <p className="text-body" style={{ color: 'gray' }}>{t('teams.noTeamsInChurch') || 'No hay equipos configurados para esta iglesia.'}</p>
-                            {isAdmin && (
-                                <Button
-                                    variant="ghost"
-                                    label={t('teams.createFirst') || 'Crear el primer equipo'}
-                                    onClick={() => setShowAddModal(true)}
-                                    style={{ marginTop: '12px' }}
-                                />
-                            )}
                         </Card>
                     )}
                     {groups.map(group => (
                         <Card key={group.id} style={{ padding: '20px', position: 'relative' }} className="sidebar-item">
-                            {hasPermission('teams.delete') && (
+                            {hasPermission('team.delete') && (
                                 <button
                                     onClick={() => handleDeleteTeam(group.id)}
                                     style={{
@@ -442,7 +491,7 @@ export const TeamsList: FC = () => {
                             </div>
 
                             <div style={{ marginTop: '20px', display: 'flex', gap: '8px' }}>
-                                {hasPermission('teams.edit') && (
+                                {hasPermission('team.update') && (
                                     <Button variant="secondary" onClick={() => setConfigTeam(group)} style={{ flex: 1, fontSize: '12px', padding: '8px' }}>
                                         {t('common.configure')}
                                     </Button>
@@ -474,18 +523,66 @@ export const TeamsList: FC = () => {
                             }}
                         />
                         <select
-                            value={newTeamLeader || ''}
-                            onChange={(e) => setNewTeamLeader(e.target.value ? parseInt(e.target.value) : null)}
+                            value={newTeamArea || ''}
+                            onChange={(e) => setNewTeamArea(e.target.value ? parseInt(e.target.value) : null)}
                             style={{
                                 width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border-subtle)',
-                                backgroundColor: 'var(--color-ui-bg)', color: 'var(--color-ui-text)', marginBottom: '20px'
+                                backgroundColor: 'var(--color-ui-bg)', color: 'var(--color-ui-text)', marginBottom: '12px'
+                            }}
+                        >
+                            <option value="">Seleccionar un área (opcional)</option>
+                            {areas.map((a: any) => (
+                                <option key={a.id} value={a.id}>{a.name}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={isNewLeader ? 'new' : (newTeamLeader || '')}
+                            onChange={(e) => {
+                                if (e.target.value === 'new') {
+                                    setIsNewLeader(true);
+                                    setNewTeamLeader(null);
+                                } else {
+                                    setIsNewLeader(false);
+                                    setNewTeamLeader(e.target.value ? parseInt(e.target.value) : null);
+                                }
+                            }}
+                            style={{
+                                width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--color-border-subtle)',
+                                backgroundColor: 'var(--color-ui-bg)', color: 'var(--color-ui-text)', marginBottom: isNewLeader ? '12px' : '20px'
                             }}
                         >
                             <option value="">{t('teams.selectLeader')}</option>
+                            <option value="new">➕ Agregar nuevo líder...</option>
                             {allPotentialLeaders.map((m: any) => (
                                 <option key={m.id} value={m.id}>{m.name}</option>
                             ))}
                         </select>
+
+                        {isNewLeader && (
+                            <div style={{ padding: '12px', backgroundColor: 'var(--color-ui-surface)', borderRadius: '8px', marginBottom: '20px' }}>
+                                <p className="text-body" style={{ fontSize: '12px', color: 'var(--color-brand-blue)', marginBottom: '8px', fontWeight: 600 }}>Detalles del nuevo líder</p>
+                                <input
+                                    type="text"
+                                    placeholder="Nombre y Apellido"
+                                    value={newLeaderName}
+                                    onChange={(e) => setNewLeaderName(e.target.value)}
+                                    style={{
+                                        width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border-subtle)',
+                                        backgroundColor: 'var(--color-ui-bg)', color: 'var(--color-ui-text)', marginBottom: '8px', fontSize: '14px'
+                                    }}
+                                />
+                                <input
+                                    type="email"
+                                    placeholder="Correo electrónico"
+                                    value={newLeaderEmail}
+                                    onChange={(e) => setNewLeaderEmail(e.target.value)}
+                                    style={{
+                                        width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--color-border-subtle)',
+                                        backgroundColor: 'var(--color-ui-bg)', color: 'var(--color-ui-text)', fontSize: '14px'
+                                    }}
+                                />
+                            </div>
+                        )}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                             <Button variant="ghost" label={t('common.cancel')} onClick={() => setShowAddModal(false)} />
                             <Button variant="primary" label={t('teams.createAction')} onClick={handleAddTeam} />

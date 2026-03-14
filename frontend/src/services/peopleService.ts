@@ -59,13 +59,13 @@ export const peopleService = {
         }
     },
 
-    invite: async (name: string, email: string, roleId: number, churchId?: number): Promise<boolean> => {
+    invite: async (name: string, email: string, roleId: number, churchId?: number): Promise<number | null> => {
         try {
-            await api.post('/people/invite', { name, email, roleId, churchId });
-            return true;
+            const response = await api.post('/people/invite', { name, email, roleId, churchId });
+            return response.data.success ? response.data.id : null;
         } catch (error) {
             console.error('Failed to invite person', error);
-            return false;
+            return null;
         }
     },
 

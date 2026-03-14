@@ -39,6 +39,11 @@ class TeamController
         } elseif ($method === 'POST') {
             \App\Middleware\PermissionMiddleware::require($memberId, 'team.create', $churchId);
 
+            $memberCheck = \App\Repositories\UserRepo::getMemberData($memberId);
+            if (($memberCheck['role']['name'] ?? '') === 'leader' && empty($memberCheck['can_create_teams'])) {
+                Response::error("Permiso denegado. Un administrador debe habilitar esta funcionalidad para tu perfil.", 403);
+            }
+
             if ($id && $subAction === 'members') {
                 if (($parts[2] ?? '') === 'bulk') {
                     $this->assignBulk($id, $data);

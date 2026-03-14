@@ -16,6 +16,7 @@ import { peopleService } from '../../../services/peopleService';
 import { Metronome } from '../../../components/music/Metronome';
 import type { User } from '../../../types/domain';
 import { useTutorials } from '../../../context/TutorialContext';
+import { useConfirm } from '../../../context/ConfirmContext';
 
 export const SongList: FC = () => {
     const { t } = useTranslation();
@@ -23,6 +24,7 @@ export const SongList: FC = () => {
     const [searchParams] = useSearchParams();
     const { isMaster, user, canManageSongs, hasRole, hasService, isSuperAdmin } = useAuth();
     const { showTutorials, startTutorial, setShowTutorials } = useTutorials();
+    const confirm = useConfirm();
     const [songs, setSongs] = useState<Song[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -45,10 +47,30 @@ export const SongList: FC = () => {
         if (isLeader || isCoordinator || isPastor || isPraiseMember) {
             const stage = localStorage.getItem('worship_tour_stage') || 'list';
             if (stage === 'list') {
-                startTutorial('worship_list');
+                // Prevent duplicate prompts
+                localStorage.setItem('tutorial_seen_worship_master', 'pending');
+                
+                const askWorshipTour = async () => {
+                    const wantsTutorial = await confirm({
+                        title: t('tutorials.worship.welcome.title') || 'Recorrido de Culto',
+                        message: t('tutorials.worship.welcome.desc') || '¿Quieres realizar un breve recorrido por la gestión de canciones y culto?',
+                        confirmText: t('common.yes') || 'Sí, claro',
+                        cancelText: t('common.no') || 'No, gracias'
+                    });
+                    
+                    if (wantsTutorial) {
+                        startTutorial('worship_list');
+                        // driver.js will advance the stage when they click elements or we can just leave it as 'list'
+                    } else {
+                        setShowTutorials(false);
+                        localStorage.setItem('user_show_tutorials', 'false');
+                    }
+                    localStorage.setItem('tutorial_seen_worship_master', 'true');
+                };
+                askWorshipTour();
             }
         }
-    }, [user, showTutorials, loading, hasRole, hasService, startTutorial]);
+    }, [user, showTutorials, loading, hasRole, hasService, startTutorial, confirm, setShowTutorials, isSuperAdmin, t]);
 
     // Pagination
     const [page, setPage] = useState(1);
@@ -94,18 +116,9 @@ export const SongList: FC = () => {
     };
 
     useEffect(() => {
-        if (showTutorials && !loading && songs.length >= 0 && !isSuperAdmin) {
-            const hasSeenTutorial = localStorage.getItem('tutorial_seen_songs');
-            if (!hasSeenTutorial) {
-                if (window.confirm('¿Quieres realizar un breve recorrido por la Biblioteca de Canciones?')) {
-                    startTutorial('songs');
-                } else {
-                    setShowTutorials(false);
-                }
-                localStorage.setItem('tutorial_seen_songs', 'true');
-            }
-        }
-    }, [showTutorials, loading]);
+        // Obsolete secondary tutorial. Merged into the worship_master tour.
+        // Keeping this empty or removed to avoid conflicts.
+    }, []);
 
     // Generate the list to display based on filters
     const getDisplaySongs = () => {
@@ -165,7 +178,14 @@ export const SongList: FC = () => {
     };
 
     const handleDelete = async (id: number | string) => {
-        if (!window.confirm(t('common.confirmDelete') || '¿Estás seguro de que deseas eliminar esta canción?')) return;
+        const confirmed = await confirm({
+            title: t('common.confirmDeleteTitle') || 'Eliminar Canción',
+            message: t('common.confirmDelete') || '¿Estás seguro de que deseas eliminar esta canción?',
+            variant: 'danger',
+            confirmText: t('common.delete') || 'Eliminar'
+        });
+        if (!confirmed) return;
+        
         const success = await songService.delete(id, finalChurchId || undefined);
         if (success) {
             loadSongs();

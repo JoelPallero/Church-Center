@@ -42,6 +42,7 @@ export interface User {
     isMaster?: boolean; // Convenience flag
     google_calendar_id?: string;
     google_api_key?: string;
+    can_create_teams?: boolean;
 }
 
 export interface Church {

@@ -416,6 +416,102 @@ option {
   transform: scale(0.98);
 }
 
+
 .table-row-hover:hover {
   background-color: var(--color-ui-surface);
 }
+
+/* FullCalendar Asana Theme Overrides */
+.fc {
+  --fc-border-color: var(--color-border-subtle);
+  --fc-button-text-color: var(--color-ui-text);
+  --fc-button-bg-color: var(--color-ui-surface);
+  --fc-button-border-color: var(--color-border-subtle);
+  --fc-button-hover-bg-color: rgba(128, 128, 128, 0.1);
+  --fc-button-hover-border-color: var(--color-border-subtle);
+  --fc-button-active-bg-color: rgba(128, 128, 128, 0.2);
+  --fc-button-active-border-color: var(--color-border-subtle);
+  --fc-event-bg-color: var(--color-brand-blue);
+  --fc-event-border-color: var(--color-brand-blue);
+  --fc-today-bg-color: rgba(59, 130, 246, 0.05);
+  font-family: var(--font-family);
+  background-color: transparent;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+  border-color: var(--color-border-subtle) !important;
+}
+
+.fc-theme-standard .fc-scrollgrid {
+  border: none !important;
+}
+
+.fc-scrollgrid-sync-table {
+  border-top: 1px solid var(--color-border-subtle) !important;
+}
+
+.fc-col-header-cell {
+  padding: 12px 0 !important;
+  font-weight: 600 !important;
+  font-size: 14px;
+  color: var(--color-ui-text-soft);
+  text-transform: uppercase;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+.fc-daygrid-day-frame {
+  padding: 4px;
+  min-height: 120px;
+}
+
+.fc-daygrid-day-top {
+  flex-direction: row;
+  justify-content: flex-end;
+  padding: 4px 8px;
+}
+
+.fc-daygrid-day-number {
+  font-size: 14px;
+  color: var(--color-ui-text);
+  font-weight: 500;
+  text-decoration: none !important;
+}
+
+.fc-daygrid-event {
+  border-radius: 6px !important;
+  padding: 2px 6px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  margin-top: 2px !important;
+  border: none !important;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: var(--color-ui-text);
+}
+
+.fc .fc-button {
+  border-radius: 8px !important;
+  text-transform: capitalize;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  padding: 8px 16px !important;
+}
+
+.fc .fc-button-primary:not(:disabled):active, 
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  background-color: var(--color-ui-surface) !important;
+  border-color: var(--color-border-subtle) !important;
+  color: var(--color-brand-blue) !important;
+}
+
+/* Make grid lines subtle */
+.fc-theme-standard td, .fc-theme-standard th {
+  border: 1px solid var(--color-border-subtle);
+}
+.fc-scrollgrid { border: none !important; }
+.fc-scrollgrid-section-header > td { border: none !important; }

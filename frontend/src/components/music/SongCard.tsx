@@ -6,6 +6,7 @@ import { Metronome } from './Metronome';
 import { useAuth } from '../../hooks/useAuth';
 import type { Song } from '../../services/songService';
 import { musicUtils } from '../../utils/musicUtils';
+import { useConfirm } from '../../context/ConfirmContext';
 
 interface SongCardProps {
     song: Song & { isAssigned?: boolean; singerName?: string };
@@ -17,6 +18,7 @@ export const SongCard: FC<SongCardProps> = ({ song, singerIdFilter, onDelete }) 
     const { canManageSongs, isMaster } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const confirm = useConfirm();
     const [menuOpen, setMenuOpen] = useState(false);
     const churchId = searchParams.get('church_id');
 
@@ -192,8 +194,14 @@ export const SongCard: FC<SongCardProps> = ({ song, singerIdFilter, onDelete }) 
                                         fontWeight: 600,
                                         borderRadius: '8px'
                                     }}
-                                    onClick={() => {
-                                        if (window.confirm('¿Eliminar esta canción?')) {
+                                    onClick={async () => {
+                                        const confirmed = await confirm({
+                                            title: 'Eliminar Canción',
+                                            message: '¿Estás seguro de que deseas eliminar esta canción?',
+                                            variant: 'danger',
+                                            confirmText: 'Eliminar'
+                                        });
+                                        if (confirmed) {
                                             onDelete?.(song.id);
                                         }
                                         setMenuOpen(false);

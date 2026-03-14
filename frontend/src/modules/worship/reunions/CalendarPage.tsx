@@ -6,6 +6,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { useTutorials } from '../../../context/TutorialContext';
+import { useConfirm } from '../../../context/ConfirmContext';
 import { Modal } from '../../../components/ui/Modal';
 import { MeetingForm } from '../../../components/reunions/MeetingForm';
 import { MeetingDetailView } from '../../../components/reunions/MeetingDetailView';
@@ -39,6 +40,7 @@ export const CalendarPage: FC = () => {
     const [searchParams] = useSearchParams();
     const { isMaster, user, hasRole, isSuperAdmin } = useAuth();
     const { startTutorial, showTutorials, setShowTutorials } = useTutorials();
+    const confirm = useConfirm();
     const [instances, setInstances] = useState<MeetingInstance[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -144,16 +146,28 @@ export const CalendarPage: FC = () => {
     useEffect(() => {
         if (showTutorials && !isLoading && instances.length >= 0 && !isSuperAdmin) {
             const hasSeenTutorial = localStorage.getItem('tutorial_seen_meetings');
-            if (!hasSeenTutorial) {
-                if (window.confirm('¿Quieres realizar un breve recorrido por la gestión de reuniones?')) {
-                    startTutorial('meetings');
-                } else {
-                    setShowTutorials(false);
-                }
-                localStorage.setItem('tutorial_seen_meetings', 'true');
+            if (hasSeenTutorial !== 'true' && hasSeenTutorial !== 'pending') {
+                localStorage.setItem('tutorial_seen_meetings', 'pending');
+                const askTutorial = async () => {
+                    const wantsTutorial = await confirm({
+                        title: t('tutorials.meetings.title') || 'Recorrido',
+                        message: '¿Quieres realizar un breve recorrido por la gestión de reuniones?',
+                        confirmText: t('common.yes') || 'Sí, claro',
+                        cancelText: t('common.no') || 'No, gracias'
+                    });
+                    
+                    if (wantsTutorial) {
+                        startTutorial('meetings');
+                    } else {
+                        setShowTutorials(false);
+                        localStorage.setItem('user_show_tutorials', 'false');
+                    }
+                    localStorage.setItem('tutorial_seen_meetings', 'true');
+                };
+                askTutorial();
             }
         }
-    }, [showTutorials, isLoading]);
+    }, [showTutorials, isLoading, isSuperAdmin, instances.length, confirm, startTutorial, setShowTutorials, t]);
 
     const fetchChurches = async () => {
         try {
@@ -246,7 +260,14 @@ export const CalendarPage: FC = () => {
     };
 
     const handleDeleteMeeting = async (id: number) => {
-        if (!window.confirm('¿Estás seguro de que deseas eliminar esta reunión?')) return;
+        const confirmed = await confirm({
+            title: t('common.confirmDeleteTitle') || 'Eliminar Reunión',
+            message: '¿Estás seguro de que deseas eliminar esta reunión?',
+            variant: 'danger',
+            confirmText: t('common.delete') || 'Eliminar'
+        });
+        if (!confirmed) return;
+        
         setIsSubmitting(true);
         try {
             const response = await api.delete(`/calendar/${id}`, { params: { churchId: finalChurchId } });
@@ -434,49 +455,46 @@ export const CalendarPage: FC = () => {
                 <div className="flex-center" style={{ height: '300px' }}><div className="spinner" /></div>
             ) : activeTab === 'calendar' ? (
                 <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+                    <FullCalendar
+                        plugins={[dayGridPlugin, interactionPlugin]}
+                        initialView="dayGridMonth"
+                        locale={esLocale}
+                        events={fcEvents}
+                        eventClick={handleEventClick}
+                        dateClick={handleDateClick}
+                        headerToolbar={{
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: 'dayGridMonth,dayGridWeek'
+                        }}
+                        dayCellContent={(arg) => {
+                            // Use local date components to avoid timezone shifts
+                            const year = arg.date.getFullYear();
+                            const month = String(arg.date.getMonth() + 1).padStart(2, '0');
+                            const day = String(arg.date.getDate()).padStart(2, '0');
+                            const dateStr = `${year}-${month}-${day}`;
 
-                    <Card style={{ padding: '24px' }}>
-                        <FullCalendar
-                            plugins={[dayGridPlugin, interactionPlugin]}
-                            initialView="dayGridMonth"
-                            locale={esLocale}
-                            events={fcEvents}
-                            eventClick={handleEventClick}
-                            dateClick={handleDateClick}
-                            headerToolbar={{
-                                left: 'prev,next today',
-                                center: 'title',
-                                right: 'dayGridMonth,dayGridWeek'
-                            }}
-                            dayCellContent={(arg) => {
-                                // Use local date components to avoid timezone shifts
-                                const year = arg.date.getFullYear();
-                                const month = String(arg.date.getMonth() + 1).padStart(2, '0');
-                                const day = String(arg.date.getDate()).padStart(2, '0');
-                                const dateStr = `${year}-${month}-${day}`;
+                            const count = instances.filter(i => (i.instance_date === dateStr) ||
+                                (i.meeting_type === 'recurrent' && (i.day_of_week === arg.date.getDay() || (i.day_of_week === 7 && arg.date.getDay() === 0)))
+                            ).length;
 
-                                const count = instances.filter(i => (i.instance_date === dateStr) ||
-                                    (i.meeting_type === 'recurrent' && (i.day_of_week === arg.date.getDay() || (i.day_of_week === 7 && arg.date.getDay() === 0)))
-                                ).length;
-
-                                return (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '0 4px' }}>
-                                        <span>{arg.dayNumberText}</span>
-                                        {isMobile && count > 0 && <span className="mobile-count" title={`${count} reuniones`}>{count}</span>}
-                                    </div>
-                                );
-                            }}
-                            eventContent={(eventInfo) => {
-                                if (isMobile) return null;
-                                return (
-                                    <div style={{ padding: '2px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        <b>{eventInfo.timeText}</b> {eventInfo.event.title}
-                                    </div>
-                                );
-                            }}
-                            height="auto"
-                        />
-                    </Card>
+                            return (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '0 4px' }}>
+                                    <span>{arg.dayNumberText}</span>
+                                    {isMobile && count > 0 && <span className="mobile-count" title={`${count} reuniones`}>{count}</span>}
+                                </div>
+                            );
+                        }}
+                        eventContent={(eventInfo) => {
+                            if (isMobile) return null;
+                            return (
+                                <div style={{ padding: '2px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <b>{eventInfo.timeText}</b> {eventInfo.event.title}
+                                </div>
+                            );
+                        }}
+                        height="auto"
+                    />
                 </div>
             ) : (
                 <div style={{ animation: 'fadeIn 0.2s ease-out' }}>

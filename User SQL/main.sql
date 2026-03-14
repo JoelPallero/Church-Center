@@ -58,6 +58,7 @@ CREATE TABLE member (
   name VARCHAR(120) NOT NULL,
   surname VARCHAR(120) NULL,
   sex ENUM('M', 'F') NULL,
+  can_create_teams TINYINT(1) DEFAULT 0,
   email VARCHAR(190) NOT NULL UNIQUE,
   phone VARCHAR(60) NULL,
   status ENUM('active','pending','inactive','deleted') NOT NULL DEFAULT 'active',

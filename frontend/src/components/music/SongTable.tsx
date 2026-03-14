@@ -5,6 +5,7 @@ import type { Song } from '../../services/songService';
 import { Button } from '../ui/Button';
 import { Metronome } from './Metronome';
 import { musicUtils } from '../../utils/musicUtils';
+import { useConfirm } from '../../context/ConfirmContext';
 
 interface SongTableProps {
     songs: (Song & { isAssigned?: boolean; singerName?: string })[];
@@ -18,6 +19,7 @@ export const SongTable: FC<SongTableProps> = ({ songs, singerIdFilter, selectedI
     const { isMaster, canManageSongs } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const confirm = useConfirm();
     const churchId = searchParams.get('church_id');
 
     const buildUrl = (path: string) => {
@@ -136,9 +138,15 @@ export const SongTable: FC<SongTableProps> = ({ songs, singerIdFilter, selectedI
                                             <Button
                                                 variant="ghost"
                                                 icon="delete"
-                                                onClick={(e: MouseEvent) => {
+                                                onClick={async (e: MouseEvent) => {
                                                     e.stopPropagation();
-                                                    if (window.confirm('¿Eliminar esta canción?')) {
+                                                    const confirmed = await confirm({
+                                                        title: 'Eliminar Canción',
+                                                        message: '¿Estás seguro de que deseas eliminar esta canción?',
+                                                        variant: 'danger',
+                                                        confirmText: 'Eliminar'
+                                                    });
+                                                    if (confirmed) {
                                                         onDelete?.(song.id);
                                                     }
                                                 }}
