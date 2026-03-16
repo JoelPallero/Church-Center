@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { BottomNav } from './BottomNav';
 import { useAuth } from '../../hooks/useAuth';
 import { NotificationCenter } from '../ui/NotificationCenter';
+import Chatbot from '../chatbot/Chatbot';
 import { ToastContainer } from '../ui/Toast';
 import { DesktopSidebar } from './DesktopSidebar';
 
 export const MainLayout: FC = () => {
     const { t } = useTranslation();
-    const { logout, user, hasPermission, isSuperAdmin, isMaster, canAccess, hasRole } = useAuth();
+    const { logout, user, hasPermission, isSuperAdmin, isMaster, canAccess, hasRole, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const isPastor = hasRole('pastor');
@@ -191,11 +192,20 @@ export const MainLayout: FC = () => {
                                         {user?.role?.displayName || user?.role?.name || 'Miembro'}
                                     </p>
                                 </div>
-                                <div onClick={() => { navigate('/profile'); setUserMenuOpen(false); }} className="dropdown-item">
-                                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person</span>
-                                    <span>Mi perfil</span>
-                                </div>
-                                {hasPermission('church.update_own') && user?.churchId && !hasPermission('church.update') && (
+                                 <div onClick={() => { navigate('/profile'); setUserMenuOpen(false); }} className="dropdown-item">
+                                     <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>person</span>
+                                     <span>Mi perfil</span>
+                                 </div>
+                                 {canAccess('action.chatbot') && (
+                                     <div onClick={() => { 
+                                         setUserMenuOpen(false);
+                                         window.dispatchEvent(new CustomEvent('open-chatbot'));
+                                     }} className="dropdown-item" style={{ color: 'var(--color-brand-blue)' }}>
+                                         <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>smart_toy</span>
+                                         <span style={{ fontWeight: 600 }}>Asistente IA</span>
+                                     </div>
+                                 )}
+                                 {hasPermission('church.update_own') && user?.churchId && !hasPermission('church.update') && (
                                     <div onClick={() => { navigate(`/mainhub/churches/edit/${user?.churchId}`); setUserMenuOpen(false); }} className="dropdown-item">
                                         <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>church</span>
                                         <span>Mi Iglesia</span>
@@ -218,35 +228,27 @@ export const MainLayout: FC = () => {
                                      <span>{t('nav.home')}</span>
                                  </div>
                                  {[
-                                     { path: '/dashboard', icon: 'dashboard', label: isPastor ? 'Dashboard' : t('nav.home') },
-                                     { path: '/mainhub/reports', icon: 'auto_graph', label: isPastor ? 'Reportes' : 'Estadísticas' },
-                                     { path: '/mainhub/churches', icon: 'church', label: isPastor ? 'Mi Iglesia' : t('nav.churches') },
+                                     { path: '/dashboard', icon: 'dashboard', label: (isPastor || isSuperAdmin) ? 'Dashboard' : t('nav.home') },
+                                     { path: '/mainhub/reports', icon: 'auto_graph', label: (isPastor || isSuperAdmin) ? 'Reportes' : 'Estadísticas' },
+                                     { 
+                                         path: isSuperAdmin ? '/mainhub/churches' : (user?.churchId ? `/mainhub/churches/edit/${user.churchId}` : '/mainhub/churches'), 
+                                         icon: 'church', 
+                                         label: isSuperAdmin ? 'Iglesias' : 'Mi Iglesia' 
+                                     },
                                      { path: '/mainhub/areas', icon: 'layers', label: isPastor ? 'Areas' : t('nav.areas') },
                                      { path: '/worship/calendar', icon: 'event', label: isPastor ? 'Calendario' : t('nav.calendar') },
-                                      { path: '/worship/playlists', icon: 'queue_music', label: (isPastor || isLeader || isMember) ? 'Listados' : t('nav.playlists') },
-                                      { path: '/worship/songs', icon: 'library_music', label: (isPastor || isSuperAdmin || isLeader || isMember) ? 'Biblioteca' : (isLeader ? 'Canciones' : t('nav.songs')) },
-                                     { path: '/mainhub/teams', icon: 'groups', label: isPastor ? 'Equipos' : t('nav.teams') },
-                                     { path: '/mainhub/people', icon: 'person_search', label: isPastor ? 'Personas' : t('nav.people') },
+                                     { path: '/worship/playlists', icon: 'queue_music', label: (isPastor || isLeader || isMember) ? 'Listados' : t('nav.playlists') },
+                                     { path: '/worship/songs', icon: 'library_music', label: (isPastor || isSuperAdmin || isLeader || isMember) ? 'Biblioteca' : (isLeader ? 'Canciones' : t('nav.songs')) },
+                                     { path: '/mainhub/teams', icon: 'groups', label: (isPastor || isLeader) ? 'Equipos' : t('nav.teams') },
+                                     { path: '/mainhub/people', icon: 'person_search', label: (isPastor || isSuperAdmin) ? 'Personas' : t('nav.people') },
                                      { path: '/mainhub/my-team', icon: 'diversity_3', label: 'Mi Equipo' },
                                      { path: '/mainhub/consolidation', icon: 'how_to_reg', label: t('nav.consolidation') },
                                  ].filter(item => {
-                                     const allowed = canAccess(item.path);
-                                     if (!allowed) return false;
+                                     if (!canAccess(item.path)) return false;
                                      
-                                     // For Pastor/Superadmin/Leader, exclude items that are already in the footer
-                                     if (isSuperAdmin) {
-                                         const superadminFooterPaths = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/settings'];
-                                         return !superadminFooterPaths.includes(item.path);
-                                     }
-                                     if (isPastor) {
-                                         const pastorFooterPaths = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/mainhub/areas', '/settings'];
-                                         return !pastorFooterPaths.includes(item.path);
-                                     }
-                                     if (isLeader) {
-                                         const leaderFooterPaths = ['/worship/calendar', '/mainhub/my-team', '/worship/playlists', '/worship/songs', '/settings'];
-                                         return !leaderFooterPaths.includes(item.path);
-                                     }
-                                     
+                                     // Only show top 5 items in BottomNav, so others should be in dropdown
+                                     // But for simplicity and UI consistency, we can show everything in dropdown
+                                     // as it's a "Mega Menu" for mobile.
                                      return true;
                                  }).map(item => (
                                      <div key={item.path} onClick={() => { navigate(item.path); setUserMenuOpen(false); }} className="dropdown-item">
@@ -363,6 +365,15 @@ export const MainLayout: FC = () => {
                                                 <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person</span>
                                                 <span>Mi perfil</span>
                                             </div>
+                                            {canAccess('action.chatbot') && (
+                                                <div onClick={() => { 
+                                                    setUserMenuOpen(false);
+                                                    window.dispatchEvent(new CustomEvent('open-chatbot'));
+                                                }} className="dropdown-item" style={{ color: 'var(--color-brand-blue)' }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>smart_toy</span>
+                                                    <span style={{ fontWeight: 600 }}>Asistente IA</span>
+                                                </div>
+                                            )}
                                             {hasPermission('church.update_own') && user?.churchId && !hasPermission('church.update') && (
                                                 <div onClick={() => { navigate(`/mainhub/churches/edit/${user?.churchId}`); setUserMenuOpen(false); }} className="dropdown-item">
                                                     <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>church</span>
@@ -399,6 +410,7 @@ export const MainLayout: FC = () => {
             <div className="mobile-only">
                 <BottomNav />
             </div>
+            {isAuthenticated && canAccess('action.chatbot') && <Chatbot userName={user?.name ?? "Usuario"} />}
             <ToastContainer />
         </div>
     );

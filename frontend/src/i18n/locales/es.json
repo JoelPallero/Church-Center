@@ -421,6 +421,8 @@
         "pt": "Português"
     },
     "chat": {
+        "title": "Asistente IA",
+        "headerSub": "Consultá sobre canciones, reuniones, equipos y más",
         "welcome": "¡Hola! Soy tu asistente de Church Center. ¿En qué puedo ayudarte hoy?",
         "online": "En línea para ayudarte",
         "inputPlaceholder": "Pregunta lo que sea...",

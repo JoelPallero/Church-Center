@@ -421,7 +421,9 @@
         "pt": "Portuguese"
     },
     "chat": {
-        "welcome": "Hello! I am your Church Center assistant. How can I help you today?",
+        "title": "AI Assistant",
+        "headerSub": "Consult about songs, meetings, teams and more",
+        "welcome": "Hello! I am your AI assistant. How can I help you today?",
         "online": "Online to help you",
         "inputPlaceholder": "Ask anything...",
         "error": "Sorry, there was a problem processing your request. Please try again."

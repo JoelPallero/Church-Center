@@ -189,6 +189,14 @@
         "en": "Inglês",
         "pt": "Português"
     },
+    "chat": {
+        "title": "Assistente IA",
+        "headerSub": "Consulte sobre músicas, reuniões, equipes e muito mais",
+        "welcome": "Olá! Eu sou seu assistente de IA. Como posso ajudar você hoje?",
+        "online": "Online para ajudar você",
+        "inputPlaceholder": "Pergunte qualquer coisa...",
+        "error": "Desculpe, ocorreu um problema ao processar seu pedido. Por favor, tente novamente."
+    },
     "playlists": {
         "title": "Listas",
         "newPlaylist": "Nova Lista",

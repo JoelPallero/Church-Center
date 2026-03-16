@@ -7,7 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 export const DesktopSidebar: FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { canAccess, logout, isSuperAdmin, hasRole } = useAuth();
+    const { canAccess, logout, isSuperAdmin, hasRole, user } = useAuth();
     const isPastor = hasRole('pastor');
     const isLeader = hasRole('leader') || hasRole('coordinator');
     const isMember = hasRole('member');
@@ -15,7 +15,11 @@ export const DesktopSidebar: FC = () => {
     const menuItems = [
         { path: '/dashboard', icon: 'dashboard', label: (isPastor || isSuperAdmin || isLeader) ? 'Dashboard' : t('nav.home') },
         { path: '/mainhub/reports', icon: 'auto_graph', label: (isPastor || isSuperAdmin || isLeader) ? 'Reportes' : 'Estadísticas' },
-        { path: '/mainhub/churches', icon: 'church', label: isSuperAdmin ? 'Iglesias' : (isPastor ? 'Mi Iglesia' : (isLeader ? 'Mi Iglesia' : t('nav.churches'))) },
+        { 
+            path: isSuperAdmin ? '/mainhub/churches' : (user?.churchId ? `/mainhub/churches/edit/${user.churchId}` : '/mainhub/churches'), 
+            icon: 'church', 
+            label: isSuperAdmin ? 'Iglesias' : (isPastor ? 'Mi Iglesia' : (isLeader ? 'Mi Iglesia' : t('nav.churches'))) 
+        },
         { path: '/worship/calendar', icon: 'event', label: isSuperAdmin ? 'Calendarios' : (isPastor ? 'Calendario' : (isLeader ? 'Calendario' : t('nav.calendar'))) },
         { path: '/worship/songs', icon: 'library_music', label: isSuperAdmin ? 'Biblioteca' : (isPastor ? 'Biblioteca' : (isLeader ? 'Biblioteca' : t('nav.songs'))) },
         { path: '/mainhub/people', icon: 'person_search', label: isSuperAdmin ? 'Personas' : (isPastor ? 'Personas' : (isLeader ? 'Personas' : t('nav.people'))) },
@@ -26,25 +30,31 @@ export const DesktopSidebar: FC = () => {
         { path: '/mainhub/consolidation', icon: 'how_to_reg', label: t('nav.consolidation') },
     ];
 
-    // Priority sorting
+    // Sort logic remains to ensure proper UI hierarchy
+    const sortItems = (items: typeof menuItems, order: string[]) => {
+        return [...items].sort((a, b) => {
+            const indexA = order.indexOf(a.path);
+            const indexB = order.indexOf(b.path);
+            if (indexA === -1 && indexB === -1) return 0;
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+    };
+
     let visibleItems = menuItems.filter(item => canAccess(item.path));
     
     if (isSuperAdmin) {
-        const superOrder = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/worship/calendar', '/worship/songs', '/mainhub/people'];
-        visibleItems = superOrder
-            .map(path => visibleItems.find(item => item.path === path))
-            .filter((item): item is typeof menuItems[0] => !!item);
+        const superOrder = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/mainhub/areas', '/mainhub/teams', '/worship/calendar', '/worship/songs', '/mainhub/people'];
+        visibleItems = sortItems(visibleItems, superOrder);
     } else if (isPastor) {
-        const pastorOrder = ['/dashboard', '/mainhub/reports', '/worship/calendar', '/mainhub/churches', '/mainhub/areas', '/worship/playlists', '/worship/songs', '/mainhub/teams', '/mainhub/people'];
-        visibleItems = pastorOrder
-            .map(path => visibleItems.find(item => item.path === path))
-            .filter((item): item is typeof menuItems[0] => !!item);
+        const pastorOrder = ['/dashboard', '/mainhub/reports', '/worship/calendar', '/mainhub/churches/edit', '/mainhub/areas', '/worship/playlists', '/worship/songs', '/mainhub/teams', '/mainhub/people'];
+        visibleItems = sortItems(visibleItems, pastorOrder);
     } else if (isLeader) {
-        const leaderOrder = ['/dashboard', '/mainhub/reports', '/worship/calendar', '/mainhub/churches', '/mainhub/areas', '/worship/playlists', '/worship/songs', '/mainhub/teams', '/mainhub/my-team', '/mainhub/people'];
-        visibleItems = leaderOrder
-            .map(path => visibleItems.find(item => item.path === path))
-            .filter((item): item is typeof menuItems[0] => !!item);
+        const leaderOrder = ['/dashboard', '/mainhub/reports', '/worship/calendar', '/mainhub/my-team', '/worship/playlists', '/worship/songs', '/mainhub/teams', '/mainhub/people'];
+        visibleItems = sortItems(visibleItems, leaderOrder);
     }
+
 
     return (
         <aside style={{
@@ -62,7 +72,7 @@ export const DesktopSidebar: FC = () => {
             zIndex: 1000
         }} className="desktop-only">
             <div>
-                <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => navigate('/')}>
+                <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
                     <img src="/favicon.png" alt="Logo" style={{ width: '32px', height: '32px' }} />
                     <span style={{ fontWeight: 800, fontSize: '18px', color: 'var(--color-brand-blue)' }}>Service Manager</span>
                 </div>

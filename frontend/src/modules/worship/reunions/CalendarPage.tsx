@@ -55,6 +55,7 @@ export const CalendarPage: FC = () => {
     const [showFilters, setShowFilters] = useState(false);
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [selectedEventDate, setSelectedEventDate] = useState<string | null>(null);
     const [dayMeetings, setDayMeetings] = useState<MeetingInstance[]>([]);
     const [churches, setChurches] = useState<any[]>([]);
     const [selectedChurchId, setSelectedChurchId] = useState<number | null>(null);
@@ -72,8 +73,33 @@ export const CalendarPage: FC = () => {
     const churchId = searchParams.get('church_id') ? parseInt(searchParams.get('church_id')!) : null;
     const isPastor = user?.role?.name === 'pastor' || hasRole('pastor');
     const isLeader = user?.role?.name === 'leader' || hasRole('leader');
+    const isCoordinator = user?.role?.name === 'coordinator' || hasRole('coordinator');
     const finalChurchId = selectedChurchId || churchId || user?.churchId;
     const canManageMeetings = isMaster || isPastor || isLeader;
+    const canSeeNextMeeting = isLeader || isCoordinator;
+
+    const [nextMeetingDetails, setNextMeetingDetails] = useState<any>(null);
+    const [isLoadingNextMeeting, setIsLoadingNextMeeting] = useState(false);
+
+    useEffect(() => {
+        if (canSeeNextMeeting && finalChurchId) {
+            fetchNextMeeting();
+        }
+    }, [canSeeNextMeeting, finalChurchId]);
+
+    const fetchNextMeeting = async () => {
+        setIsLoadingNextMeeting(true);
+        try {
+            const response = await api.get(`/reports?action=pastor_stats&church_id=${finalChurchId}`);
+            if (response.data.success && response.data.stats?.next_meeting) {
+                setNextMeetingDetails(response.data.stats.next_meeting);
+            }
+        } catch (err) {
+            console.error('Error fetching next meeting:', err);
+        } finally {
+            setIsLoadingNextMeeting(false);
+        }
+    };
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -100,16 +126,24 @@ export const CalendarPage: FC = () => {
 
     const getCategoryColor = (category: string) => {
         const colors: Record<string, string> = {
-            'Ensayos': '#EF4444',
-            'Reunión de jóvenes': '#3B82F6',
-            'Reunión de adolescentes': '#10B982',
-            'Reunión de preadolescentes': '#8B5CF6',
-            'Reunión de mujeres': '#EC4899',
-            'Reunión de hombres': '#6366F1',
+            'Ensayos': '#9CA3AF', // Gris
+            'Reunión de jóvenes': '#0EA5E9', // Celeste
+            'Discipulado': '#0EA5E9', // Celeste
+            'Reunión de adolescentes': '#D4AF37', // Dorado
+            'Reunión de preadolescentes': '#D4AF37', // Dorado
+            'Reunión de pre y ados': '#D4AF37', // Dorado
+            'Reunión de mujeres': '#EC4899', // Rosa
+            'Reunión de hombres': '#10B981', // Verde
+            'Monte de oración': '#F97316', // Naranja
+            'Santa cena': '#800020', // Bordó
             'Evento': '#F59E0B',
             'Congreso': '#F97316',
             'Taller': '#06B6D4',
             'Cambios de horario': '#DC2626',
+            'Reuniones genererales': '#3B82F6', // Azul
+            'Reuniones dominicales': '#3B82F6', // Azul
+            'Dominical': '#3B82F6', // Azul
+            'General': '#3B82F6', // Azul
             'Reuniones que no cambian': '#059669',
             'Reuniones ocasionales': '#FCD34D',
             'Reuniones especiales': '#FB923C',
@@ -234,6 +268,7 @@ export const CalendarPage: FC = () => {
     const handleEventClick = (info: any) => {
         if (info.event.url) return;
         setSelectedInstanceId(parseInt(info.event.id));
+        setSelectedEventDate(info.event.startStr.split('T')[0]);
     };
 
     const handleDateClick = (arg: any) => {
@@ -377,16 +412,71 @@ export const CalendarPage: FC = () => {
                 .fc .fc-toolbar-title { font-size: 1.25rem; font-weight: 700; text-transform: capitalize; }
                 .fc .fc-button { font-weight: 600; text-transform: capitalize; border-radius: 10px; }
                 .fc .fc-button-primary:not(:disabled):active, .fc .fc-button-primary:not(:disabled).fc-button-active { background-color: var(--color-brand-blue); color: white; }
-                .fc .fc-daygrid-day.fc-day-today { background-color: rgba(59, 130, 246, 0.05); }
+                .fc .fc-daygrid-day.fc-day-today { background-color: rgba(59, 130, 246, 0.08); }
                 .fc-theme-standard td, .fc-theme-standard th { border: 1px solid var(--color-border-subtle); }
                 .fc .fc-col-header-cell { background-color: var(--color-ui-surface); padding: 8px 0 !important; }
                 .fc .fc-col-header-cell-cushion { color: var(--color-ui-text-soft); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-                .fc .fc-daygrid-day-number { font-size: 0.85rem; font-weight: 600; padding: 8px; color: var(--color-ui-text); }
-                .mobile-count { background: var(--color-brand-blue); color: white; border-radius: 50%; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; margin-left: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-                .fc-event { border-radius: 6px; padding: 2px 4px; font-size: 0.75rem; cursor: pointer; transition: transform 0.1s; border: none !important; }
-                .fc-event:hover { transform: scale(1.02); filter: brightness(1.1); }
-                .fc-daygrid-event-harness { margin-top: 2px !important; }
+                .fc .fc-daygrid-day-number { font-size: 0.85rem; font-weight: 600; padding: 4px 8px !important; color: var(--color-ui-text); }
+                .fc .fc-daygrid-day-frame { padding: 0 !important; min-height: 80px; }
+                .fc-day-past { opacity: 0.5; }
+                .fc-day-past .fc-daygrid-day-number { opacity: 0.7; }
+                .dot-container { display: flex; flex-wrap: wrap; gap: 3px; padding: 4px 8px; justify-content: flex-start; margin-top: auto; }
+                .meeting-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+                .fc-event { background: none !important; border: none !important; padding: 0 !important; margin: 0 !important; }
+                .desktop-tag { padding: 2px 8px; border-radius: 100px; font-size: 10px; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: fit-content; max-width: 100%; margin-bottom: 2px; }
+                .fc-daygrid-event-harness { margin: 0 4px !important; }
+                ${isMobile ? '.fc-daygrid-event-harness { display: none !important; }' : ''}
             `}</style>
+
+            {canSeeNextMeeting && (
+                isLoadingNextMeeting ? (
+                    <div className="flex-center" style={{ marginBottom: '32px', height: '100px' }}>
+                        <div className="spinner" />
+                    </div>
+                ) : (
+                    nextMeetingDetails && nextMeetingDetails.songs && nextMeetingDetails.songs.length > 0 && (
+                        <div style={{ marginBottom: '32px', animation: 'fadeIn 0.3s ease-out' }}>
+                            <Card style={{ padding: '24px', border: '1px solid var(--color-brand-blue)', backgroundColor: 'var(--color-ui-surface)' }}>
+                                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)' }}>event_upcoming</span>
+                                        <h2 className="text-card-title" style={{ margin: 0 }}>{t('pastor.nextMeeting.title')}</h2>
+                                    </div>
+                                    <span className="text-overline" style={{ color: 'var(--color-brand-blue)', fontWeight: 700 }}>
+                                        {nextMeetingDetails.start_at ? new Date(nextMeetingDetails.start_at.replace(' ', 'T')).toLocaleDateString(i18n.language, { weekday: 'short', day: '2-digit', month: '2-digit' }).toUpperCase() : ''}
+                                    </span>
+                                </header>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                                    {nextMeetingDetails.songs.map((item: any, idx: number) => (
+                                        <div key={idx} style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            gap: '12px', 
+                                            padding: '12px', 
+                                            backgroundColor: 'rgba(59, 130, 246, 0.05)', 
+                                            borderRadius: '12px',
+                                            border: '1px solid rgba(59, 130, 246, 0.1)'
+                                        }}>
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '10px', backgroundColor: 'var(--color-brand-blue)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>
+                                                {idx + 1}
+                                            </div>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p className="text-body" style={{ fontWeight: 600, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    {item.title || item.playlist_name || 'Sin título'}
+                                                </p>
+                                                <p className="text-overline" style={{ color: 'var(--color-ui-text-soft)', margin: 0 }}>
+                                                    {item.artist ? `${item.artist} • ` : ''}{item.key ? `Tono: ${item.key}` : (item.assigned_by_name ? `Asignado por ${item.assigned_by_name}` : '')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Card>
+                        </div>
+                    )
+                )
+            )}
 
             <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '1px solid var(--color-border-subtle)' }}>
                 {['calendar', 'meetings'].map(tab => (
@@ -468,30 +558,50 @@ export const CalendarPage: FC = () => {
                             right: 'dayGridMonth,dayGridWeek'
                         }}
                         dayCellContent={(arg) => {
-                            // Use local date components to avoid timezone shifts
                             const year = arg.date.getFullYear();
                             const month = String(arg.date.getMonth() + 1).padStart(2, '0');
                             const day = String(arg.date.getDate()).padStart(2, '0');
                             const dateStr = `${year}-${month}-${day}`;
 
-                            const count = instances.filter(i => (i.instance_date === dateStr) ||
+                            const dayMeetings = instances.filter(i => (i.instance_date === dateStr) ||
                                 (i.meeting_type === 'recurrent' && (i.day_of_week === arg.date.getDay() || (i.day_of_week === 7 && arg.date.getDay() === 0)))
-                            ).length;
+                            );
 
                             return (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '0 4px' }}>
-                                    <span>{arg.dayNumberText}</span>
-                                    {isMobile && count > 0 && <span className="mobile-count" title={`${count} reuniones`}>{count}</span>}
+                                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', width: '100%' }}>
+                                        <span className="fc-daygrid-day-number">{arg.dayNumberText}</span>
+                                    </div>
+                                    {isMobile && dayMeetings.length > 0 && (
+                                        <div className="dot-container">
+                                            {dayMeetings.map((m, idx) => (
+                                                <span 
+                                                    key={idx} 
+                                                    className="meeting-dot" 
+                                                    style={{ backgroundColor: getCategoryColor(m.category || '') }}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         }}
                         eventContent={(eventInfo) => {
                             if (isMobile) return null;
+                            const category = eventInfo.event.extendedProps.category || '';
+                            const color = getCategoryColor(category);
                             return (
-                                <div style={{ padding: '2px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    <b>{eventInfo.timeText}</b> {eventInfo.event.title}
+                                <div className="desktop-tag" style={{ backgroundColor: color }}>
+                                    {eventInfo.event.title}
                                 </div>
                             );
+                        }}
+                        dayCellClassNames={(arg) => {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const cellDate = new Date(arg.date);
+                            cellDate.setHours(0, 0, 0, 0);
+                            return cellDate < today ? ['fc-day-past'] : [];
                         }}
                         height="auto"
                     />
@@ -527,11 +637,12 @@ export const CalendarPage: FC = () => {
                 <MeetingForm initialChurchId={finalChurchId} onSuccess={() => { setIsModalOpen(false); fetchInstances(); }} onCancel={() => setIsModalOpen(false)} />
             </Modal>
 
-            <Modal isOpen={!!selectedInstanceId} onClose={() => setSelectedInstanceId(null)} title={t('reunions.details')}>
+            <Modal isOpen={!!selectedInstanceId} onClose={() => { setSelectedInstanceId(null); setSelectedEventDate(null); }} title={t('reunions.details')}>
                 {selectedInstanceId && (
                     <MeetingDetailView
                         instanceId={selectedInstanceId}
-                        onClose={() => setSelectedInstanceId(null)}
+                        eventDate={selectedEventDate}
+                        onClose={() => { setSelectedInstanceId(null); setSelectedEventDate(null); }}
                         onEdit={(details) => {
                             setSelectedInstanceId(null);
                             setEditingMeeting(details);
