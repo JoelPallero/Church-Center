@@ -7,7 +7,7 @@ export const MOCK_CHURCH: Church = {
     subscriptionPlan: 'enterprise'
 };
 
-const createMockUser = (roleName: UserRoleName, id: number, name: string): User => {
+const createMockUser = (roleName: UserRoleName, id: number, name: string, areaName: string = 'Alabanza', serviceKey: string = 'worship'): User => {
     const isSuperAdmin = roleName === 'superadmin' || roleName === 'master';
 
     return {
@@ -27,13 +27,12 @@ const createMockUser = (roleName: UserRoleName, id: number, name: string): User 
             isSystemRole: true
         },
         services: [
-            { serviceKey: 'worship', enabled: true },
+            { serviceKey, enabled: true },
             { serviceKey: 'mainhub', enabled: true },
             { serviceKey: 'social', enabled: true }
         ],
         areas: [
-            { id: 1, name: 'Alabanza' },
-            { id: 2, name: 'Ujieres' }
+            { id: 1, name: areaName }
         ]
     };
 };
@@ -64,7 +63,17 @@ export const MOCK_PROFILES: Record<string, { user: User; permissions: string[]; 
         roles: ['pastor']
     },
     leader: {
-        user: createMockUser('leader', 3, 'Dev Lider'),
+        user: createMockUser('leader', 3, 'Dev Lider Ujieres', 'Ujieres', 'ushers'),
+        permissions: [
+            'calendar.read',
+            'team.read',
+            'person.read',
+            'reunions.view'
+        ],
+        roles: ['leader']
+    },
+    leader_worship: {
+        user: createMockUser('leader', 33, 'Dev Lider Alabanza', 'Alabanza', 'worship'),
         permissions: [
             'calendar.read',
             'song.read',
@@ -94,5 +103,14 @@ export const MOCK_PROFILES: Record<string, { user: User; permissions: string[]; 
             'song.read'
         ],
         roles: ['member']
+    },
+    ujier: {
+        user: createMockUser('ujier', 6, 'Dev Ujier', 'Ujieres', 'ushers'),
+        permissions: [
+            'person.read',
+            'calendar.read',
+            'reunions.view'
+        ],
+        roles: ['ujier']
     }
 };

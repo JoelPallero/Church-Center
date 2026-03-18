@@ -13,7 +13,8 @@ class ConsolidationController
         $churchId = $_GET['church_id'] ?? $_GET['churchId'] ?? null;
 
         if ($method === 'GET') {
-            \App\Middleware\PermissionMiddleware::require($memberId, 'church.read', $churchId);
+            // Ujier y Pastor: reunions.view permite ver reportes, visitantes y asistencia
+            \App\Middleware\PermissionMiddleware::requireAny($memberId, ['reunions.view', 'church.read'], $churchId);
             if ($action === 'report') {
                 $this->getReport($memberId);
             } elseif ($action === 'database') {

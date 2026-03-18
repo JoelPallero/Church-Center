@@ -32,13 +32,16 @@ class UserRepo
             $member['instruments'] = self::getUserInstruments($memberId);
             $member['areas'] = self::getUserAreas($memberId);
 
-            // Get role
+            // Get role (prioridad por level: superadmin < pastor < leader < coordinator < member < ujier)
             $stmt = $db->prepare("
                 SELECT r.id, r.name, r.display_name as displayName
-                FROM roles r
-                JOIN user_service_roles usr ON r.id = usr.role_id
-                JOIN services s ON usr.service_id = s.id
-                WHERE usr.member_id = ? AND s.key = 'mainhub'
+                FROM user_roles ur
+                JOIN roles r ON ur.role_id = r.id
+                LEFT JOIN services s ON s.id = COALESCE(ur.service_id, r.service_id)
+                WHERE ur.member_id = ?
+                  AND (s.`key` IN ('mainhub','ushers') OR r.scope IN ('CHURCH','GLOBAL'))
+                ORDER BY r.level ASC
+                LIMIT 1
             ");
             $stmt->execute([$memberId]);
             $member['role'] = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -104,8 +107,8 @@ class UserRepo
         $stmt = $db->prepare("
             SELECT u.*, r.name as role_name 
             FROM user_accounts u
-            LEFT JOIN user_global_roles ugr ON u.member_id = ugr.member_id
-            LEFT JOIN roles r ON ugr.role_id = r.id
+            LEFT JOIN user_roles ur ON u.member_id = ur.member_id AND ur.church_id IS NULL AND ur.service_id IS NULL
+            LEFT JOIN roles r ON ur.role_id = r.id AND r.scope = 'GLOBAL'
             WHERE u.member_id = ? AND u.is_active = 1
         ");
         $stmt->execute([$memberId]);
@@ -116,12 +119,20 @@ class UserRepo
     {
         $db = Database::getInstance();
         $sql = "
-            SELECT m.id, m.church_id, m.name, m.surname, m.email, m.phone, m.status, m.can_create_teams, usr.role_id, r.name as role_name, r.display_name as role_display, c.name as church_name
+            SELECT m.id, m.church_id, m.name, m.surname, m.email, m.phone, m.status, m.can_create_teams,
+                   main_r.role_id, main_r.role_name, main_r.role_display, c.name as church_name
             FROM member m
             LEFT JOIN church c ON m.church_id = c.id
-            LEFT JOIN services s ON s.key = 'mainhub'
-            LEFT JOIN user_service_roles usr ON m.id = usr.member_id AND (m.church_id = usr.church_id OR m.church_id IS NULL) AND usr.service_id = s.id
-            LEFT JOIN roles r ON usr.role_id = r.id
+            LEFT JOIN (
+                SELECT ur.member_id, ur.role_id, r.name as role_name, r.display_name as role_display,
+                       ROW_NUMBER() OVER (PARTITION BY ur.member_id ORDER BY r.level) as rn
+                FROM user_roles ur
+                JOIN roles r ON ur.role_id = r.id
+                LEFT JOIN services s ON s.id = COALESCE(ur.service_id, r.service_id)
+                JOIN member mb ON ur.member_id = mb.id
+                WHERE (s.`key` = 'mainhub' OR r.scope IN ('CHURCH','GLOBAL'))
+                  AND (ur.church_id = mb.church_id OR ur.church_id IS NULL)
+            ) main_r ON m.id = main_r.member_id AND main_r.rn = 1
             WHERE m.status != 'deleted'
         ";
         $params = [];
@@ -201,13 +212,13 @@ class UserRepo
         if (!$serviceId)
             return false;
 
-        // 2. Assign in user_service_roles
+        // 2. Assign in user_roles (SERVICE scope)
         $stmt = $db->prepare("
-            INSERT INTO user_service_roles (member_id, church_id, service_id, role_id)
+            INSERT INTO user_roles (member_id, role_id, church_id, service_id)
             VALUES (?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE role_id = VALUES(role_id)
         ");
-        return $stmt->execute([$memberId, $churchId, $serviceId, $roleId]);
+        return $stmt->execute([$memberId, $roleId, $churchId, $serviceId]);
     }
 
     public static function updateMemberRole($memberId, $roleId)
@@ -224,8 +235,11 @@ class UserRepo
             $stmt->execute([(int)$roleId]);
             $roleName = $stmt->fetchColumn();
             if ($roleName === 'superadmin') {
-                return $db->prepare("INSERT INTO user_global_roles (member_id, role_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE role_id = role_id")
-                    ->execute([$memberId, $roleId]);
+                return $db->prepare("
+                    INSERT INTO user_roles (member_id, role_id, church_id, service_id)
+                    VALUES (?, ?, NULL, NULL)
+                    ON DUPLICATE KEY UPDATE role_id = VALUES(role_id)
+                ")->execute([$memberId, $roleId]);
             }
             Logger::warning("UserRepo::updateMemberRole - Cannot assign church-level role without church_id for MemberID: $memberId");
             return false;
@@ -239,7 +253,7 @@ class UserRepo
         $db = Database::getInstance();
         try {
             $db->beginTransaction();
-            $db->prepare("DELETE FROM user_service_roles WHERE member_id = ?")->execute([$memberId]);
+            $db->prepare("DELETE FROM user_roles WHERE member_id = ?")->execute([$memberId]);
             $db->prepare("DELETE FROM user_accounts WHERE member_id = ?")->execute([$memberId]);
             $db->prepare("DELETE FROM group_members WHERE member_id = ?")->execute([$memberId]);
             $result = $db->prepare("DELETE FROM member WHERE id = ?")->execute([$memberId]);
@@ -334,7 +348,11 @@ class UserRepo
                     $rStmt = $db->prepare("SELECT name FROM roles WHERE id = ?");
                     $rStmt->execute([$roleId]);
                     if ($rStmt->fetchColumn() === 'superadmin') {
-                        $db->prepare("INSERT INTO user_global_roles (member_id, role_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE role_id=role_id")->execute([$memberId, $roleId]);
+                        $db->prepare("
+                            INSERT INTO user_roles (member_id, role_id, church_id, service_id)
+                            VALUES (?, ?, NULL, NULL)
+                            ON DUPLICATE KEY UPDATE role_id = VALUES(role_id)
+                        ")->execute([$memberId, $roleId]);
                     }
                 }
             }

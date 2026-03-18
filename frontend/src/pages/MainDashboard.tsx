@@ -15,7 +15,7 @@ import { useProfileCompletion } from '../hooks/useProfileCompletion';
 
 export const MainDashboard: FC = () => {
     const { t } = useTranslation();
-    const { user, isMaster, isPastor } = useAuth();
+    const { user, canAccess, isPastor, isMaster } = useAuth();
     const navigate = useNavigate();
     useProfileCompletion();
     const [pendingCount, setPendingCount] = useState(0);
@@ -26,6 +26,10 @@ export const MainDashboard: FC = () => {
     const isGuest = user?.role?.level === 200;
     const isLeader = (user?.role?.level || 100) <= 50;
     const isMember = user?.role?.name === 'member' || (!isPastor && !isMaster && !isLeader && !isGuest);
+
+    const canAccessMaster = canAccess('/mainhub/master');
+    const canAccessPastor = canAccess('/mainhub/pastor');
+    const canAccessWorship = canAccess('/worship/playlists');
 
     useEffect(() => {
         if (isLeader) {
@@ -52,10 +56,10 @@ export const MainDashboard: FC = () => {
         }, 1000);
     };
 
-    // Role-based HOME selection
-    if (isMaster) return <MasterDashboard />;
-    if (isPastor || isLeader) return <PastorDashboard />;
-    if (isMember) return <Playlists />;
+    // Role-based component entry points (Decoupled via permissions identifiers)
+    if (canAccessMaster) return <MasterDashboard />;
+    if (canAccessPastor || (isLeader && canAccess('/mainhub/teams'))) return <PastorDashboard />;
+    if (canAccessWorship && isMember) return <Playlists />;
 
     if (isGuest) {
         return (
@@ -109,81 +113,74 @@ export const MainDashboard: FC = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {isMaster && <MasterDashboard />}
-            {isPastor && <PastorDashboard />}
+            <header>
+                <h1 className="text-h1" style={{ marginBottom: '4px' }}>
+                    {t('dashboard.welcome', { name: user?.name || '' })}
+                </h1>
+                <p className="text-body" style={{ color: '#6B7280' }}>{t('dashboard.happeningToday')}</p>
+            </header>
 
-            {!isMaster && !isPastor && (
-                <>
-                    <header>
-                        <h1 className="text-h1" style={{ marginBottom: '4px' }}>
-                            {t('dashboard.welcome', { name: user?.name || '' })}
-                        </h1>
-                        <p className="text-body" style={{ color: '#6B7280' }}>{t('dashboard.happeningToday')}</p>
-                    </header>
-
-                    {isLeader && pendingCount > 0 && (
-                        <Card
-                            onClick={() => navigate('/worship/songs/approvals')}
-                            style={{
-                                backgroundColor: 'var(--color-brand-blue-light)',
-                                border: '1px solid var(--color-brand-blue)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '16px',
-                                marginBottom: '8px'
-                            }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)', fontSize: '28px' }}>pending_actions</span>
-                                <div>
-                                    <p className="text-card-title" style={{ color: 'var(--color-brand-blue)', marginBottom: '2px' }}>
-                                        {t('songs.dashboard.pendingEdits', { count: pendingCount })}
-                                    </p>
-                                    <p className="text-overline" style={{ color: 'var(--color-brand-blue)', opacity: 0.8 }}>
-                                        {t('songs.moderation.subtitle')}
-                                    </p>
-                                </div>
-                            </div>
-                            <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)' }}>chevron_right</span>
-                        </Card>
-                    )}
-
-                    {pendingMembers > 0 && (
-                        <Card
-                            onClick={() => navigate('/mainhub/people/approvals')}
-                            style={{
-                                backgroundColor: 'var(--color-brand-blue-light)',
-                                border: '1px solid var(--color-brand-blue)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: '16px'
-                            }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)', fontSize: '28px' }}>person_add</span>
-                                <div>
-                                    <p className="text-card-title" style={{ color: 'var(--color-brand-blue)', marginBottom: '2px' }}>
-                                        {t('dashboard.pendingRequestsCount', { count: pendingMembers })}
-                                    </p>
-                                    <p className="text-overline" style={{ color: 'var(--color-brand-blue)', opacity: 0.8 }}>
-                                        {t('dashboard.pendingRequestsTitle')}
-                                    </p>
-                                </div>
-                            </div>
-                            <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)' }}>chevron_right</span>
-                        </Card>
-                    )}
-                </>
+            {isLeader && pendingCount > 0 && (
+                <Card
+                    onClick={() => navigate('/worship/songs/approvals')}
+                    style={{
+                        backgroundColor: 'var(--color-brand-blue-light)',
+                        border: '1px solid var(--color-brand-blue)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '16px',
+                        marginBottom: '8px'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)', fontSize: '28px' }}>pending_actions</span>
+                        <div>
+                            <p className="text-card-title" style={{ color: 'var(--color-brand-blue)', marginBottom: '2px' }}>
+                                {t('songs.dashboard.pendingEdits', { count: pendingCount })}
+                            </p>
+                            <p className="text-overline" style={{ color: 'var(--color-brand-blue)', opacity: 0.8 }}>
+                                {t('songs.moderation.subtitle')}
+                            </p>
+                        </div>
+                    </div>
+                    <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)' }}>chevron_right</span>
+                </Card>
             )}
 
-            {!isMaster && !isPastor && (
-                <section>
-                    <h3 className="text-h2" style={{ marginBottom: '16px' }}>{t('dashboard.quickActions')}</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+            {pendingMembers > 0 && (
+                <Card
+                    onClick={() => navigate('/mainhub/people/approvals')}
+                    style={{
+                        backgroundColor: 'var(--color-brand-blue-light)',
+                        border: '1px solid var(--color-brand-blue)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '16px'
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)', fontSize: '28px' }}>person_add</span>
+                        <div>
+                            <p className="text-card-title" style={{ color: 'var(--color-brand-blue)', marginBottom: '2px' }}>
+                                {t('dashboard.pendingRequestsCount', { count: pendingMembers })}
+                            </p>
+                            <p className="text-overline" style={{ color: 'var(--color-brand-blue)', opacity: 0.8 }}>
+                                {t('dashboard.pendingRequestsTitle')}
+                            </p>
+                        </div>
+                    </div>
+                    <span className="material-symbols-outlined" style={{ color: 'var(--color-brand-blue)' }}>chevron_right</span>
+                </Card>
+            )}
+
+            <section>
+                <h3 className="text-h2" style={{ marginBottom: '16px' }}>{t('dashboard.quickActions')}</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                    {canAccess('/worship/songs/new') && (
                         <Card
                             className="flex-center"
                             onClick={() => navigate('/worship/songs/new')}
@@ -192,6 +189,8 @@ export const MainDashboard: FC = () => {
                             <span className="material-symbols-outlined" style={{ fontSize: '32px', color: 'var(--color-brand-blue)' }}>add_circle</span>
                             <span className="text-card-title">{t('dashboard.newSong')}</span>
                         </Card>
+                    )}
+                    {canAccess('/mainhub/people/invite') && (
                         <Card
                             className="flex-center"
                             onClick={() => navigate('/mainhub/people')}
@@ -200,13 +199,12 @@ export const MainDashboard: FC = () => {
                             <span className="material-symbols-outlined" style={{ fontSize: '32px', color: 'var(--color-brand-blue)' }}>person_add</span>
                             <span className="text-card-title">{t('dashboard.addPerson')}</span>
                         </Card>
-                    </div>
-                </section>
-            )}
+                    )}
+                </div>
+            </section>
 
             {/* Global Activity Feed for everyone (except guests handled above) */}
             <ActivityFeed />
         </div>
     );
 };
-

@@ -47,7 +47,7 @@ class ActivityController
         header('Cache-Control: no-cache');
         header('Connection: keep-alive');
         header('X-Accel-Buffering: no'); // Disable proxy buffering for Nginx
-        ob_end_clean(); // Disable output buffering
+        if (ob_get_level()) ob_end_clean();
 
         $lastId = (int) ($_GET['lastId'] ?? 0);
         $churchId = $_GET['church_id'] ?? null;

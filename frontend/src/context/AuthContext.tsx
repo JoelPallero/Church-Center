@@ -194,13 +194,25 @@ export const AuthProvider: FC<PropsWithChildren> = ({ children }) => {
     }, [isLocalhost, loadBootstrap]);
 
     const canAccess = useCallback((identifier: string) => {
-        // Hub-level check: if a path belongs to a module, check if that module is enabled/assigned
-        // Worship Hub
-        if (identifier.startsWith('/worship') && !services.includes('worship') && !isSuperAdmin) return false;
+        // Worship Hub: Only for users in 'alabanza' area (unless superadmin or pastor)
+        const isWorshipRoute = identifier.startsWith('/worship');
+        const isWorshipAction = identifier.startsWith('action.song') || identifier.startsWith('action.playlist');
+        
+        if ((isWorshipRoute || isWorshipAction) && !isSuperAdmin) {
+            const hasWorshipService = services.includes('worship');
+            const hasAlabanzaArea = user?.areas?.some(a => a.name.toLowerCase() === 'alabanza');
+            const isPastor = roles.includes('pastor');
+            
+            if (!isPastor && (!hasWorshipService || !hasAlabanzaArea)) {
+                return false;
+            }
+        }
+
         // Social Hub
         if (identifier.startsWith('/social') && !services.includes('social') && !isSuperAdmin) return false;
+        
         // Consolidation Hub
-        if (identifier.startsWith('/mainhub/consolidation') && !services.includes('consolidation') && !isSuperAdmin) return false;
+        if (identifier.startsWith('/mainhub/consolidation') && !services.includes('consolidation') && !services.includes('ushers') && !isSuperAdmin) return false;
 
         // Custom specific check: Leader with 'can_create_teams' extra functionality
         if ((identifier === '/mainhub/setup-teams' || identifier === 'action.team.create' || identifier === '/mainhub/teams') && user?.can_create_teams) {

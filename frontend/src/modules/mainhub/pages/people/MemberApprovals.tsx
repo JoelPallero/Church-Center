@@ -23,7 +23,7 @@ export const MemberApprovals: FC = () => {
 
     useEffect(() => {
         if (!hasPermission('users.manage') && !hasPermission('users.approve')) {
-            navigate('/');
+            navigate('/dashboard');
             return;
         }
         loadData();

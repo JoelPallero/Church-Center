@@ -127,7 +127,7 @@ export const ChurchSelect: FC = () => {
             ) : null}
 
             <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                <Button variant="ghost" label="Volver al Inicio" onClick={() => navigate('/')} />
+                <Button variant="ghost" label="Volver al Inicio" onClick={() => navigate('/dashboard')} />
             </div>
         </div>
     );

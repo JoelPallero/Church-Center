@@ -250,4 +250,61 @@ class CalendarRepo
         $stmt->execute([$churchId, $name, $color, $icon]);
         return $db->lastInsertId() ?: true;
     }
+
+    public static function getAttendance($meetingId, $date)
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("SELECT * FROM meeting_attendance WHERE meeting_id = ? AND event_date = ?");
+        $stmt->execute([$meetingId, $date]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public static function getVisitors($meetingId, $date)
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("SELECT * FROM meeting_visitors WHERE meeting_id = ? AND event_date = ?");
+        $stmt->execute([$meetingId, $date]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function saveAttendance($meetingId, $date, $adults, $children, $newPeople)
+    {
+        $db = Database::getInstance();
+        $stmt = $db->prepare("
+            INSERT INTO meeting_attendance (meeting_id, event_date, adults, children, new_people)
+            VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE adults = VALUES(adults), children = VALUES(children), new_people = VALUES(new_people)
+        ");
+        return $stmt->execute([$meetingId, $date, $adults, $children, $newPeople]);
+    }
+
+    public static function saveVisitors($meetingId, $date, $visitors)
+    {
+        $db = Database::getInstance();
+        
+        // 1. Delete existing visitors for this instance to replace them
+        $stmt = $db->prepare("DELETE FROM meeting_visitors WHERE meeting_id = ? AND event_date = ?");
+        $stmt->execute([$meetingId, $date]);
+
+        // 2. Insert new ones
+        if (empty($visitors)) return true;
+
+        $sql = "INSERT INTO meeting_visitors (meeting_id, event_date, first_name, surname, phone, email, notes) VALUES ";
+        $placeholders = [];
+        $values = [];
+        foreach ($visitors as $v) {
+            $placeholders[] = "(?, ?, ?, ?, ?, ?, ?)";
+            $values[] = $meetingId;
+            $values[] = $date;
+            $values[] = $v['first_name'] ?? 'Visitante';
+            $values[] = $v['surname'] ?? null;
+            $values[] = $v['phone'] ?? null;
+            $values[] = $v['email'] ?? null;
+            $values[] = $v['notes'] ?? null;
+        }
+        
+        $sql .= implode(', ', $placeholders);
+        $stmt = $db->prepare($sql);
+        return $stmt->execute($values);
+    }
 }

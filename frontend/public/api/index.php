@@ -121,6 +121,10 @@ switch ($resource) {
         (new \App\Controllers\RoleController())->handle($memberId, $action, $method);
         break;
 
+    case 'chatbot':
+        (new \App\Controllers\ChatbotController())->handle($memberId);
+        break;
+
     default:
         \App\Helpers\Response::error("Resource not found: " . $resource, 404);
 }

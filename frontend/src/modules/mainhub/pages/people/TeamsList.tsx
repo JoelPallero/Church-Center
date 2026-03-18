@@ -184,7 +184,7 @@ const TeamSettingsModal: FC<TeamSettingsProps> = ({ team, onClose, onSaved, chur
 
 export const TeamsList: FC = () => {
     const { t } = useTranslation();
-    const { user, hasPermission, isMaster, isLoading: authLoading } = useAuth();
+    const { user, hasPermission, hasRole, isMaster, isLoading: authLoading } = useAuth();
     const { addToast } = useToast();
     const confirm = useConfirm();
     const [groups, setGroups] = useState<any[]>([]);
@@ -232,9 +232,13 @@ export const TeamsList: FC = () => {
         }
     };
 
-    const isLeader = user?.role?.name === 'leader' || user?.role?.name === 'coordinator';
-    const isAdmin = isMaster || user?.role?.name === 'pastor' || user?.role?.name === 'admin' || (isLeader && !!user?.can_create_teams);
-
+    const isLeader = hasRole('leader') || hasRole('coordinator');
+    // All pastors and superadmins are considered admins here. 
+    // If we want leaders/coordinators to create teams, we add them to the condition based on the permission matrix rule.
+    // 'action.team.create': ['superadmin', 'pastor', 'leader'] is permitted in permissionsConfig.ts, so we let 'team.create' dictate the button. 
+    // Wait, the button rendering checks `hasPermission('team.create') && isAdmin`
+    // So making isAdmin true for leaders too allows the permission check to do its job.
+    const isAdmin = isMaster || hasRole('pastor') || hasRole('admin') || isLeader;
     useEffect(() => {
         if (authLoading) return;
 

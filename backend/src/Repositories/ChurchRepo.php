@@ -62,11 +62,14 @@ class ChurchRepo
     {
         try {
             $db = Database::getInstance();
+            if (PermissionRepo::isSuperAdmin($memberId)) {
+                return self::getAll();
+            }
             $stmt = $db->prepare("
                 SELECT DISTINCT c.id, c.name, c.slug, c.address, c.timezone, c.is_active
                 FROM church c
-                JOIN user_service_roles usr ON c.id = usr.church_id
-                WHERE usr.member_id = ?
+                JOIN user_roles ur ON c.id = ur.church_id
+                WHERE ur.member_id = ?
                 ORDER BY c.id DESC
             ");
             $stmt->execute([$memberId]);
@@ -120,7 +123,7 @@ class ChurchRepo
             $db->beginTransaction();
 
             // 1. Delete user service roles
-            $stmt = $db->prepare("DELETE FROM user_service_roles WHERE church_id = ?");
+            $stmt = $db->prepare("DELETE FROM user_roles WHERE church_id = ?");
             $stmt->execute([$id]);
 
             // 2. Delete group members

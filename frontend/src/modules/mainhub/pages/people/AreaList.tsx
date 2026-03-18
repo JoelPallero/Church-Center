@@ -245,7 +245,13 @@ export const AreaList: FC = () => {
                                     variant="ghost"
                                     icon="delete"
                                     onClick={() => handleDelete(area.id)}
-                                    style={{ padding: '8px', minWidth: 'auto', color: 'var(--color-danger-red)' }}
+                                    disabled={area.name.toLowerCase() === 'alabanza'}
+                                    style={{ 
+                                        padding: '8px', 
+                                        minWidth: 'auto', 
+                                        color: area.name.toLowerCase() === 'alabanza' ? 'var(--color-ui-text-soft)' : 'var(--color-danger-red)',
+                                        opacity: area.name.toLowerCase() === 'alabanza' ? 0.3 : 1
+                                    }}
                                 />
                             </div>
                         </Card>

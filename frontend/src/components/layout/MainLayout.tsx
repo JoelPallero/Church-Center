@@ -120,6 +120,29 @@ export const MainLayout: FC = () => {
                         </div>
                     </div>
                     <div className="flex-center" style={{ gap: '12px' }}>
+                        {canAccess('action.chatbot') && (
+                            <button
+                                className="desktop-only"
+                                onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+                                title="Asistente IA"
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: '6px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    color: 'var(--color-ui-text-soft)',
+                                    borderRadius: '50%',
+                                    transition: 'background-color 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            >
+                                <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>smart_toy</span>
+                            </button>
+                        )}
                         <NotificationCenter
                             isOpen={notificationsOpen}
                             onOpenChange={(open) => {
@@ -313,6 +336,34 @@ export const MainLayout: FC = () => {
                                 <h1 className="text-h2" style={{ margin: 0 }}>{getHubTitle()}</h1>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                {canAccess('action.chatbot') && (
+                                    <button
+                                        onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+                                        title="Asistente IA"
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            padding: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            color: 'var(--color-ui-text-soft)',
+                                            borderRadius: '12px',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                                            e.currentTarget.style.color = 'var(--color-brand-blue)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                            e.currentTarget.style.color = 'var(--color-ui-text-soft)';
+                                        }}
+                                    >
+                                        <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>smart_toy</span>
+                                    </button>
+                                )}
                                 <NotificationCenter
                                     isOpen={notificationsOpen}
                                     onOpenChange={setNotificationsOpen}

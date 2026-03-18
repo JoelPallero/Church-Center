@@ -34,6 +34,8 @@ class CalendarController
                 $this->listCategories($churchId);
             } elseif ($action === 'assignment-data') {
                 $this->getAssignmentData($memberId);
+            } elseif ($action === 'attendance') {
+                $this->getAttendance();
             } elseif (is_numeric($action)) {
                 $this->showEvent($action);
             }
@@ -47,6 +49,9 @@ class CalendarController
             } elseif ($action === 'assign_setlist') {
                 \App\Middleware\PermissionMiddleware::require($memberId, 'meeting.update', $churchId);
                 $this->assignSetlist($memberId, $data);
+            } elseif ($action === 'attendance') {
+                \App\Middleware\PermissionMiddleware::require($memberId, 'reunions.view', $churchId);
+                $this->saveAttendance($data);
             } else {
                 \App\Middleware\PermissionMiddleware::require($memberId, 'meeting.create', $churchId);
                 $this->create($memberId, $churchId, $data);
@@ -298,6 +303,46 @@ class CalendarController
         }
 
         $success = PlaylistRepo::assignToMeeting($meetingId, $playlistId, $memberId);
+        Response::json(['success' => $success]);
+    }
+
+    private function getAttendance()
+    {
+        $meetingId = $_GET['meeting_id'] ?? null;
+        $date = $_GET['date'] ?? null;
+
+        if (!$meetingId || !$date) {
+            Response::error("Meeting ID and Date required", 400);
+        }
+
+        $attendance = CalendarRepo::getAttendance($meetingId, $date);
+        $visitors = CalendarRepo::getVisitors($meetingId, $date);
+
+        Response::json([
+            'success' => true,
+            'attendance' => $attendance,
+            'visitors' => $visitors
+        ]);
+    }
+
+    private function saveAttendance($data)
+    {
+        $meetingId = $data['meeting_id'] ?? null;
+        $date = $data['date'] ?? null;
+        $adults = $data['adults'] ?? 0;
+        $children = $data['children'] ?? 0;
+        $newPeople = $data['new_people'] ?? 0;
+        $visitors = $data['visitors'] ?? [];
+
+        if (!$meetingId || !$date) {
+            Response::error("Meeting ID and Date required", 400);
+        }
+
+        $success = CalendarRepo::saveAttendance($meetingId, $date, $adults, $children, $newPeople);
+        if ($success) {
+            $success = CalendarRepo::saveVisitors($meetingId, $date, $visitors);
+        }
+
         Response::json(['success' => $success]);
     }
 }

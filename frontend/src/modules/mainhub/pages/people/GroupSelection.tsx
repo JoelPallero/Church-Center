@@ -51,7 +51,7 @@ export const GroupSelection: FC = () => {
         if (musicGroup && selectedGroups.includes(musicGroup.id)) {
             setShowInstruments(true);
         } else {
-            navigate('/');
+            navigate('/dashboard');
         }
     };
 
@@ -60,7 +60,7 @@ export const GroupSelection: FC = () => {
     if (showInstruments) {
         return (
             <div className="flex-center" style={{ minHeight: '80vh', padding: '24px' }}>
-                <InstrumentForm onComplete={() => navigate('/')} />
+                <InstrumentForm onComplete={() => navigate('/dashboard')} />
             </div>
         );
     }
@@ -140,7 +140,7 @@ export const GroupSelection: FC = () => {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-                    <Button variant="ghost" label="Omitir por ahora" onClick={() => navigate('/')} style={{ height: '48px', padding: '0 24px' }} />
+                    <Button variant="ghost" label="Omitir por ahora" onClick={() => navigate('/dashboard')} style={{ height: '48px', padding: '0 24px' }} />
                     <Button variant="primary" label="Comenzar ahora" onClick={handleContinue} style={{ height: '48px', padding: '0 40px' }} />
                 </div>
             </Card>

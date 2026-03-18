@@ -9,17 +9,16 @@ import { Card } from '../components/ui/Card';
 import { useToast } from '../context/ToastContext';
 
 export const Settings: FC = () => {
-    const { user, isSuperAdmin } = useAuth();
+    const { user, isSuperAdmin, canAccess } = useAuth();
     const { t, i18n } = useTranslation();
     const { theme, setTheme } = useTheme();
     const navigate = useNavigate();
     const { addToast } = useToast();
-    const { hasRole } = useAuth();
     const { showTutorials, setShowTutorials } = useTutorials();
     const [isSaving, setIsSaving] = useState(false);
 
-    const isMaster = user?.role?.name === 'master';
-    const canCustomizeInvitations = isMaster || hasRole('pastor') || hasRole('leader') || hasRole('coordinator');
+    const canCustomizeInvitations = canAccess('/settings/invitations');
+    const isAdmin = canAccess('/mainhub/admin/permissions');
 
     const handleLanguageChange = async (lang: string) => {
         setIsSaving(true);
@@ -238,7 +237,7 @@ export const Settings: FC = () => {
                     )}
 
                     {/* Admin Section */}
-                    {isMaster && (
+                    {isAdmin && (
                         <section>
                             <h3 className="text-overline" style={{ color: 'var(--color-danger-red)', marginBottom: '16px', letterSpacing: '1px', fontWeight: 700 }}>{t('profile.admin')}</h3>
                             <SettingRow

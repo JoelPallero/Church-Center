@@ -18,8 +18,8 @@ class Database
             $configPath = \APP_ROOT . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'database.env';
 
             if (!file_exists($configPath)) {
-                Logger::error("Database Configuration file not found at: " . $configPath);
-                throw new \Exception("Database configuration missing.");
+                Logger::error("Database Configuration file not found at: " . $configPath . " (APP_ROOT: " . (defined('APP_ROOT') ? APP_ROOT : 'UNDEFINED') . ")");
+                throw new \Exception("Database configuration missing at " . $configPath);
             }
 
             self::$cachedEnv = parse_ini_file($configPath);

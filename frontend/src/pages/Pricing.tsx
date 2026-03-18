@@ -98,7 +98,7 @@ export const Pricing: FC = () => {
                 borderBottom: '1px solid #E2E8F0'
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: '1366px', margin: '0 auto' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => navigate('/')}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => navigate(isAuthenticated ? '/dashboard' : '/')}>
                         <div style={{ width: '32px', height: '32px', backgroundColor: '#3d68df', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <span className="material-symbols-outlined" style={{ color: 'white', fontSize: '20px' }}>church</span>
                         </div>

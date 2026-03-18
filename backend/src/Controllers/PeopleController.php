@@ -138,9 +138,9 @@ class PeopleController
             SELECT DISTINCT m.id, m.name, m.surname, m.email, m.phone, m.status, r.name as role_name, r.display_name as role_display
             FROM member m
             JOIN group_members gm ON m.id = gm.member_id
-            LEFT JOIN services s ON s.key = 'mainhub'
-            LEFT JOIN user_service_roles usr ON m.id = usr.member_id AND usr.service_id = s.id
-            LEFT JOIN roles r ON usr.role_id = r.id
+            LEFT JOIN user_roles ur ON m.id = ur.member_id
+            LEFT JOIN roles r ON ur.role_id = r.id
+            LEFT JOIN services s ON s.id = COALESCE(ur.service_id, r.service_id) AND s.`key` = 'mainhub'
             WHERE gm.group_id IN ($placeholders) AND m.status != 'deleted'
         ";
 

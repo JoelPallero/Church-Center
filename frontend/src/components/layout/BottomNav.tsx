@@ -7,11 +7,10 @@ import '../../index.css';
 
 export const BottomNav: FC = () => {
     const { t } = useTranslation();
-    const { canAccess, isSuperAdmin, hasRole } = useAuth();
+    const { canAccess, isSuperAdmin, hasRole, user } = useAuth();
     const isPastor = hasRole('pastor');
     const isLeader = hasRole('leader') || hasRole('coordinator');
     const isMember = hasRole('member');
-    const isUjier = hasRole('ujier');
 
     interface NavItem {
         path: string;
@@ -23,7 +22,11 @@ export const BottomNav: FC = () => {
     const allItems: NavItem[] = [
         { path: '/dashboard', icon: 'dashboard', label: (isPastor || isSuperAdmin) ? 'Dashboard' : t('nav.dashboard') },
         { path: '/mainhub/reports', icon: 'analytics', label: (isPastor || isSuperAdmin) ? 'Reportes' : t('nav.reports') },
-        { path: '/mainhub/churches', icon: 'church', label: isSuperAdmin ? 'Iglesias' : 'Mi Iglesia' },
+        { 
+            path: isSuperAdmin ? '/mainhub/churches' : (user?.churchId ? `/mainhub/churches/edit/${user.churchId}` : '/mainhub/churches'), 
+            icon: 'church', 
+            label: isSuperAdmin ? 'Iglesias' : 'Mi Iglesia' 
+        },
         { path: '/mainhub/areas', icon: 'layers', label: isPastor ? 'Areas' : t('nav.areas') },
         { path: '/settings', icon: 'settings', label: 'Ajustes' },
         { path: '/mainhub/my-team', icon: 'diversity_3', label: 'Mi Equipo' },
@@ -35,32 +38,10 @@ export const BottomNav: FC = () => {
         { path: '/mainhub/consolidation', icon: 'how_to_reg', label: t('nav.consolidation') },
     ];
 
-    let navItems: NavItem[] = [];
-
-    if (isSuperAdmin) {
-        // Specific footer for Superadmin
-        const superadminFooterPaths = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/settings'];
-        navItems = allItems.filter(item => superadminFooterPaths.includes(item.path) && canAccess(item.path));
-    } else if (isPastor) {
-        // Specific footer for Pastor
-        const pastorFooterPaths = ['/dashboard', '/mainhub/reports', '/mainhub/churches', '/mainhub/areas', '/settings'];
-        navItems = allItems.filter(item => pastorFooterPaths.includes(item.path) && canAccess(item.path));
-    } else if (isLeader || isMember) {
-        // Specific footer for Leader and Member
-        const leaderFooterPaths = ['/worship/calendar', '/mainhub/my-team', '/worship/playlists', '/worship/songs', '/settings'];
-        navItems = leaderFooterPaths
-            .map(path => allItems.find(item => item.path === path))
-            .filter((item): item is NavItem => !!item && canAccess(item.path));
-    } else if (isUjier) {
-        // Specific footer for Ujier
-        const ujierFooterPaths = ['/mainhub/consolidation', '/settings'];
-        navItems = allItems.filter(item => ujierFooterPaths.includes(item.path) && canAccess(item.path));
-    } else {
-        // Filter by permissions matrix for other roles
-        const filteredItems = allItems.filter(item => canAccess(item.path));
-        // Take up to 5 items
-        navItems = filteredItems.slice(0, 5);
-    }
+    // Filter and sort by permissions matrix
+    const navItems = allItems
+        .filter(item => canAccess(item.path))
+        .slice(0, 5); // Max 5 items for mobile bottom nav
 
     // If no items (very rare), fallback to profile
     if (navItems.length === 0) {

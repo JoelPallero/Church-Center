@@ -1,5 +1,6 @@
 import { useState, useEffect, type FC } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import api from '../../services/api';
@@ -8,35 +9,53 @@ import { SetlistAssignmentForm } from './SetlistAssignmentForm';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmContext';
+import { AttendanceForm } from './AttendanceForm';
 
 interface MeetingDetailViewProps {
     instanceId: number;
+    eventDate?: string | null;
     onClose: () => void;
     onEdit?: (details: any) => void;
     onDelete?: (id: number) => void;
 }
 
-export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onClose, onEdit, onDelete }) => {
+export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, eventDate, onClose, onEdit, onDelete }) => {
     const navigate = useNavigate();
-    const { isMaster, user, hasRole } = useAuth();
+    const { t } = useTranslation();
+    const { isMaster: isAuthMaster, user, hasRole } = useAuth();
     const { addToast } = useToast();
     const confirm = useConfirm();
     const [details, setDetails] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isDeleting, setIsDeleting] = useState(false);
     const [assignmentData, setAssignmentData] = useState<any>(null);
-    const [activeModal, setActiveModal] = useState<'none' | 'team' | 'setlist'>('none');
+    const [activeModal, setActiveModal] = useState<'none' | 'team' | 'setlist' | 'attendance'>('none');
+
+    const isPastor = user?.role?.name === 'pastor' || hasRole('pastor');
+    const isLeader = user?.role?.name === 'leader' || hasRole('leader');
+    const isUjier = user?.role?.name === 'ujier' || hasRole('ujier');
+    const isMaster = isAuthMaster || user?.role?.name === 'superadmin' || hasRole('superadmin');
+
+    const eventDateTime = eventDate && details?.start_time
+        ? new Date(`${eventDate}T${details.start_time}`)
+        : details?.start_datetime_utc ? new Date(details.start_datetime_utc) : null;
+    
+    // Check if meeting is in the past
+    const isPast = eventDateTime ? eventDateTime < new Date() : false;
+
+    // Permissions: Pastor and Ujier (or anyone who can manage) can do consolidation on past meetings.
+    const canDoConsolidation = isMaster || isPastor || isUjier;
+    
+    // Editing the meeting template/assignment is only for non-past meetings (unless Master)
+    const canModifyStructure = (isMaster || isPastor || isLeader) && (!isPast || isMaster);
+    
+    const canManageMeetings = isMaster || isPastor || isLeader;
 
     const handleShare = () => {
-        // Now accurately deep links to this meeting
         const shareUrl = `${window.location.origin}/worship/calendar?church_id=${details.church_id}&meeting_id=${instanceId}`;
         navigator.clipboard.writeText(shareUrl);
         addToast('Enlace de reunión copiado al portapapeles', 'success');
     };
-
-    const isPastor = user?.role?.name === 'pastor' || hasRole('pastor');
-    const isLeader = user?.role?.name === 'leader' || hasRole('leader');
-    const canManageMeetings = isMaster || isPastor || isLeader;
 
     useEffect(() => {
         fetchDetails();
@@ -81,9 +100,11 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                         <p className="text-overline" style={{ color: 'var(--color-brand-blue)' }}>
                             {details.meeting_type === 'recurrent'
                                 ? `Recurrente - Cada ${['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][details.day_of_week] || 'semana'}`
-                                : (details.instance_date && !isNaN(new Date(details.instance_date).getTime())
-                                    ? new Date(details.instance_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
-                                    : 'Recurrente')}
+                                : (eventDate && !isNaN(new Date(eventDate).getTime())
+                                    ? new Date(eventDate).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+                                    : (details.instance_date && !isNaN(new Date(details.instance_date).getTime())
+                                        ? new Date(details.instance_date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+                                        : 'Recurrente'))}
                         </p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                             <h2 className="text-h2" style={{ margin: '4px 0' }}>{details.title}</h2>
@@ -117,7 +138,7 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                             style={{ padding: '8px' }}
                             title="Compartir"
                         />
-                        {(isMaster || isPastor) && (
+                        {canModifyStructure && (
                             <>
                                 <Button
                                     variant="secondary"
@@ -154,6 +175,15 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                                 />
                             </>
                         )}
+                        {canDoConsolidation && (
+                            <Button
+                                variant="primary"
+                                icon="analytics"
+                                label={t('consolidation.title')}
+                                onClick={() => setActiveModal('attendance')}
+                                style={{ padding: '8px 12px' }}
+                            />
+                        )}
                     </div>
                 </div>
                 {details.description && (
@@ -189,7 +219,7 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                 <section>
                     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <h4 className="text-overline">EQUIPO ASIGNADO</h4>
-                        {canManageMeetings && (
+                        {canModifyStructure && (
                             <Button variant="ghost" icon="person_add" style={{ padding: '4px' }} onClick={() => setActiveModal('team')} />
                         )}
                     </header>
@@ -222,7 +252,7 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                 <section>
                     <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                         <h4 className="text-overline">SETLIST</h4>
-                        {canManageMeetings && (
+                        {canModifyStructure && (
                             <Button variant="ghost" icon="playlist_add" style={{ padding: '4px' }} onClick={() => setActiveModal('setlist')} />
                         )}
                     </header>
@@ -300,7 +330,24 @@ export const MeetingDetailView: FC<MeetingDetailViewProps> = ({ instanceId, onCl
                     />
                 )}
             </Modal>
+
+            <Modal
+                isOpen={activeModal === 'attendance'}
+                onClose={() => setActiveModal('none')}
+                title="Consolidación y Asistencia"
+            >
+                {eventDate && (
+                    <AttendanceForm
+                        meetingId={instanceId}
+                        eventDate={eventDate}
+                        onSuccess={() => {
+                            setActiveModal('none');
+                            fetchDetails();
+                        }}
+                        onCancel={() => setActiveModal('none')}
+                    />
+                )}
+            </Modal>
         </div>
     );
 };
-

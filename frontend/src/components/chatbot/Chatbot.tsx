@@ -284,26 +284,16 @@ export default function Chatbot({
       {/* ─── CSS ─────────────────────────────────────────────────── */}
       <style>{`
         :root {
-          --cb-primary: #4285F4;
-          --cb-primary-dark: #2c6fdb;
-          --cb-surface: #ffffff;
-          --cb-bg: #f8f9fa;
-          --cb-border: #e8eaed;
-          --cb-text: #202124;
-          --cb-text-muted: #80868b;
+          --cb-primary: var(--color-brand-blue);
+          --cb-surface: var(--color-card-bg);
+          --cb-bg: var(--color-ui-bg);
+          --cb-border: var(--color-border-subtle);
+          --cb-text: var(--color-ui-text);
+          --cb-text-muted: var(--color-ui-text-soft);
           --cb-shadow: rgba(0,0,0,0.15);
           --cb-radius: 20px;
         }
-        @media (prefers-color-scheme: dark) {
-          :root {
-            --cb-surface: #2d2d30;
-            --cb-bg: #1e1e1e;
-            --cb-border: #3c3c3c;
-            --cb-text: #e8eaed;
-            --cb-text-muted: #9aa0a6;
-            --cb-shadow: rgba(0,0,0,0.4);
-          }
-        }
+
         @keyframes fadeSlideIn {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
@@ -327,20 +317,24 @@ export default function Chatbot({
         .cb-fab {
           all: unset;
           cursor: pointer;
-          width: 56px;
-          height: 56px;
+          width: 64px;
+          height: 64px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #4285F4, #9B72CB);
+          background: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 18px rgba(66,133,244,0.45);
+          box-shadow: 0 4px 18px rgba(0,0,0,0.15);
           transition: transform 0.2s, box-shadow 0.2s;
           position: relative;
+          border: 1px solid var(--cb-border);
+        }
+        [data-theme='dark'] .cb-fab {
+          background: var(--color-ui-surface);
         }
         .cb-fab:hover {
           transform: scale(1.08);
-          box-shadow: 0 6px 24px rgba(66,133,244,0.55);
+          box-shadow: 0 6px 24px rgba(0,0,0,0.2);
         }
         .cb-fab:active { transform: scale(0.96); }
         .cb-window {
@@ -372,7 +366,7 @@ export default function Chatbot({
           align-items: center;
           gap: 10px;
           padding: 14px 16px;
-          background: linear-gradient(135deg, #4285F4 0%, #9B72CB 100%);
+          background: var(--cb-primary);
           color: #fff;
           flex-shrink: 0;
         }
@@ -481,7 +475,7 @@ export default function Chatbot({
           width: 40px;
           height: 40px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #4285F4, #9B72CB);
+          background: var(--cb-primary);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -492,17 +486,40 @@ export default function Chatbot({
         .cb-send-btn.active { opacity: 1; }
         .cb-send-btn.active:hover { transform: scale(1.08); }
         .cb-send-btn.active:active { transform: scale(0.94); }
+        .cb-fab-container {
+          display: none;
+        }
+
+        @media (max-width: 768px) {
+          .cb-fab-container {
+            display: block;
+            position: fixed !important;
+            bottom: 100px !important;
+            right: 16px !important;
+            z-index: 9998 !important;
+          }
+          .cb-window {
+            bottom: 90px !important;
+            right: 16px !important;
+            left: 16px !important;
+            width: auto !important;
+            height: auto !important;
+            max-height: 70vh !important;
+            border-radius: 20px !important;
+            z-index: 9999 !important;
+          }
+        }
       `}</style>
 
       {/* ─── FAB ─────────────────────────────────────────────────── */}
-      <div style={{ position: "fixed", ...positionStyle, zIndex: 9998 }}>
+      <div className="cb-fab-container" style={{ position: "fixed", ...positionStyle, zIndex: 9998 }}>
         {!isOpen && (
           <button
             className="cb-fab"
             onClick={() => setIsOpen(true)}
             title="Asistente IA del sistema"
           >
-            <GeminiIcon size={26} />
+            <GeminiIcon size={32} />
             {unreadCount > 0 && (
               <span
                 style={{
@@ -542,7 +559,7 @@ export default function Chatbot({
         >
           {/* Header */}
           <div className="cb-header">
-            <GeminiIcon size={26} />
+            <GeminiIcon size={28} />
             <div style={{ flex: 1 }}>
               <div className="cb-header-title">{t('chat.title') || "Asistente del Sistema"}</div>
               <div className="cb-header-sub">{t('chat.headerSub') || "Consultá sobre canciones, reuniones, equipos y más"}</div>

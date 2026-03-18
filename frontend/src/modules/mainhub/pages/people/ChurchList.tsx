@@ -29,7 +29,7 @@ export const ChurchList: FC = () => {
     const fetchChurches = async () => {
         setIsLoading(true);
         try {
-            const response = await api.get('/churches');
+            const response = await api.get('/churches/my_churches');
             if (response.data.success) {
                 setChurches(response.data.churches);
             }

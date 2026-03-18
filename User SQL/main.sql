@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS areas;
 DROP TABLE IF EXISTS member_instruments;
 DROP TABLE IF EXISTS instruments;
 DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS user_roles;
 DROP TABLE IF EXISTS user_service_roles;
 DROP TABLE IF EXISTS user_global_roles;
 DROP TABLE IF EXISTS role_permissions;
@@ -119,14 +120,19 @@ CREATE TABLE IF NOT EXISTS church_services (
 
 CREATE TABLE roles (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  service_id INT NULL,
   name VARCHAR(60) NOT NULL,
   display_name VARCHAR(120) NOT NULL,
   description VARCHAR(255) NULL,
+  scope ENUM('GLOBAL','CHURCH','SERVICE') NOT NULL DEFAULT 'SERVICE',
+  church_id INT NULL,
+  service_id INT NULL,
   level INT NOT NULL DEFAULT 100,
-  is_system_role TINYINT(1) NOT NULL DEFAULT 1,
+  is_system TINYINT(1) NOT NULL DEFAULT 1,
+  is_editable TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_roles_service_name (service_id, name),
+  scope_key VARCHAR(80) NOT NULL DEFAULT 'S0',
+  UNIQUE KEY uq_roles_scope_name (scope_key, name),
+  FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE SET NULL,
   FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -148,26 +154,23 @@ CREATE TABLE role_permissions (
   FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE user_global_roles (
+-- Tabla unificada: GLOBAL (church_id NULL, service_id NULL), CHURCH (service_id NULL), SERVICE (ambos)
+-- scope_combo: evita duplicados con NULL (MySQL: NULL != NULL en UNIQUE)
+CREATE TABLE user_roles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
   member_id INT NOT NULL,
   role_id INT NOT NULL,
+  church_id INT NULL,
+  service_id INT NULL,
+  assigned_by INT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (member_id, role_id),
+  scope_combo VARCHAR(120) GENERATED ALWAYS AS (CONCAT(member_id, '-', IFNULL(church_id, 0), '-', IFNULL(service_id, 0))) STORED,
+  UNIQUE KEY uq_user_scope (scope_combo),
   FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
-  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE user_service_roles (
-  member_id INT NOT NULL,
-  church_id INT NOT NULL,
-  service_id INT NOT NULL,
-  role_id INT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (member_id, church_id, service_id),
-  FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
+  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
   FOREIGN KEY (church_id) REFERENCES church(id) ON DELETE CASCADE,
   FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
-  FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+  FOREIGN KEY (assigned_by) REFERENCES member(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /* =========================================================
@@ -283,18 +286,21 @@ CREATE TABLE meetings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS meeting_attendance (
-  meeting_id INT NOT NULL PRIMARY KEY,
+  meeting_id INT NOT NULL,
+  event_date DATE NOT NULL,
   adults INT NOT NULL DEFAULT 0,
   children INT NOT NULL DEFAULT 0,
   new_people INT NOT NULL DEFAULT 0,
   total INT AS (adults + children) STORED,
   updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (meeting_id, event_date),
   FOREIGN KEY (meeting_id) REFERENCES meetings(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS meeting_visitors (
   id INT AUTO_INCREMENT PRIMARY KEY,
   meeting_id INT NOT NULL,
+  event_date DATE NOT NULL,
   first_name VARCHAR(100) NOT NULL,
   surname VARCHAR(100) NULL,
   phone VARCHAR(40) NULL,
@@ -403,26 +409,35 @@ INSERT INTO services (`key`, name, description, active) VALUES
   ('global_songs', 'Biblioteca Global', 'Acceso al repositorio general de canciones', 1)
 ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description);
 
--- Roles
-INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
-VALUES (NULL, 'superadmin', 'Super Administrador', 'Control total global', 0, 1)
-ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+-- Roles (scope: GLOBAL, CHURCH, SERVICE) - scope_key: GLOBAL para global, S{id} para service
+INSERT INTO roles (name, display_name, description, scope, church_id, service_id, level, is_system, is_editable, scope_key)
+VALUES ('superadmin', 'Super Administrador', 'Control total global', 'GLOBAL', NULL, NULL, 0, 1, 0, 'GLOBAL')
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name), scope=VALUES(scope);
 
-INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
-SELECT s.id, 'pastor', 'Pastor', 'Admin de iglesia', 10, 1 FROM services s WHERE s.`key`='mainhub'
-ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+INSERT INTO roles (name, display_name, description, scope, church_id, service_id, level, is_system, is_editable, scope_key)
+SELECT 'pastor', 'Pastor', 'Admin de iglesia', 'CHURCH', NULL, s.id, 10, 1, 0, CONCAT('S', s.id)
+FROM services s WHERE s.`key`='mainhub' LIMIT 1
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name), scope=VALUES(scope);
 
-INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
-SELECT s.id, 'leader', 'Líder', 'Puede crear equipos', 20, 1 FROM services s WHERE s.`key`='mainhub'
-ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+INSERT INTO roles (name, display_name, description, scope, church_id, service_id, level, is_system, is_editable, scope_key)
+SELECT 'leader', 'Líder', 'Puede crear equipos', 'SERVICE', NULL, s.id, 20, 1, 0, CONCAT('S', s.id)
+FROM services s WHERE s.`key`='mainhub' LIMIT 1
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name), scope=VALUES(scope);
 
-INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
-SELECT s.id, 'coordinator', 'Coordinador', 'Coordina equipos', 30, 1 FROM services s WHERE s.`key`='mainhub'
-ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+INSERT INTO roles (name, display_name, description, scope, church_id, service_id, level, is_system, is_editable, scope_key)
+SELECT 'coordinator', 'Coordinador', 'Coordina equipos', 'SERVICE', NULL, s.id, 30, 1, 0, CONCAT('S', s.id)
+FROM services s WHERE s.`key`='mainhub' LIMIT 1
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name), scope=VALUES(scope);
 
-INSERT INTO roles (service_id, name, display_name, description, level, is_system_role)
-SELECT s.id, 'member', 'Miembro', 'Acceso básico', 40, 1 FROM services s WHERE s.`key`='mainhub'
-ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+INSERT INTO roles (name, display_name, description, scope, church_id, service_id, level, is_system, is_editable, scope_key)
+SELECT 'member', 'Miembro', 'Acceso básico', 'SERVICE', NULL, s.id, 40, 1, 0, CONCAT('S', s.id)
+FROM services s WHERE s.`key`='mainhub' LIMIT 1
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name), scope=VALUES(scope);
+
+INSERT INTO roles (name, display_name, description, scope, church_id, service_id, level, is_system, is_editable, scope_key)
+SELECT 'ujier', 'Ujier', 'Servicio de consolidación y recepción', 'SERVICE', NULL, s.id, 35, 1, 0, CONCAT('S', s.id)
+FROM services s WHERE s.`key`='ushers' LIMIT 1
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name), scope=VALUES(scope);
 
 -- Permisos
 INSERT INTO permissions (name, display_name, module, description) VALUES
@@ -448,7 +463,11 @@ INSERT INTO permissions (name, display_name, module, description) VALUES
   ('users.approve', 'Aprobar personas', 'person', 'Permite aprobar solicitudes de acceso'),
   ('users.delete', 'Eliminar personas', 'person', 'Permite eliminar perfiles'),
   ('reunions.view', 'Ver estadísticas de reuniones', 'reports', 'Permite ver reportes de asistencia'),
-  ('reports.view', 'Ver estadísticas generales', 'reports', 'Permite ver reportes y dashboard')
+  ('reports.view', 'Ver estadísticas generales', 'reports', 'Permite ver reportes y dashboard'),
+  ('church.update_own', 'Editar iglesia propia', 'church', 'Permite editar perfil de la iglesia del usuario'),
+  ('users.manage', 'Gestionar usuarios', 'person', 'Alias para aprobar/invitar personas'),
+  ('users.view', 'Ver usuarios y actividad', 'person', 'Ver actividad y listado de usuarios'),
+  ('team.delete', 'Eliminar equipos', 'team', 'Permite eliminar equipos')
 ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
 
 -- Instrumentos
@@ -464,16 +483,19 @@ SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='member' AND p.name I
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='coordinator' AND p.name IN ('team.read', 'calendar.read', 'song.read', 'song.create', 'song.update')
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='coordinator' AND p.name IN ('team.read', 'calendar.read', 'song.read', 'song.create', 'song.update', 'users.manage', 'users.view')
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='leader' AND p.name IN ('team.read', 'team.create', 'team.update', 'team.manage_members', 'calendar.read', 'meeting.create', 'meeting.update', 'song.read', 'song.create', 'song.update', 'song.delete')
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='leader' AND p.name IN ('team.read', 'team.create', 'team.update', 'team.manage_members', 'team.delete', 'calendar.read', 'meeting.create', 'meeting.update', 'song.read', 'song.create', 'song.update', 'song.delete', 'church.update_own', 'users.view')
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
 INSERT INTO role_permissions (role_id, permission_id)
-SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='pastor' AND p.name IN ('church.read', 'church.update', 'area.create', 'area.update', 'team.read', 'team.create', 'team.update', 'team.manage_members', 'person.read', 'users.invite', 'users.approve', 'users.delete', 'calendar.read', 'meeting.create', 'meeting.update', 'song.read', 'song.create', 'song.update', 'song.delete', 'song.approve', 'reunions.view', 'reports.view')
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='pastor' AND p.name IN ('church.read', 'church.update', 'church.update_own', 'area.create', 'area.update', 'team.read', 'team.create', 'team.update', 'team.manage_members', 'team.delete', 'person.read', 'users.invite', 'users.approve', 'users.manage', 'users.view', 'users.delete', 'calendar.read', 'meeting.create', 'meeting.update', 'song.read', 'song.create', 'song.update', 'song.delete', 'song.approve', 'reunions.view', 'reports.view')
 ON DUPLICATE KEY UPDATE role_id=role_id;
 
-SET FOREIGN_KEY_CHECKS = 1;
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id FROM roles r, permissions p WHERE r.name='ujier' AND p.name IN ('person.read', 'calendar.read', 'reunions.view')
+ON DUPLICATE KEY UPDATE role_id=role_id;
+
 SET FOREIGN_KEY_CHECKS = 1;
